@@ -1,0 +1,8 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/FattoVirtual.Api/FattoVirtual.Api.csproj" />
+    <Project Path="src/FattoVirtual.Application/FattoVirtual.Application.csproj" />
+    <Project Path="src/FattoVirtual.Domain/FattoVirtual.Domain.csproj" />
+    <Project Path="src/FattoVirtual.Infrastructure/FattoVirtual.Infrastructure.csproj" />
+  </Folder>
+</Solution>

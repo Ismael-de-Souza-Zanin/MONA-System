@@ -1,0 +1,61 @@
+{
+  "name": "fattovirtual-desktop",
+  "version": "0.1.0",
+  "private": true,
+  "description": "FattoVirtual — cliente desktop (Electron) sobre a mesma UI React e APIs da web",
+  "main": "main.js",
+  "author": "FattoVirtual",
+  "scripts": {
+    "dev": "electron .",
+    "build:ui": "node scripts/build-ui.mjs",
+    "build:win": "npm run build:ui && electron-builder --win && npm run pack:demo",
+    "pack": "npm run build:ui && electron-builder --win --dir && npm run pack:demo",
+    "pack:demo": "node scripts/pack-demo.mjs",
+    "demo": "powershell -NoProfile -ExecutionPolicy Bypass -File ./demo/Start-FattoDemo.ps1",
+    "demo:stop": "powershell -NoProfile -ExecutionPolicy Bypass -File ./demo/Stop-FattoDemo.ps1"
+  },
+  "devDependencies": {
+    "electron": "^37.2.0",
+    "electron-builder": "^26.0.12"
+  },
+  "build": {
+    "appId": "com.fattovirtual.desktop",
+    "productName": "FattoVirtual",
+    "copyright": "Copyright © FattoVirtual",
+    "directories": {
+      "output": "release",
+      "buildResources": "build"
+    },
+    "icon": "build/icon.png",
+    "files": [
+      "main.js",
+      "preload.js",
+      "renderer/**/*",
+      "package.json",
+      "build/icon.png"
+    ],
+    "win": {
+      "icon": "build/icon.png",
+      "target": [
+        {
+          "target": "nsis",
+          "arch": ["x64"]
+        },
+        {
+          "target": "portable",
+          "arch": ["x64"]
+        }
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "shortcutName": "FattoVirtual",
+      "artifactName": "${productName}-${version}-setup.${ext}"
+    },
+    "portable": {
+      "artifactName": "${productName}-${version}-portable.${ext}"
+    }
+  }
+}

@@ -1,0 +1,51 @@
+# Stack da demo FattoVirtual (entregável):
+# - Postgres interno (volume Docker — não precisa instalar banco no Windows)
+# - API ASP.NET (migrações + seed na subida)
+#
+# Uso preferencial via Iniciar-FattoVirtual.bat (projeto Docker: fattovirtual-demo)
+
+name: fattovirtual-demo
+
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: fattovirtual-demo-db
+    environment:
+      POSTGRES_DB: fattovirtual
+      POSTGRES_USER: fatto
+      POSTGRES_PASSWORD: fatto_dev_password
+    ports:
+      - "5433:5432"
+    volumes:
+      - pgdata_demo:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U fatto -d fattovirtual"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    restart: unless-stopped
+
+  api:
+    build:
+      context: ..
+      dockerfile: backend/Dockerfile
+    container_name: fattovirtual-demo-api
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ConnectionStrings__DefaultConnection: Host=db;Port=5432;Database=fattovirtual;Username=fatto;Password=fatto_dev_password
+      Jwt__Key: FattoVirtual_Dev_Signing_Key_Change_In_Production_32chars_min
+      Jwt__Issuer: FattoVirtual
+      Jwt__Audience: FattoVirtual
+      Security__CredentialEncryptionKey: FattoVirtualDevKey_ChangeMe_32b!
+      EmailKit__OutboxDirectory: /app/email-outbox
+      WhatsAppKit__OutboxDirectory: /app/whatsapp-outbox
+    ports:
+      - "5080:8080"
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  pgdata_demo:
+    name: fattovirtual_demo_pgdata

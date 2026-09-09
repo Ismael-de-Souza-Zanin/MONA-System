@@ -1,0 +1,181 @@
+@import "tailwindcss";
+
+@theme {
+  --color-brand-950: var(--fv-brand-950);
+  --color-brand-900: var(--fv-brand-900);
+  --color-brand-800: var(--fv-brand-800);
+  --color-brand-700: var(--fv-brand-700);
+  --color-brand-600: var(--fv-brand-600);
+  --color-brand-500: var(--fv-brand-500);
+  --color-brand-100: var(--fv-brand-100);
+  --color-brand-50: var(--fv-brand-50);
+  --color-ink-900: var(--fv-ink-900);
+  --color-ink-700: var(--fv-ink-700);
+  --color-ink-500: var(--fv-ink-500);
+  --color-ink-300: var(--fv-ink-300);
+  --color-ink-100: var(--fv-ink-100);
+  --color-ink-50: var(--fv-ink-50);
+  --color-surface: var(--fv-surface);
+  --color-teal-950: var(--fv-brand-950);
+  --color-teal-900: var(--fv-brand-800);
+  --color-teal-800: var(--fv-brand-700);
+  --color-teal-700: var(--fv-ink-700);
+  --color-teal-600: var(--fv-brand-600);
+  --color-teal-500: var(--fv-brand-500);
+  --color-teal-200: var(--fv-brand-200);
+  --color-teal-100: var(--fv-brand-100);
+  --color-sand-50: var(--fv-ink-50);
+  --color-sand-100: var(--fv-ink-100);
+  --color-sand-200: var(--fv-border);
+  --color-sand-300: var(--fv-ink-300);
+  --color-sand-400: var(--fv-ink-500);
+  --color-sand-500: var(--fv-ink-500);
+  --font-display: "Fraunces", Georgia, serif;
+  --font-ui: "DM Sans", "Source Sans 3", system-ui, sans-serif;
+}
+
+/* Identidade Fatto — claro (padrão) */
+:root,
+html[data-theme='light'] {
+  --fv-brand-950: #003d3b;
+  --fv-brand-900: #004f4c;
+  --fv-brand-800: #006d69;
+  --fv-brand-700: #0a857f;
+  --fv-brand-600: #149991;
+  --fv-brand-500: #2ab0a7;
+  --fv-brand-200: #9fd9d5;
+  --fv-brand-100: #d9f3f1;
+  --fv-brand-50: #eef9f8;
+  --fv-ink-900: #12212b;
+  --fv-ink-700: #334155;
+  --fv-ink-500: #64748b;
+  --fv-ink-300: #cbd5e1;
+  --fv-ink-100: #eef1f4;
+  --fv-ink-50: #f5f7f8;
+  --fv-primary: #006d69;
+  --fv-primary-hover: #004f4c;
+  --fv-bg: #f0f5f4;
+  --fv-surface: #ffffff;
+  --fv-border: #e6ebef;
+  --fv-text: #12212b;
+  --fv-muted: #64748b;
+  --fv-radius: 14px;
+  --fv-shadow: 0 1px 2px rgba(18, 33, 43, 0.04), 0 8px 24px rgba(18, 33, 43, 0.06);
+  --fv-bg-accent: radial-gradient(900px 420px at 8% -8%, rgba(42, 176, 167, 0.16), transparent 55%);
+}
+
+/* Tema escuro — mesmos verdes Fatto, atmosfera noturna */
+html.dark,
+html[data-theme='dark'] {
+  --fv-brand-950: #041412;
+  --fv-brand-900: #0a2e2b;
+  --fv-brand-800: #149991;
+  --fv-brand-700: #2ab0a7;
+  --fv-brand-600: #3fc4ba;
+  --fv-brand-500: #5fd4cb;
+  --fv-brand-200: #1a4a45;
+  --fv-brand-100: #143833;
+  --fv-brand-50: #0f2a27;
+  --fv-ink-900: #e8f6f4;
+  --fv-ink-700: #c5e0dc;
+  --fv-ink-500: #8ab5af;
+  --fv-ink-300: #3d5f5a;
+  --fv-ink-100: #1a322f;
+  --fv-ink-50: #102422;
+  --fv-primary: #2ab0a7;
+  --fv-primary-hover: #3fc4ba;
+  --fv-bg: #0a1514;
+  --fv-surface: #122422;
+  --fv-border: #1e3a36;
+  --fv-text: #e8f6f4;
+  --fv-muted: #8ab5af;
+  --fv-shadow: 0 1px 2px rgba(0, 0, 0, 0.35), 0 12px 32px rgba(0, 0, 0, 0.35);
+  --fv-bg-accent: radial-gradient(1000px 500px at 12% -12%, rgba(20, 153, 145, 0.28), transparent 55%),
+    radial-gradient(700px 400px at 90% 10%, rgba(0, 77, 75, 0.45), transparent 50%);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  min-height: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-ui);
+  color: var(--fv-text);
+  background-color: var(--fv-bg);
+  background-image: var(--fv-bg-accent);
+  background-attachment: fixed;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1,
+h2,
+h3,
+.brand-font {
+  font-family: var(--font-display);
+  letter-spacing: -0.02em;
+}
+
+.app-font {
+  font-family: var(--font-ui);
+}
+
+.fv-card {
+  background: var(--fv-surface);
+  border: 1px solid var(--fv-border);
+  border-radius: var(--fv-radius);
+  box-shadow: var(--fv-shadow);
+}
+
+.fv-pill {
+  border-radius: 999px;
+  padding: 0.2rem 0.65rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+/* Superfícies hardcoded em páginas antigas */
+html.dark .bg-white,
+html.dark .bg-white\/90,
+html.dark .bg-white\/80 {
+  background-color: var(--fv-surface) !important;
+}
+
+html.dark .border-sand-200,
+html.dark .border-ink-100,
+html.dark .border-ink-50 {
+  border-color: var(--fv-border) !important;
+}
+
+html.dark .text-red-600 {
+  color: #f87171;
+}
+
+html.dark .hover\:bg-red-50:hover {
+  background-color: rgba(248, 113, 113, 0.12);
+}
+
+html.dark .hover\:bg-ink-50:hover,
+html.dark .hover\:bg-sand-100:hover {
+  background-color: var(--fv-ink-100);
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--fv-ink-300);
+  border-radius: 999px;
+}
+
+html.dark ::-webkit-scrollbar-thumb {
+  background: #2a4a45;
+}

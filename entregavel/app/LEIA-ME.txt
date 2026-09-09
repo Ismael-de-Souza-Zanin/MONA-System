@@ -1,0 +1,14 @@
+﻿ATENCAO — nao comece por aqui
+=============================
+
+Os arquivos .exe desta pasta NAO devem ser abertos sozinhos.
+Sem o ambiente preparado, o app parece "quebrado" (nao conecta).
+
+Como usar corretamente
+----------------------
+1. Volte uma pasta (entregavel)
+2. Abra COMECE-AQUI.txt
+3. Rode 2-Iniciar-FattoVirtual.bat
+   (na 1a vez, rode antes 1-Instalar-Docker-Desktop.bat)
+
+Login: ju@fattovirtual.com / Admin123!

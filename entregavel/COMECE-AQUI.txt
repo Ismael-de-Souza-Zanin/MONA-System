@@ -1,0 +1,50 @@
+========================================
+  FattoVirtual — como abrir a demonstração
+========================================
+
+Você NÃO precisa saber programar.
+No Windows o Docker PRECISA do WSL2 — por isso
+às vezes aparece erro de Docker e depois de WSL.
+Isso é normal na 1ª configuração do PC.
+
+----------------------------------------
+PASSO 1 — Preparar o PC (só na 1ª vez)
+----------------------------------------
+  • Clique com o BOTÃO DIREITO em:
+      1-Preparar-PC.bat
+  • Escolha: "Executar como administrador"
+  • Aceite a janela do Windows
+  • Se pedir REINICIAR, reinicie
+  • Abra o "Docker Desktop" e espere ficar PRONTO
+    (ícone da baleia perto do relógio, sem "Starting...")
+  • Se o Docker pedir atualização do WSL, aceite
+
+----------------------------------------
+PASSO 2 — Iniciar o FattoVirtual
+----------------------------------------
+  • Duplo clique em:  2-Iniciar-FattoVirtual.bat
+  • Na 1ª vez pode demorar vários minutos
+  • O aplicativo abre sozinho
+
+----------------------------------------
+PASSO 3 — Entrar
+----------------------------------------
+  E-mail:  ju@fattovirtual.com
+  Senha:   Admin123!
+
+----------------------------------------
+SE DER ERRO DE DOCKER OU WSL
+----------------------------------------
+  1. Feche tudo
+  2. Rode de novo 1-Preparar-PC.bat como Administrador
+  3. Reinicie o PC se o Windows pedir
+  4. Abra o Docker Desktop até ficar pronto
+  5. Só então rode 2-Iniciar-FattoVirtual.bat
+
+  NÃO abra só o .exe da pasta "app" — sem o Passo 2
+  o sistema não conecta.
+
+Parar ambiente:   3-Parar-FattoVirtual.bat
+Resetar demo:     4-Resetar-Demo.bat
+Docs do produto:  pasta docs
+========================================

@@ -1,0 +1,26 @@
+# Dependencies
+node_modules/
+frontend/dist/
+frontend/node_modules/
+
+# .NET
+**/bin/
+**/obj/
+**/.vs/
+*.user
+
+# Env / secrets
+.env
+.env.local
+*.pfx
+
+# IDE / OS
+.idea/
+.DS_Store
+Thumbs.db
+
+# Storage uploads
+backend/src/FattoVirtual.Api/storage/
+
+# Packaged desktop binaries (gerados no build; >50MB)
+entregavel/app/*.exe
