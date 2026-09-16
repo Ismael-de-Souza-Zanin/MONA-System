@@ -2,13 +2,15 @@
 
 ## Modelo (simples e completo)
 
-Três livros por cliente direto — sem misturar dinheiro:
+Três **planos** — o cliente, a Fatto e a VA não compartilham a mesma gaveta.  
+Detalhe: [ARQUITETURA-NUCLEO-COMPLETO.md](../ARQUITETURA-NUCLEO-COMPLETO.md).
 
-| Ledger | Significado | Exemplo |
-|--------|-------------|---------|
-| **Agency** | Fatto/assistente ← cliente | Mensalidade da operação |
-| **ClientAr** | Cliente ← terceiros (gerido) | Cliente da manicure pagou o serviço |
-| **ClientAp** | Cliente → fornecedores (gerido) | Cliente paga software / parceiro |
+| Plano | Ledger | Quem vê | Exemplo |
+|-------|--------|---------|---------|
+| **A — negócio do cliente** | **ClientAr** / **ClientAp** | Equipe + cliente (se compartilhado) | Cliente da manicure pagou; cliente paga o software |
+| **B — Fatto ← cliente** | **Agency** | Equipe; cliente vê o que deve à Fatto | Mensalidade / retainer / extra |
+| **C — Fatto → VA** | **AssistantPayout** (eleva `Payment.EmployeeId`) | ADM vê todas; VA só a sua | Repasse, hora, bônus |
+| **Margem** | Calculada (B − C) | Só ADM | Não é livro para lançar; o cliente nunca vê |
 
 Baixa continua eficiente: **comprovante ou senha Ju/admin** (`POST /payments/{id}/settle`).
 

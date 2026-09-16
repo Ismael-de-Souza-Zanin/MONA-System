@@ -1,0 +1,447 @@
+/*
+  Classes semânticas MONA (NestCSS nativo)
+  ----------------------------------------
+  Tailwind/LightningCSS quebra `&__` e `&--` (vira :is(.bloco)__el).
+  Escreva o nome completo do bloco/elemento/modificador.
+  Aninhe só estado: &:hover, &:disabled, &.is-invalid, descendentes.
+*/
+
+@layer mona {
+  .mona-page {
+    min-width: 0;
+  }
+
+  .mona-page__header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: var(--mona-space-4);
+    margin-bottom: var(--mona-space-6);
+  }
+
+  .mona-page__title {
+    margin: 0;
+    font-family: var(--mona-font-display);
+    font-size: calc(var(--mona-type-title) * var(--mona-type-scale));
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    color: var(--mona-color-ink);
+  }
+
+  .mona-page__subtitle {
+    margin: var(--mona-space-1) 0 0;
+    font-size: calc(var(--mona-type-subtitle) * var(--mona-type-scale));
+    color: var(--mona-color-muted);
+  }
+
+  .mona-page__actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--mona-space-2);
+  }
+
+  .mona-workspace {
+    min-width: 0;
+
+    &.is-client-locked {
+      box-shadow: inset 3px 0 0 var(--mona-color-client-accent);
+    }
+  }
+
+  .mona-card {
+    background: var(--mona-color-surface);
+    border: 1px solid var(--mona-color-border);
+    border-radius: var(--mona-radius-md);
+    box-shadow: var(--mona-shadow-sm);
+    padding: var(--mona-space-5);
+
+    &.is-hoverable {
+      cursor: pointer;
+      transition: border-color 0.15s ease, transform 0.15s ease;
+
+      &:hover {
+        transform: translateY(-2px);
+        border-color: color-mix(in srgb, var(--mona-color-accent) 40%, var(--mona-color-border));
+      }
+    }
+  }
+
+  .mona-field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.375rem;
+    min-width: 0;
+
+    &.is-invalid .mona-field__control {
+      border-color: var(--mona-color-danger);
+    }
+  }
+
+  .mona-field__label {
+    font-size: calc(var(--mona-type-label) * var(--mona-type-scale));
+    font-weight: 500;
+    color: var(--fv-ink-700);
+  }
+
+  .mona-field__hint {
+    font-size: 0.75rem;
+    color: var(--mona-color-muted);
+  }
+
+  .mona-field__error {
+    font-size: 0.75rem;
+    color: var(--mona-color-danger-ink);
+  }
+
+  .mona-field__control {
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    min-height: var(--mona-control-h);
+    padding: 0.625rem 0.875rem;
+    border: 1px solid var(--fv-ink-300);
+    border-radius: var(--mona-radius-md);
+    background: var(--mona-color-surface);
+    color: var(--mona-color-ink);
+    font-size: 0.875rem;
+    font-family: inherit;
+    outline: none;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+
+    &::placeholder {
+      color: color-mix(in srgb, var(--mona-color-muted) 70%, transparent);
+    }
+
+    &:focus {
+      border-color: var(--mona-color-accent);
+      box-shadow: var(--mona-ring-accent);
+    }
+  }
+
+  textarea.mona-field__control {
+    min-height: 96px;
+    resize: vertical;
+  }
+
+  .mona-check {
+    display: flex;
+    cursor: pointer;
+    align-items: flex-start;
+    gap: var(--mona-space-2);
+    font-size: 0.875rem;
+    color: var(--mona-color-ink);
+  }
+
+  .mona-check__input {
+    margin-top: 0.125rem;
+    width: 1rem;
+    height: 1rem;
+    accent-color: var(--mona-color-accent);
+  }
+
+  .mona-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--mona-space-2);
+    font-family: inherit;
+    font-weight: 600;
+    border: 1px solid transparent;
+    cursor: pointer;
+    transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+
+    &:disabled,
+    &.is-disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+  }
+
+  .mona-btn--sm {
+    padding: 0.375rem 0.75rem;
+    font-size: 0.875rem;
+    border-radius: var(--mona-radius-md);
+  }
+
+  .mona-btn--md {
+    padding: 0.625rem 1rem;
+    font-size: 0.875rem;
+    border-radius: var(--mona-radius-md);
+  }
+
+  .mona-btn--lg {
+    padding: 0.75rem 1.25rem;
+    font-size: 1rem;
+    border-radius: var(--mona-radius-lg);
+  }
+
+  .mona-btn--primary {
+    background: var(--fv-brand-800);
+    color: var(--mona-color-on-accent);
+
+    &:hover:not(:disabled) {
+      background: var(--fv-brand-900);
+    }
+  }
+
+  .mona-btn--secondary {
+    background: var(--mona-color-surface);
+    color: var(--fv-ink-900);
+    border-color: var(--fv-ink-300);
+
+    &:hover:not(:disabled) {
+      background: var(--fv-ink-50);
+    }
+  }
+
+  .mona-btn--ghost {
+    background: transparent;
+    color: var(--fv-ink-700);
+
+    &:hover:not(:disabled) {
+      background: var(--fv-ink-100);
+    }
+  }
+
+  .mona-btn--danger {
+    background: var(--mona-color-danger);
+    color: #fff;
+
+    &:hover:not(:disabled) {
+      background: var(--mona-color-danger-hover);
+    }
+  }
+
+  .mona-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    border-radius: var(--mona-radius-pill);
+    padding: 0.2rem 0.65rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+  }
+
+  .mona-status__dot {
+    display: inline-block;
+    width: 0.625rem;
+    height: 0.625rem;
+    flex-shrink: 0;
+    border-radius: var(--mona-radius-pill);
+  }
+
+  .mona-status--active {
+    background: var(--mona-status-active-soft);
+    color: var(--mona-status-active-ink);
+
+    &.mona-status__dot,
+    .mona-status__dot {
+      background: var(--mona-status-active);
+    }
+  }
+
+  .mona-status--inactive {
+    background: var(--mona-status-inactive-soft);
+    color: var(--mona-status-inactive-ink);
+
+    &.mona-status__dot,
+    .mona-status__dot {
+      background: var(--mona-status-inactive);
+    }
+  }
+
+  .mona-status--notice {
+    background: var(--mona-status-notice-soft);
+    color: var(--mona-status-notice-ink);
+
+    &.mona-status__dot,
+    .mona-status__dot {
+      background: var(--mona-status-notice);
+    }
+  }
+
+  .mona-status--hold {
+    background: var(--mona-status-hold-soft);
+    color: var(--mona-status-hold-ink);
+
+    &.mona-status__dot,
+    .mona-status__dot {
+      background: var(--mona-status-hold);
+    }
+  }
+
+  .mona-modal {
+    position: fixed;
+    inset: 0;
+    z-index: var(--mona-z-modal);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--mona-space-4);
+  }
+
+  .mona-modal__backdrop {
+    position: absolute;
+    inset: 0;
+    background: color-mix(in srgb, var(--fv-ink-900) 35%, transparent);
+    backdrop-filter: blur(2px);
+  }
+
+  .mona-modal__dialog {
+    position: relative;
+    width: 100%;
+    overflow: hidden;
+    border: 1px solid var(--fv-ink-100);
+    border-radius: var(--mona-radius-lg);
+    background: var(--mona-color-surface);
+    box-shadow: var(--fv-shadow);
+  }
+
+  .mona-modal__dialog--sm {
+    max-width: 28rem;
+  }
+
+  .mona-modal__dialog--md {
+    max-width: 32rem;
+  }
+
+  .mona-modal__dialog--lg {
+    max-width: 42rem;
+  }
+
+  .mona-modal__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--mona-space-4) var(--mona-space-5);
+    border-bottom: 1px solid var(--fv-ink-100);
+  }
+
+  .mona-modal__title {
+    margin: 0;
+    font-family: var(--mona-font-ui);
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: var(--fv-ink-900);
+  }
+
+  .mona-modal__close {
+    border: 0;
+    border-radius: var(--mona-radius-md);
+    padding: 0.375rem;
+    background: transparent;
+    color: var(--mona-color-muted);
+    cursor: pointer;
+
+    &:hover {
+      background: var(--fv-ink-50);
+    }
+  }
+
+  .mona-modal__body {
+    padding: var(--mona-space-4) var(--mona-space-5);
+  }
+
+  .mona-empty {
+    padding: var(--mona-space-12) var(--mona-space-6);
+    text-align: center;
+    border: 1px dashed var(--fv-ink-300);
+    border-radius: var(--mona-radius-md);
+    background: color-mix(in srgb, var(--mona-color-surface) 60%, transparent);
+  }
+
+  .mona-empty__title {
+    margin: 0;
+    font-weight: 500;
+    color: var(--fv-ink-900);
+  }
+
+  .mona-empty__description {
+    margin: var(--mona-space-1) 0 0;
+    font-size: 0.875rem;
+    color: var(--mona-color-muted);
+  }
+
+  .mona-alert {
+    padding: var(--mona-space-3) var(--mona-space-4);
+    border-radius: var(--mona-radius-sm);
+    font-size: 0.875rem;
+    border: 1px solid var(--mona-color-border);
+  }
+
+  .mona-alert--danger {
+    border-color: color-mix(in srgb, var(--mona-color-danger) 35%, var(--mona-color-border));
+    background: var(--mona-color-danger-soft);
+    color: var(--mona-color-danger-ink);
+  }
+
+  .mona-alert--info {
+    border-color: color-mix(in srgb, var(--mona-color-info) 35%, var(--mona-color-border));
+    background: var(--mona-color-info-soft);
+    color: var(--mona-color-info-ink);
+  }
+
+  .mona-sidebar {
+    background: var(--mona-chrome-sidebar-bg);
+    border-color: var(--mona-chrome-sidebar-border);
+    color: var(--mona-chrome-sidebar-ink);
+  }
+
+  .mona-sidebar__link {
+    color: var(--mona-chrome-sidebar-ink);
+    font-size: calc(var(--mona-type-sidebar) * var(--mona-type-scale));
+
+    &:hover:not(.is-active) {
+      background: var(--mona-chrome-sidebar-hover-bg);
+    }
+
+    &.is-active {
+      background: var(--mona-chrome-sidebar-active-bg);
+      color: var(--mona-chrome-sidebar-active-ink);
+    }
+  }
+
+  .mona-tabbar {
+    background: color-mix(in srgb, var(--fv-ink-50) 80%, transparent);
+    border-color: var(--mona-color-border);
+  }
+
+  .mona-tab {
+    color: var(--mona-chrome-tab-ink);
+    font-size: calc(var(--mona-type-tab) * var(--mona-type-scale));
+
+    &.is-active {
+      background: var(--mona-chrome-tab-active-bg);
+      color: var(--mona-chrome-tab-active-ink);
+    }
+  }
+
+  .mona-window {
+    background: var(--mona-chrome-window-bg);
+    border-color: var(--mona-color-border);
+    border-radius: var(--mona-chrome-window-radius);
+    box-shadow: var(--mona-chrome-window-shadow);
+  }
+
+  .mona-window__titlebar {
+    background: var(--mona-chrome-window-title-bg);
+    border-color: var(--mona-color-border);
+    color: var(--mona-color-ink);
+  }
+}
+
+html[data-tab-style="underline"] .mona-tab.is-active {
+  background: transparent;
+  border-radius: 0;
+  box-shadow: inset 0 -2px 0 var(--mona-chrome-tab-active-ink);
+}
+
+html[data-tab-style="chip"] .mona-tab {
+  border-radius: var(--mona-radius-pill);
+}
+
+html[data-tab-style="chip"] .mona-tab.is-active {
+  box-shadow: none;
+}

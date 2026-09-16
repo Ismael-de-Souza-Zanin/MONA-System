@@ -24,6 +24,7 @@ public class AgendaController : ControllerBase
             .Include(e => e.ResponsibleEmployee)
             .Include(e => e.Client)
             .Include(e => e.LinkedTodos)
+            .Include(e => e.Decisions)
             .Where(e => e.OrganizationId == User.GetOrganizationId());
 
         if (view == "mine")
@@ -83,7 +84,8 @@ public class AgendaController : ControllerBase
             CategoryId = body.CategoryId,
             ResponsibleEmployeeId = body.ResponsibleEmployeeId,
             ClientId = body.ClientId,
-            OwnerUserId = body.ResponsibleUserId ?? User.GetUserId()
+            OwnerUserId = body.ResponsibleUserId ?? User.GetUserId(),
+            Kind = string.IsNullOrWhiteSpace(body.Kind) ? "Event" : body.Kind.Trim()
         };
         _db.AgendaEvents.Add(e);
         await _db.SaveChangesAsync();
@@ -198,6 +200,8 @@ public class AgendaController : ControllerBase
             clientId = e.ClientId,
             clientName = e.Client?.Name,
             clientTimeZoneId = e.Client?.TimeZoneId,
+            kind = string.IsNullOrWhiteSpace(e.Kind) ? "Event" : e.Kind,
+            decisionCount = e.Decisions?.Count ?? 0,
             linkedTodos = e.LinkedTodos.Select(t => new
             {
                 id = t.Id,
@@ -228,7 +232,8 @@ public class AgendaController : ControllerBase
         Guid? CategoryId,
         Guid? ResponsibleEmployeeId,
         string? ResponsibleUserId,
-        Guid? ClientId);
+        Guid? ClientId,
+        string? Kind);
     public record CategoryBody(string Name, string? Color);
     public record TodoFromEventBody(string? Title, string? Description, string? Priority);
 }

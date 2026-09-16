@@ -1,0 +1,237 @@
+/*
+  MONA design tokens
+  -------------------
+  1. Escala do produto (--mona-space, --mona-radius, --mona-z, fontes)
+  2. Tenant Fatto (--fv-* / --tenant-*) — identidade que a Ju já usa
+  3. Semântica MONA (--mona-color-*) — o que componentes novos devem ler
+
+  Trocar de tenant no futuro = redefinir --tenant-* / --fv-*.
+  Nunca colocar hex em página. A júnior lê styles/README.md.
+*/
+
+:root {
+  --mona-space-1: 0.25rem;
+  --mona-space-2: 0.5rem;
+  --mona-space-3: 0.75rem;
+  --mona-space-4: 1rem;
+  --mona-space-5: 1.25rem;
+  --mona-space-6: 1.5rem;
+  --mona-space-8: 2rem;
+  --mona-space-10: 2.5rem;
+  --mona-space-12: 3rem;
+
+  --mona-radius-sm: 8px;
+  --mona-radius-md: 14px;
+  --mona-radius-lg: 16px;
+  --mona-radius-xl: 20px;
+  --mona-radius-pill: 999px;
+
+  --mona-control-h: 42px;
+  --mona-control-h-sm: 34px;
+  --mona-control-h-lg: 48px;
+
+  --mona-z-base: 1;
+  --mona-z-dock: 20;
+  --mona-z-dropdown: 40;
+  --mona-z-modal: 50;
+  --mona-z-toast: 60;
+  --mona-z-float: 70;
+
+  --mona-font-ui: "DM Sans", "Source Sans 3", system-ui, sans-serif;
+  --mona-font-display: "Fraunces", Georgia, serif;
+
+  --mona-type-scale: 1;
+  --mona-type-title: 1.5rem;
+  --mona-type-subtitle: 0.875rem;
+  --mona-type-body: 0.875rem;
+  --mona-type-label: 0.875rem;
+  --mona-type-sidebar: 0.875rem;
+  --mona-type-tab: 0.75rem;
+
+  --mona-shadow-sm: var(--fv-shadow);
+  --mona-ring-accent: 0 0 0 4px color-mix(in srgb, var(--mona-color-accent) 12%, transparent);
+}
+
+/* Tenant Fatto — claro (padrão). Hex só vive aqui. */
+:root,
+html[data-theme="light"],
+html[data-tenant="fatto"] {
+  --fv-brand-950: #003d3b;
+  --fv-brand-900: #004f4c;
+  --fv-brand-800: #006d69;
+  --fv-brand-700: #0a857f;
+  --fv-brand-600: #149991;
+  --fv-brand-500: #2ab0a7;
+  --fv-brand-200: #9fd9d5;
+  --fv-brand-100: #d9f3f1;
+  --fv-brand-50: #eef9f8;
+  --fv-ink-900: #12212b;
+  --fv-ink-700: #334155;
+  --fv-ink-500: #64748b;
+  --fv-ink-300: #cbd5e1;
+  --fv-ink-100: #eef1f4;
+  --fv-ink-50: #f5f7f8;
+  --fv-primary: #006d69;
+  --fv-primary-hover: #004f4c;
+  --fv-bg: #f0f5f4;
+  --fv-surface: #ffffff;
+  --fv-border: #e6ebef;
+  --fv-text: #12212b;
+  --fv-muted: #64748b;
+  --fv-radius: 14px;
+  --fv-shadow: 0 1px 2px rgba(18, 33, 43, 0.04), 0 8px 24px rgba(18, 33, 43, 0.06);
+  --fv-bg-accent: radial-gradient(900px 420px at 8% -8%, rgba(42, 176, 167, 0.16), transparent 55%);
+
+  --tenant-accent: var(--fv-primary);
+  --tenant-accent-hover: var(--fv-primary-hover);
+  --tenant-accent-soft: var(--fv-brand-50);
+
+  --mona-color-bg: var(--fv-bg);
+  --mona-color-bg-accent: var(--fv-bg-accent);
+  --mona-color-surface: var(--fv-surface);
+  --mona-color-ink: var(--fv-text);
+  --mona-color-muted: var(--fv-muted);
+  --mona-color-border: var(--fv-border);
+  --mona-color-accent: var(--fv-primary);
+  --mona-color-accent-hover: var(--fv-primary-hover);
+  --mona-color-accent-soft: var(--fv-brand-50);
+  --mona-color-accent-muted: var(--fv-brand-100);
+  --mona-color-on-accent: #ffffff;
+  --mona-color-client-accent: var(--mona-color-accent);
+
+  --mona-color-danger: #dc2626;
+  --mona-color-danger-hover: #b91c1c;
+  --mona-color-danger-soft: #fef2f2;
+  --mona-color-danger-ink: #b91c1c;
+  --mona-color-success: #059669;
+  --mona-color-success-soft: #ecfdf5;
+  --mona-color-success-ink: #047857;
+  --mona-color-warning: #d97706;
+  --mona-color-warning-soft: #fff7ed;
+  --mona-color-warning-ink: #c2410c;
+  --mona-color-info: #0284c7;
+  --mona-color-info-soft: #f0f9ff;
+  --mona-color-info-ink: #0369a1;
+  --mona-color-neutral: #64748b;
+  --mona-color-neutral-soft: #f1f5f9;
+  --mona-color-neutral-ink: #475569;
+
+  --mona-status-active: #10b981;
+  --mona-status-active-soft: #ecfdf5;
+  --mona-status-active-ink: #047857;
+  --mona-status-inactive: #94a3b8;
+  --mona-status-inactive-soft: #f1f5f9;
+  --mona-status-inactive-ink: #475569;
+  --mona-status-notice: #0ea5e9;
+  --mona-status-notice-soft: #f0f9ff;
+  --mona-status-notice-ink: #0369a1;
+  --mona-status-hold: #f97316;
+  --mona-status-hold-soft: #fff7ed;
+  --mona-status-hold-ink: #c2410c;
+
+  --mona-chrome-sidebar-bg: var(--mona-color-surface);
+  --mona-chrome-sidebar-ink: var(--fv-ink-700);
+  --mona-chrome-sidebar-border: var(--mona-color-border);
+  --mona-chrome-sidebar-active-bg: var(--mona-color-accent);
+  --mona-chrome-sidebar-active-ink: var(--mona-color-on-accent);
+  --mona-chrome-sidebar-hover-bg: var(--fv-ink-50);
+  --mona-chrome-tab-active-bg: var(--mona-color-surface);
+  --mona-chrome-tab-active-ink: var(--fv-brand-900);
+  --mona-chrome-tab-ink: var(--fv-ink-500);
+  --mona-chrome-window-bg: var(--mona-color-surface);
+  --mona-chrome-window-title-bg: var(--fv-ink-50);
+  --mona-chrome-window-radius: var(--mona-radius-xl);
+  --mona-chrome-window-shadow: var(--fv-shadow);
+}
+
+/* Tenant Fatto — escuro. Mesmos verdes, atmosfera noturna. */
+html.dark,
+html[data-theme="dark"] {
+  --fv-brand-950: #041412;
+  --fv-brand-900: #0a2e2b;
+  --fv-brand-800: #149991;
+  --fv-brand-700: #2ab0a7;
+  --fv-brand-600: #3fc4ba;
+  --fv-brand-500: #5fd4cb;
+  --fv-brand-200: #1a4a45;
+  --fv-brand-100: #143833;
+  --fv-brand-50: #0f2a27;
+  --fv-ink-900: #e8f6f4;
+  --fv-ink-700: #c5e0dc;
+  --fv-ink-500: #8ab5af;
+  --fv-ink-300: #3d5f5a;
+  --fv-ink-100: #1a322f;
+  --fv-ink-50: #102422;
+  --fv-primary: #2ab0a7;
+  --fv-primary-hover: #3fc4ba;
+  --fv-bg: #0a1514;
+  --fv-surface: #122422;
+  --fv-border: #1e3a36;
+  --fv-text: #e8f6f4;
+  --fv-muted: #8ab5af;
+  --fv-shadow: 0 1px 2px rgba(0, 0, 0, 0.35), 0 12px 32px rgba(0, 0, 0, 0.35);
+  --fv-bg-accent:
+    radial-gradient(1000px 500px at 12% -12%, rgba(20, 153, 145, 0.28), transparent 55%),
+    radial-gradient(700px 400px at 90% 10%, rgba(0, 77, 75, 0.45), transparent 50%);
+
+  --tenant-accent: var(--fv-primary);
+  --tenant-accent-hover: var(--fv-primary-hover);
+  --tenant-accent-soft: var(--fv-brand-50);
+
+  --mona-color-bg: var(--fv-bg);
+  --mona-color-bg-accent: var(--fv-bg-accent);
+  --mona-color-surface: var(--fv-surface);
+  --mona-color-ink: var(--fv-text);
+  --mona-color-muted: var(--fv-muted);
+  --mona-color-border: var(--fv-border);
+  --mona-color-accent: var(--fv-primary);
+  --mona-color-accent-hover: var(--fv-primary-hover);
+  --mona-color-accent-soft: var(--fv-brand-50);
+  --mona-color-accent-muted: var(--fv-brand-100);
+  --mona-color-on-accent: #041412;
+  --mona-color-client-accent: var(--mona-color-accent);
+
+  --mona-color-danger: #f87171;
+  --mona-color-danger-hover: #ef4444;
+  --mona-color-danger-soft: rgba(248, 113, 113, 0.12);
+  --mona-color-danger-ink: #fca5a5;
+  --mona-color-success: #34d399;
+  --mona-color-success-soft: rgba(52, 211, 153, 0.12);
+  --mona-color-success-ink: #6ee7b7;
+  --mona-color-warning: #fb923c;
+  --mona-color-warning-soft: rgba(251, 146, 60, 0.14);
+  --mona-color-warning-ink: #fdba74;
+  --mona-color-info: #38bdf8;
+  --mona-color-info-soft: rgba(56, 189, 248, 0.12);
+  --mona-color-info-ink: #7dd3fc;
+  --mona-color-neutral: #8ab5af;
+  --mona-color-neutral-soft: var(--fv-ink-100);
+  --mona-color-neutral-ink: var(--fv-ink-700);
+
+  --mona-status-active: #34d399;
+  --mona-status-active-soft: rgba(52, 211, 153, 0.14);
+  --mona-status-active-ink: #6ee7b7;
+  --mona-status-inactive: #64748b;
+  --mona-status-inactive-soft: var(--fv-ink-100);
+  --mona-status-inactive-ink: #94a3b8;
+  --mona-status-notice: #38bdf8;
+  --mona-status-notice-soft: rgba(56, 189, 248, 0.14);
+  --mona-status-notice-ink: #7dd3fc;
+  --mona-status-hold: #fb923c;
+  --mona-status-hold-soft: rgba(251, 146, 60, 0.16);
+  --mona-status-hold-ink: #fdba74;
+
+  --mona-chrome-sidebar-bg: var(--mona-color-surface);
+  --mona-chrome-sidebar-ink: var(--fv-ink-700);
+  --mona-chrome-sidebar-border: var(--mona-color-border);
+  --mona-chrome-sidebar-active-bg: var(--mona-color-accent);
+  --mona-chrome-sidebar-active-ink: var(--mona-color-on-accent);
+  --mona-chrome-sidebar-hover-bg: var(--fv-ink-100);
+  --mona-chrome-tab-active-bg: var(--mona-color-surface);
+  --mona-chrome-tab-active-ink: var(--fv-brand-500);
+  --mona-chrome-tab-ink: var(--fv-ink-500);
+  --mona-chrome-window-bg: var(--mona-color-surface);
+  --mona-chrome-window-title-bg: var(--fv-ink-50);
+  --mona-chrome-window-radius: var(--mona-radius-xl);
+  --mona-chrome-window-shadow: var(--fv-shadow);
+}

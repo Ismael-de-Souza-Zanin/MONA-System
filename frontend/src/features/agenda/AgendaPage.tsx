@@ -41,6 +41,7 @@ export function AgendaPage() {
     clientId: '',
     timeZoneId: 'America/Sao_Paulo',
     remindMinutesBefore: '30',
+    kind: 'Event',
   })
   const [categoryForm, setCategoryForm] = useState({ name: '', color: '#006D69' })
 
@@ -87,6 +88,7 @@ export function AgendaPage() {
         timeZoneId: eventForm.timeZoneId || preferences?.timeZoneId || 'America/Sao_Paulo',
         remindMinutesBefore: Number(eventForm.remindMinutesBefore || 30),
         isUtc: false,
+        kind: eventForm.kind,
       }),
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: ['agenda-events'] })
@@ -203,6 +205,9 @@ export function AgendaPage() {
                         {event.responsibleUserName && (
                           <p className="text-xs text-teal-600">Responsável: {event.responsibleUserName}</p>
                         )}
+                        {event.kind === 'Meeting' && (
+                          <p className="text-xs font-medium text-brand-800">Reunião · {event.decisionCount ?? 0} decisão(ões)</p>
+                        )}
                         {event.clientName && (
                           <p className="text-xs text-teal-600">
                             Cliente: {event.clientName}
@@ -225,6 +230,27 @@ export function AgendaPage() {
                             }
                           >
                             + Criar follow-up (tarefa)
+                          </button>
+                        )}
+                        {canWrite && event.kind === 'Meeting' && (
+                          <button
+                            type="button"
+                            className="mt-1 block text-xs font-medium text-brand-800 hover:underline"
+                            onClick={() => {
+                              const title = window.prompt('O que ficou combinado?')
+                              if (!title?.trim()) return
+                              void api
+                                .post('/decisions', {
+                                  title: title.trim(),
+                                  agendaEventId: event.id,
+                                  clientId: event.clientId || null,
+                                  visibleToClient: window.confirm('O cliente pode ver esta decisão no portal?'),
+                                  createTodo: window.confirm('Abrir uma tarefa a partir desta decisão?'),
+                                })
+                                .then(() => qc.invalidateQueries({ queryKey: ['agenda-events'] }))
+                            }}
+                          >
+                            + Registrar decisão
                           </button>
                         )}
                       </div>
@@ -268,6 +294,11 @@ export function AgendaPage() {
             value={eventForm.remindMinutesBefore}
             onChange={(e) => setEventForm({ ...eventForm, remindMinutesBefore: e.target.value })}
           />
+          <Select label="Tipo" value={eventForm.kind} onChange={(e) => setEventForm({ ...eventForm, kind: e.target.value })}>
+            <option value="Event">Compromisso</option>
+            <option value="Meeting">Reunião (gera decisões)</option>
+            <option value="Block">Bloqueio</option>
+          </Select>
           <Select label="Categoria" value={eventForm.categoryId} onChange={(e) => setEventForm({ ...eventForm, categoryId: e.target.value })}>
             <option value="">— Nenhuma —</option>
             {categories.map((c) => (

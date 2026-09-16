@@ -1,6 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useMemo, useState } from 'react'
-import { Link } from 'react-router-dom'
 import { ArrowDown, ArrowUp, Plus } from 'lucide-react'
 import { api } from '../../shared/api/client'
 import type { FaqItem } from '../../shared/types'

@@ -24,5 +24,8 @@ public class AgendaEvent : BaseEntity, IOrganizationScoped
     public Guid? ClientId { get; set; }
     public Client? Client { get; set; }
     public string? OwnerUserId { get; set; }
+    /// <summary>Event | Meeting | Block</summary>
+    public string Kind { get; set; } = "Event";
     public ICollection<TodoItem> LinkedTodos { get; set; } = [];
+    public ICollection<BusinessDecision> Decisions { get; set; } = [];
 }

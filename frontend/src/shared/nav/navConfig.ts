@@ -20,6 +20,7 @@ import {
   MessagesSquare,
   Bolt,
   HelpCircle,
+  BarChart3,
 } from 'lucide-react'
 import type { Permission } from '../permissions/constants'
 import { Permissions } from '../permissions/constants'
@@ -36,6 +37,7 @@ export interface NavDefinition {
 export const NAV_DEFINITIONS: NavDefinition[] = [
   { key: 'dashboard', to: '/', label: 'Dashboard', icon: LayoutDashboard, permission: Permissions.Dashboard },
   { key: 'operacao', to: '/operacao', label: 'Modo operação', icon: Bolt, permission: Permissions.Dashboard },
+  { key: 'relatorios', to: '/relatorios', label: 'Relatórios', icon: BarChart3, permission: Permissions.Dashboard },
   { key: 'clientes', to: '/clientes', label: 'Clientes', icon: Users, permission: Permissions.ClientsRead },
   { key: 'tarefas', to: '/todos', label: 'Tarefas', icon: CheckSquare, permission: Permissions.TodosRead },
   { key: 'agenda', to: '/agenda', label: 'Agenda', icon: CalendarDays, permission: Permissions.AgendaRead },

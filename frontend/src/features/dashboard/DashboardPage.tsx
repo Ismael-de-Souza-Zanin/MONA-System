@@ -130,6 +130,7 @@ export function DashboardPage() {
     { to: '/clientes', label: 'Novo cliente' },
     { to: '/financeiro', label: 'Registrar pagamento' },
     { to: '/sops', label: 'Abrir SOPs' },
+    { to: '/relatorios', label: 'Relatórios do período' },
   ]
 
   return (
@@ -139,6 +140,15 @@ export function DashboardPage() {
         subtitle={`Olá, ${user?.name}. Visão rápida — para o dia a dia com muitos clientes, use o Modo operação.`}
       />
 
+      <Link
+        to="/relatorios"
+        className="mb-3 flex items-center justify-between rounded-2xl border border-brand-200 bg-brand-50 px-4 py-3 text-sm text-brand-950 transition hover:bg-brand-100/60"
+      >
+        <span>
+          <strong>Relatórios</strong> — dia, semana e mês nas lentes cliente, ADM e VA.
+        </span>
+        <ArrowUpRight size={16} />
+      </Link>
       <Link
         to="/operacao"
         className="mb-5 flex items-center justify-between rounded-2xl border border-brand-200 bg-brand-50 px-4 py-3 text-sm text-brand-950 transition hover:bg-brand-100/60"

@@ -57,6 +57,9 @@ public class AppDbContext : IdentityDbContext<AppUser>
     public DbSet<ChatParticipant> ChatParticipants => Set<ChatParticipant>();
     public DbSet<ChatMessage> ChatMessages => Set<ChatMessage>();
     public DbSet<ClientGroup> ClientGroups => Set<ClientGroup>();
+    public DbSet<BusinessDecision> BusinessDecisions => Set<BusinessDecision>();
+    public DbSet<AttendancePoint> AttendancePoints => Set<AttendancePoint>();
+    public DbSet<TimeEntry> TimeEntries => Set<TimeEntry>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -310,6 +313,37 @@ public class AppDbContext : IdentityDbContext<AppUser>
 
         builder.Entity<ScheduledEmail>()
             .HasIndex(x => new { x.Status, x.ScheduledAtUtc });
+
+        builder.Entity<BusinessDecision>()
+            .HasOne(d => d.AgendaEvent)
+            .WithMany(e => e.Decisions)
+            .HasForeignKey(d => d.AgendaEventId)
+            .OnDelete(DeleteBehavior.SetNull);
+        builder.Entity<BusinessDecision>()
+            .HasOne(d => d.TodoItem)
+            .WithMany()
+            .HasForeignKey(d => d.TodoItemId)
+            .OnDelete(DeleteBehavior.SetNull);
+        builder.Entity<BusinessDecision>()
+            .HasIndex(x => new { x.OrganizationId, x.ClientId, x.IsOpen });
+
+        builder.Entity<AttendancePoint>()
+            .HasOne(p => p.ServiceItem)
+            .WithMany()
+            .HasForeignKey(p => p.ServiceItemId)
+            .OnDelete(DeleteBehavior.SetNull);
+        builder.Entity<AttendancePoint>()
+            .HasOne(p => p.Sop)
+            .WithMany()
+            .HasForeignKey(p => p.SopId)
+            .OnDelete(DeleteBehavior.SetNull);
+        builder.Entity<AttendancePoint>()
+            .HasIndex(x => new { x.OrganizationId, x.ClientId });
+
+        builder.Entity<TimeEntry>()
+            .HasIndex(x => new { x.OrganizationId, x.UserId, x.StartedAtUtc });
+        builder.Entity<TimeEntry>()
+            .HasIndex(x => new { x.OrganizationId, x.ClientId, x.StartedAtUtc });
     }
 
     private static List<string> DeserializeStringList(string? value)

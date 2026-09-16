@@ -234,7 +234,7 @@ export interface PyramidNode {
   children: PyramidNode[]
 }
 
-export type PaymentLedger = 'Agency' | 'ClientAr' | 'ClientAp'
+export type PaymentLedger = 'Agency' | 'ClientAr' | 'ClientAp' | 'AssistantPayout'
 
 export type PaymentLinkKind = 'todo' | 'agenda' | 'sop' | 'sop-run' | 'service' | 'contract'
 
@@ -376,6 +376,8 @@ export interface AgendaEvent {
   clientId?: string
   clientName?: string
   description?: string
+  kind?: 'Event' | 'Meeting' | 'Block' | string
+  decisionCount?: number
   linkedTodos?: { id: string; title: string; status: string; dueAtUtc?: string }[]
 }
 

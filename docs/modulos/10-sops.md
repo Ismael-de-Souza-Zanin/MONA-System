@@ -3,7 +3,9 @@
 ## Princípio de produto
 A página **não** é uma biblioteca de documentos. É um lugar onde a assistente chega com um problema e sai com o **próximo passo**.
 
-Packs por ramo (contabilidade, clínica…) são **opcionais no futuro** — o core fica com o **núcleo universal** + overlays da empresa/cliente, sem engessar vertical de mercado.
+Packs por ramo **não** viram sistemas separados. O core fica com o **núcleo universal** + overlays. Neste MVP entra o pack **atendimento** (intake, remarcação, incidente); outros ramos (`saude`, `juridico`…) só quando a carteira pedir.
+
+**Ponto de atendimento** (serviço na conta): canal, janela/SLA, intake, escalonamento, SOP padrão — ver [ARQUITETURA-NUCLEO-COMPLETO.md](../ARQUITETURA-NUCLEO-COMPLETO.md).
 
 ## Arquitetura (camadas)
 

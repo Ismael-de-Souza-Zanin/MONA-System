@@ -40,6 +40,8 @@ public class Client : BaseEntity, IOrganizationScoped
     public bool OnboardingCompleted { get; set; }
     /// <summary>Precisa resposta rápida (fila operação).</summary>
     public bool NeedsQuickResponse { get; set; }
+    /// <summary>Horas do pacote/retainer no mês (0 = sem pacote).</summary>
+    public decimal RetainerHoursPerMonth { get; set; }
 
     /// <summary>Estágio de relacionamento: Novo | Ativo | EmRisco | Vip | Pausado</summary>
     public string RelationshipStage { get; set; } = "Ativo";

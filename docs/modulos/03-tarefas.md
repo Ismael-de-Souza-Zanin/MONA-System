@@ -7,6 +7,8 @@ Tarefas atrasadas geram alerta (`todo_overdue`) e aparecem destacadas no quadro 
 ## Regras conhecidas
 - Task **geral** = visível para a equipe; pessoal = responsável.
 - Mover para coluna “conclui” marca Done.
+- **Agenda ≠ tarefa** — ciclo de vida distinto; vínculo opcional (reunião pode *nascer* tarefas via decisão).
+- Tarefa concluída + SOP run + decisão = evidência dos relatórios (cliente / ADM / VA).
 - Evolução prevista: Demanda → várias tarefas + grupo de acesso (ver BRIEFING-ALINHAMENTO-JU).
 
 ## Perguntas essenciais

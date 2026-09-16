@@ -7,61 +7,114 @@ import {
   useState,
   type ReactNode,
 } from 'react'
+import { applyAppearance } from './applyAppearance'
+import { defaultAppearance, markCustom, presetPrefs } from './presets'
+import type { AppearancePrefs, ThemeMode } from './types'
 
-export type ThemeMode = 'light' | 'dark'
-
-const STORAGE_KEY = 'fatto_theme'
+const LEGACY_THEME_KEY = 'fatto_theme'
+const STORAGE_KEY = 'fatto_appearance_v1'
 
 type ThemeContextValue = {
   theme: ThemeMode
   setTheme: (mode: ThemeMode) => void
   toggleTheme: () => void
+  appearance: AppearancePrefs
+  setAppearance: (next: AppearancePrefs) => void
+  patchAppearance: (patch: Partial<AppearancePrefs>) => void
+  applyPreset: (id: Exclude<AppearancePrefs['preset'], 'custom'>) => void
+  resetAppearance: () => void
 }
 
 const ThemeContext = createContext<ThemeContextValue | null>(null)
 
-function readStored(): ThemeMode {
+function readStored(): AppearancePrefs {
   try {
-    const v = localStorage.getItem(STORAGE_KEY)
-    if (v === 'dark' || v === 'light') return v
+    const raw = localStorage.getItem(STORAGE_KEY)
+    if (raw) {
+      const parsed = JSON.parse(raw) as AppearancePrefs
+      if (parsed?.colors && parsed?.type && parsed?.chrome) return parsed
+    }
+    const legacy = localStorage.getItem(LEGACY_THEME_KEY)
+    if (legacy === 'dark' || legacy === 'light') return defaultAppearance(legacy)
   } catch {
     /* ignore */
   }
-  return 'light'
-}
-
-function applyDom(theme: ThemeMode) {
-  const root = document.documentElement
-  root.classList.toggle('dark', theme === 'dark')
-  root.dataset.theme = theme
-  root.style.colorScheme = theme
+  return defaultAppearance('light')
 }
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
-  const [theme, setThemeState] = useState<ThemeMode>(() => {
+  const [appearance, setAppearanceState] = useState<AppearancePrefs>(() => {
     const initial = readStored()
-    applyDom(initial)
+    applyAppearance(initial)
     return initial
   })
 
   useEffect(() => {
-    applyDom(theme)
+    applyAppearance(appearance)
     try {
-      localStorage.setItem(STORAGE_KEY, theme)
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(appearance))
+      localStorage.setItem(LEGACY_THEME_KEY, appearance.mode)
     } catch {
       /* ignore */
     }
-  }, [theme])
+  }, [appearance])
 
-  const setTheme = useCallback((mode: ThemeMode) => setThemeState(mode), [])
-  const toggleTheme = useCallback(
-    () => setThemeState((t) => (t === 'dark' ? 'light' : 'dark')),
-    [],
-  )
+  const setAppearance = useCallback((next: AppearancePrefs) => setAppearanceState(next), [])
+
+  const patchAppearance = useCallback((patch: Partial<AppearancePrefs>) => {
+    setAppearanceState((prev) => {
+      const next: AppearancePrefs = {
+        ...prev,
+        ...patch,
+        colors: { ...prev.colors, ...(patch.colors || {}) },
+        type: { ...prev.type, ...(patch.type || {}) },
+        chrome: { ...prev.chrome, ...(patch.chrome || {}) },
+      }
+      if (!patch.preset) next.preset = 'custom'
+      return next
+    })
+  }, [])
+
+  const applyPreset = useCallback((id: Exclude<AppearancePrefs['preset'], 'custom'>) => {
+    setAppearanceState(presetPrefs(id))
+  }, [])
+
+  const resetAppearance = useCallback(() => {
+    setAppearanceState(defaultAppearance('light'))
+  }, [])
+
+  const setTheme = useCallback((mode: ThemeMode) => {
+    setAppearanceState((prev) => {
+      if (prev.preset === 'fatto-light' || prev.preset === 'fatto-dark' || prev.preset === 'custom') {
+        if (prev.preset !== 'custom') return presetPrefs(mode === 'dark' ? 'fatto-dark' : 'fatto-light')
+        return markCustom({ ...prev, mode })
+      }
+      return presetPrefs(mode === 'dark' ? 'fatto-dark' : 'fatto-light')
+    })
+  }, [])
+
+  const toggleTheme = useCallback(() => {
+    setAppearanceState((prev) => {
+      const nextMode: ThemeMode = prev.mode === 'dark' ? 'light' : 'dark'
+      if (prev.preset === 'fatto-light' || prev.preset === 'fatto-dark') {
+        return presetPrefs(nextMode === 'dark' ? 'fatto-dark' : 'fatto-light')
+      }
+      return markCustom({ ...prev, mode: nextMode })
+    })
+  }, [])
 
   const value = useMemo(
-    () => ({ theme, setTheme, toggleTheme }),
-    [theme, setTheme, toggleTheme],
+    () => ({
+      theme: appearance.mode,
+      setTheme,
+      toggleTheme,
+      appearance,
+      setAppearance,
+      patchAppearance,
+      applyPreset,
+      resetAppearance,
+    }),
+    [appearance, setTheme, toggleTheme, setAppearance, patchAppearance, applyPreset, resetAppearance],
   )
 
   return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>
@@ -71,4 +124,8 @@ export function useTheme() {
   const ctx = useContext(ThemeContext)
   if (!ctx) throw new Error('useTheme must be used within ThemeProvider')
   return ctx
+}
+
+export function useAppearance() {
+  return useTheme()
 }

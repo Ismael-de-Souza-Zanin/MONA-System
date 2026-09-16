@@ -33,6 +33,7 @@ Depois da primeira execução bem-sucedida, use o atalho **FattoVirtual** na Ár
 
 | Arquivo | Conteúdo |
 |---------|----------|
+| [docs/MAPA-JU-IMPLANTADO-MVP-DEPOIS.md](./docs/MAPA-JU-IMPLANTADO-MVP-DEPOIS.md) | **Para a Ju:** implantado · MVP · depois |
 | [docs/MAPA-PAGINAS-E-FUNCIONALIDADES.md](./docs/MAPA-PAGINAS-E-FUNCIONALIDADES.md) | Mapa de telas |
 | [docs/STATUS-E-SONDAGEM-MODULOS.md](./docs/STATUS-E-SONDAGEM-MODULOS.md) | Status + perguntas |
 | [docs/ATIVIDADES-FATTO.md](./docs/ATIVIDADES-FATTO.md) | O que a FattoVirtual precisa fazer |

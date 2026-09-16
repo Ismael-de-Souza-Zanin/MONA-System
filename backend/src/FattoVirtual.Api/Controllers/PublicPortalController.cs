@@ -48,6 +48,7 @@ public class PublicPortalController : ControllerBase
         object? agenda = null;
         object? documents = null;
         object? messages = null;
+        object? report = null;
 
         if (client is not null)
         {
@@ -139,6 +140,26 @@ public class PublicPortalController : ControllerBase
                     })
                     .ToListAsync();
             }
+
+            if (scope is "portal" or "client")
+            {
+                var monthStart = new DateTime(DateTime.UtcNow.Year, DateTime.UtcNow.Month, 1, 0, 0, 0, DateTimeKind.Utc);
+                var decisions = await _db.BusinessDecisions
+                    .Where(d => d.ClientId == client.Id && d.OrganizationId == share.OrganizationId && d.VisibleToClient)
+                    .OrderByDescending(d => d.CreatedAt)
+                    .Take(12)
+                    .Select(d => new { d.Title, d.IsOpen, d.DueAtUtc, d.CreatedAt })
+                    .ToListAsync();
+                var done = await _db.TodoItems.CountAsync(t =>
+                    t.ClientId == client.Id && t.OrganizationId == share.OrganizationId &&
+                    t.Status == TodoStatus.Done && t.UpdatedAt >= monthStart);
+                report = new
+                {
+                    period = "month",
+                    todosDone = done,
+                    decisions
+                };
+            }
         }
 
         var faqs = await _db.FaqItems.Where(f => f.OrganizationId == share.OrganizationId && f.IsPublished)
@@ -157,6 +178,7 @@ public class PublicPortalController : ControllerBase
             agenda,
             documents,
             messages,
+            report,
             faqs,
             capabilities = new
             {

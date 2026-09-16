@@ -96,6 +96,7 @@ function titleFromPath(path: string): string {
     chat: 'Chat interno',
     notificacoes: 'Notificações',
     operacao: 'Modo operação',
+    relatorios: 'Relatórios',
   }
   if (parts[0] === 'clientes' && parts.length >= 2) return 'Cliente'
   if (parts.length >= 2 && map[parts[0]]) return `${map[parts[0]]} · detalhe`

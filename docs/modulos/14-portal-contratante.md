@@ -22,7 +22,7 @@ Login autenticado do cliente = evolução futura (Access Graph); o link já entr
 ## O que o contratante faz
 | Função | Detalhe |
 |--------|---------|
-| Acompanhar | Status, próximo passo, financeiro Agency, agenda, contratos (conforme escopo) |
+| Acompanhar | Status, próximo passo, financeiro **A/B** (nunca C/margem), agenda, contratos, **relatório do período** (entregas + decisões visíveis) |
 | Comunicar | Mensagens com a equipe (notifica owner) |
 | Centralizar info | Hub mobile-first |
 | Anexar | Arquivo da galeria **ou foto da câmera** (`capture=environment`) — comprovante/documento |

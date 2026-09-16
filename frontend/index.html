@@ -17,6 +17,7 @@
     <script>
       try {
         var t = localStorage.getItem('fatto_theme')
+        document.documentElement.dataset.tenant = 'fatto'
         if (t === 'dark') {
           document.documentElement.classList.add('dark')
           document.documentElement.dataset.theme = 'dark'

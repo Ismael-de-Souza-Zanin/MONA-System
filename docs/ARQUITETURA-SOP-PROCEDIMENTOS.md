@@ -7,7 +7,7 @@ Documento para revisão da Ju e da equipe. Data: 2026-08-10.
 | Camada PO | Na Fatto |
 |-----------|----------|
 | Núcleo operacional universal | **Sim agora** — seed `PackKey=universal` (cobrança, documento, cancelamento, follow-up, reunião, atraso, comunicação…) |
-| Pacotes por ramo | **Futuro opcional** — templates importáveis, **não** sistemas diferentes nem enums de vertical no core |
+| Pacotes por ramo | **Templates importáveis** — pack `atendimento` no MVP; outros ramos sob demanda. **Não** sistemas diferentes nem enums de vertical no core |
 | Camada específica da empresa/cliente | **Overlays** (`SopOverlay`: Rule / Condition / Exception / Channel) — sem clonar SOP |
 
 Isso respeita o briefing: funcionalidades reutilizáveis; grupos/tags definidos pela operação; sem engessar mercado.

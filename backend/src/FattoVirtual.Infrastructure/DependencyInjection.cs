@@ -167,6 +167,7 @@ public class DbSeeder
         await EnsureFaqsPermissionAsync();
         await EnsureSampleSopAsync();
         await EnsureUniversalSopsAsync();
+        await EnsureAtendimentoSopsAsync();
         await EnsureOrgScaleFieldsAsync();
         await EnsureClientJsonListsAsync();
         await EnsureStarterClientGroupsAsync();
@@ -493,6 +494,89 @@ public class DbSeeder
                     Title = st.Title,
                     Instruction = st.Instr,
                     IsCritical = st.Crit,
+                    ActionKind = st.Path is null ? "none" : "open_path",
+                    ActionPath = st.Path,
+                    ActionLabel = st.Label
+                });
+            }
+            await _db.SaveChangesAsync();
+        }
+    }
+
+    private async Task EnsureAtendimentoSopsAsync()
+    {
+        var orgId = await _db.Organizations.Select(o => o.Id).FirstOrDefaultAsync();
+        if (orgId == Guid.Empty) return;
+
+        var defs = new (string Name, string Trigger, string[] Aliases, (string Title, string Instr, string? Path, string? Label)[] Steps)[]
+        {
+            ("Pedido de orçamento", "Cliente pediu orçamento",
+                ["quero orçamento", "preço", "quanto custa"],
+                [
+                    ("Captar serviço e janela", "Anote o que precisa, quando e onde.", "/clientes", "Abrir cliente"),
+                    ("Checar agenda e capacidade", "Veja disponibilidade antes de prometer.", "/agenda", "Abrir agenda"),
+                    ("Registrar follow-up", "Crie tarefa se não fechar na hora.", "/todos", "Abrir tarefas")
+                ]),
+            ("Remarcação de compromisso", "Preciso remarcar",
+                ["remarcar", "trocar horário", "adiar"],
+                [
+                    ("Localizar o compromisso", "Abra a agenda do cliente.", "/agenda", "Abrir agenda"),
+                    ("Aplicar a regra do cliente", "Overlay: prazo, taxa, quem avisar.", null, null),
+                    ("Confirmar nova janela", "Atualize o evento e avise as partes.", "/agenda", "Abrir agenda")
+                ]),
+            ("Cliente já pagou", "Já paguei / enviei comprovante",
+                ["já paguei", "comprovante", "paguei"],
+                [
+                    ("Anexar comprovante", "Peça o arquivo no portal se ainda não veio.", "/compartilhar", "Portal"),
+                    ("Dar baixa no livro certo", "Agency se for a Fatto; ClientAr se for o negócio dele.", "/financeiro", "Abrir financeiro"),
+                    ("Avisar o responsável", "Chat interno se a baixa depender de outra pessoa.", "/chat", "Abrir chat")
+                ]),
+            ("Ninguém compareceu", "Ninguém veio / não atenderam",
+                ["ninguém veio", "no-show", "não apareceu"],
+                [
+                    ("Abrir incidente", "Registre no CRM com prioridade.", "/clientes", "Abrir cliente"),
+                    ("Escalar", "Siga a árvore do ponto de atendimento.", null, null),
+                    ("Registrar resolução", "Feche com decisão visível se o cliente precisa ver.", "/relatorios", "Relatórios")
+                ]),
+        };
+
+        foreach (var d in defs)
+        {
+            if (await _db.Sops.AnyAsync(s => s.OrganizationId == orgId && s.Name == d.Name)) continue;
+            var aliases = d.Aliases.ToList();
+            var sop = new Domain.Entities.Sop
+            {
+                OrganizationId = orgId,
+                Name = d.Name,
+                Category = "Atendimento",
+                ProcedureType = "Atendimento",
+                ApplicableArea = "Atendimento",
+                TriggerDescription = d.Trigger,
+                SituationAliases = aliases,
+                SituationSearch = string.Join(" | ", new[] { d.Name, d.Trigger }.Concat(aliases)),
+                PackKey = "atendimento",
+                IsTemplate = true,
+                UsageDescription = d.Trigger,
+                Procedure = "Ponto de atendimento do cliente define canal, SLA e escalonamento.",
+                Rules = "Não misture o contexto de outro cliente. Use overlay da conta.",
+                Outcome = "Atendimento registrado com próximo passo",
+                EstimatedMinutes = 15,
+                SlaBusinessDays = 1,
+                Tags = ["atendimento", "pack"],
+                LastReviewedAtUtc = DateTime.UtcNow
+            };
+            _db.Sops.Add(sop);
+            await _db.SaveChangesAsync();
+            var order = 1;
+            foreach (var st in d.Steps)
+            {
+                _db.SopSteps.Add(new Domain.Entities.SopStep
+                {
+                    SopId = sop.Id,
+                    SortOrder = order++,
+                    Title = st.Title,
+                    Instruction = st.Instr,
+                    IsCritical = true,
                     ActionKind = st.Path is null ? "none" : "open_path",
                     ActionPath = st.Path,
                     ActionLabel = st.Label

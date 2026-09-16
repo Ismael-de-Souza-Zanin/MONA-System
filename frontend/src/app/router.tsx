@@ -31,6 +31,7 @@ import { SettingsPage } from '../features/settings/SettingsPage'
 import { ShareLinksPage } from '../features/share/ShareLinksPage'
 import { FaqsPage } from '../features/faqs/FaqsPage'
 import { ContractorPortalPage } from '../features/portal/ContractorPortalPage'
+import { ReportsPage } from '../features/reports/ReportsPage'
 import { Permissions } from '../shared/permissions/constants'
 
 export function AppRouter() {
@@ -50,6 +51,7 @@ export function AppRouter() {
 
             <Route element={<RequirePermission permission={Permissions.Dashboard} />}>
               <Route path="operacao" element={<OperationsPage />} />
+              <Route path="relatorios" element={<ReportsPage />} />
             </Route>
 
             <Route element={<RequirePermission permission={Permissions.ClientsRead} />}>

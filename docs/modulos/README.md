@@ -8,7 +8,8 @@ Objetivo: a Ju lê, responde e assim fechamos o que cada aba precisa no dia a di
 **Briefing original × gaps (sem apagar o feito):** [../ALINHAMENTO-BRIEFING-ORIGINAL.md](../ALINHAMENTO-BRIEFING-ORIGINAL.md)  
 **Mapa do que já existe no código:** [../MAPA-TELAS.md](../MAPA-TELAS.md)  
 **Checklist reunião (menu, serviços, chat, WhatsApp):** [../REUNIAO-JU-MENU-SERVICOS-CHAT-WHATSAPP.md](../REUNIAO-JU-MENU-SERVICOS-CHAT-WHATSAPP.md)  
-**Arquitetura SOP / procedimentos:** [../ARQUITETURA-SOP-PROCEDIMENTOS.md](../ARQUITETURA-SOP-PROCEDIMENTOS.md)
+**Arquitetura SOP / procedimentos:** [../ARQUITETURA-SOP-PROCEDIMENTOS.md](../ARQUITETURA-SOP-PROCEDIMENTOS.md)  
+**Núcleo completo (dinheiro, relatórios, reuniões, ramos):** [../ARQUITETURA-NUCLEO-COMPLETO.md](../ARQUITETURA-NUCLEO-COMPLETO.md)
 
 | Aba | Arquivo |
 |-----|---------|

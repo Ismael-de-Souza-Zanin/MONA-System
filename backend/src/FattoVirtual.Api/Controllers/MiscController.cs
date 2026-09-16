@@ -55,7 +55,10 @@ public class MiscController : ControllerBase
             myTodos = openTodos,
             myAgenda,
             requests = 0,
-            sops = await _db.Sops.CountAsync(s => s.OrganizationId == orgId)
+            sops = await _db.Sops.CountAsync(s => s.OrganizationId == orgId),
+            decisionsOpen = await _db.BusinessDecisions.CountAsync(d => d.OrganizationId == orgId && d.IsOpen),
+            meetingsToday = await _db.AgendaEvents.CountAsync(e =>
+                e.OrganizationId == orgId && e.Kind == "Meeting" && e.StartsAt >= today && e.StartsAt < tomorrow)
         });
     }
 

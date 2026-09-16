@@ -20,6 +20,7 @@ import {
 } from 'lucide-react'
 import { useAuth } from '../shared/auth/AuthContext'
 import { useTheme } from '../shared/theme/ThemeContext'
+import { iconForPath } from '../shared/theme/tabIcon'
 import { usePermissions } from '../shared/permissions/hooks'
 import { NAV_DEFINITIONS, resolveMenu, type MenuPreferenceItem } from '../shared/nav/navConfig'
 import { useNotifications, useUserPreferences, useTimeZones } from '../shared/hooks/useWorkspaceData'
@@ -64,6 +65,8 @@ function WorkspaceTabBar() {
     cycleFloating,
     reorderDocked,
   } = useWorkspaceTabs()
+  const { appearance } = useTheme()
+  const showTabIcons = appearance.chrome.tabIcons
   const navigate = useNavigate()
   const docked = tabs.filter((t) => t.mode === 'docked')
   const floating = tabs.filter((t) => t.mode === 'floating')
@@ -137,7 +140,7 @@ function WorkspaceTabBar() {
   const canCloseOthers = tabs.length > 1
 
   return (
-    <div className="flex min-w-0 flex-col gap-1 border-b border-ink-100 bg-ink-50/80 px-2 py-1.5 sm:flex-row sm:items-stretch sm:gap-2">
+    <div className="mona-tabbar flex min-w-0 flex-col gap-1 border-b px-2 py-1.5 sm:flex-row sm:items-stretch sm:gap-2">
       <div
         ref={scrollerRef}
         className="flex min-w-0 flex-1 gap-1 overflow-x-auto overscroll-x-contain scroll-smooth [-webkit-overflow-scrolling:touch] [scrollbar-width:thin]"
@@ -158,14 +161,16 @@ function WorkspaceTabBar() {
             onDoubleClick={() => {
               if (window.matchMedia('(min-width: 768px)').matches) floatTab(tab.id)
             }}
-            className={`flex shrink-0 items-center gap-0.5 rounded-lg px-1.5 py-1.5 text-xs font-medium sm:gap-1 sm:px-2 ${
-              activeId === tab.id
-                ? 'bg-white text-brand-900 shadow-sm ring-1 ring-brand-800/20'
-                : 'text-ink-600 hover:bg-white/70'
+            className={`mona-tab flex shrink-0 items-center gap-0.5 rounded-lg px-1.5 py-1.5 font-medium sm:gap-1 sm:px-2 ${
+              activeId === tab.id ? 'is-active shadow-sm' : 'hover:bg-white/70'
             }`}
             title="Clique direito para gerenciar · arraste · duplo clique flutua"
           >
             <GripVertical size={12} className="hidden shrink-0 text-ink-300 sm:block" />
+            {showTabIcons && (() => {
+              const TabIcon = iconForPath(tab.path)
+              return <TabIcon size={13} className="shrink-0" strokeWidth={1.9} />
+            })()}
             <button
               type="button"
               className="max-w-[100px] truncate sm:max-w-[140px]"
@@ -200,12 +205,17 @@ function WorkspaceTabBar() {
             key={tab.id}
             data-tab-id={tab.id}
             onContextMenu={(e) => openMenu(e, tab.id, 'floating', -1)}
-            className={`flex shrink-0 items-center gap-0.5 rounded-lg border border-dashed border-brand-800/30 bg-brand-50/80 px-1.5 py-1.5 text-xs font-medium sm:gap-1 sm:px-2 ${
-              activeId === tab.id ? 'ring-1 ring-brand-800/30' : ''
+            className={`mona-tab flex shrink-0 items-center gap-0.5 rounded-lg border border-dashed border-brand-800/30 bg-brand-50/80 px-1.5 py-1.5 font-medium sm:gap-1 sm:px-2 ${
+              activeId === tab.id ? 'is-active' : ''
             }`}
             title="Clique direito para gerenciar janela flutuante"
           >
-            <LayoutPanelTop size={12} className="shrink-0 text-brand-800" />
+            {showTabIcons ? (() => {
+              const TabIcon = iconForPath(tab.path)
+              return <TabIcon size={13} className="shrink-0 text-brand-800" strokeWidth={1.9} />
+            })() : (
+              <LayoutPanelTop size={12} className="shrink-0 text-brand-800" />
+            )}
             <button
               type="button"
               className="max-w-[88px] truncate text-brand-900 sm:max-w-[120px]"
@@ -507,7 +517,7 @@ function AppShell() {
         />
       )}
       <aside
-        className={`fixed inset-y-0 left-0 z-30 flex flex-col border-r border-ink-100 bg-white transition-[width] ${
+        className={`mona-sidebar fixed inset-y-0 left-0 z-30 flex flex-col border-r transition-[width] ${
           collapsed && !drawerOpen ? 'w-16' : 'w-[248px]'
         }`}
       >
@@ -650,8 +660,8 @@ function AppShell() {
                         end={def.to === '/'}
                         aria-label={label}
                         className={({ isActive }) =>
-                          `flex items-center justify-center rounded-xl p-2.5 ${
-                            isActive ? 'bg-brand-800 text-white' : 'text-ink-700 hover:bg-ink-50'
+                          `mona-sidebar__link flex items-center justify-center rounded-xl p-2.5 ${
+                            isActive ? 'is-active' : ''
                           }`
                         }
                       >
@@ -672,10 +682,8 @@ function AppShell() {
                       to={def.to}
                       end={def.to === '/'}
                       className={({ isActive }) =>
-                        `flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition ${
-                          isActive
-                            ? 'bg-brand-800 text-white shadow-sm'
-                            : 'text-ink-700 hover:bg-ink-50'
+                        `mona-sidebar__link flex items-center gap-3 rounded-xl px-3 py-2.5 font-medium transition ${
+                          isActive ? 'is-active shadow-sm' : ''
                         }`
                       }
                     >
@@ -715,8 +723,8 @@ function AppShell() {
                     to={item.to}
                     aria-label={item.label}
                     className={({ isActive }) =>
-                      `flex items-center justify-center rounded-xl p-2.5 ${
-                        isActive ? 'bg-brand-50 text-brand-900' : 'text-ink-700 hover:bg-ink-50'
+                      `mona-sidebar__link flex items-center justify-center rounded-xl p-2.5 ${
+                        isActive ? 'is-active' : ''
                       }`
                     }
                   >
@@ -733,8 +741,8 @@ function AppShell() {
                 key={item.to}
                 to={item.to}
                 className={({ isActive }) =>
-                  `flex items-center gap-2 rounded-xl px-3 py-2 text-sm ${
-                    isActive ? 'bg-brand-50 text-brand-900' : 'text-ink-700 hover:bg-ink-50'
+                  `mona-sidebar__link flex items-center gap-2 rounded-xl px-3 py-2 ${
+                    isActive ? 'is-active' : ''
                   }`
                 }
               >

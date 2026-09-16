@@ -13,7 +13,7 @@ export function Card({ children, className = '', onClick, hover, style }: CardPr
     <div
       onClick={onClick}
       style={style}
-      className={`fv-card p-5 ${hover ? 'cursor-pointer transition hover:-translate-y-0.5 hover:border-brand-500/40' : ''} ${className}`}
+      className={`mona-card ${hover ? 'is-hoverable' : ''} ${className}`.trim()}
       role={onClick ? 'button' : undefined}
       tabIndex={onClick ? 0 : undefined}
       onKeyDown={

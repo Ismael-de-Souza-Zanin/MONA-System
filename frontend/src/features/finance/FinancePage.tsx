@@ -24,7 +24,7 @@ import {
 } from './EntityLinksField'
 import type { PaymentLink } from '../../shared/types'
 
-type Ledger = 'Agency' | 'ClientAr' | 'ClientAp' | 'all'
+type Ledger = 'Agency' | 'ClientAr' | 'ClientAp' | 'AssistantPayout' | 'all'
 
 function money(value?: number) {
   return (value ?? 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
@@ -33,6 +33,7 @@ function money(value?: number) {
 function ledgerLabel(l?: string) {
   if (l === 'ClientAr') return 'Cliente ← terceiro'
   if (l === 'ClientAp') return 'Cliente → fornecedor'
+  if (l === 'AssistantPayout') return 'Fatto → VA'
   return 'Fatto ← cliente'
 }
 
@@ -67,7 +68,9 @@ function AddPaymentModal({ open, onClose }: { open: boolean; onClose: () => void
             ? 'Recebimento Fatto'
             : form.ledger === 'ClientAr'
               ? 'Recebível do cliente'
-              : 'Pagável do cliente'),
+              : form.ledger === 'AssistantPayout'
+                ? 'Repasse VA'
+                : 'Pagável do cliente'),
         clientId: form.clientId || null,
         ledger: form.ledger,
         counterpartyName: form.counterpartyName || null,
@@ -100,17 +103,18 @@ function AddPaymentModal({ open, onClose }: { open: boolean; onClose: () => void
     <Modal open={open} onClose={onClose} title="Registrar movimento" size="lg">
       <div className="space-y-4">
         <p className="text-xs text-ink-500">
-          Escolha o livro certo: o que a Fatto recebe, o que o cliente recebe de terceiros, ou o que
-          ele paga a fornecedores.
+          Três gavetas: negócio do cliente (A), o que a Fatto cobra (B) e o que a Fatto paga à VA (C).
+          O cliente nunca vê a gaveta C.
         </p>
         <Select
           label="Livro"
           value={form.ledger}
           onChange={(e) => setForm({ ...form, ledger: e.target.value })}
         >
-          <option value="Agency">Fatto ← cliente</option>
-          <option value="ClientAr">Cliente ← terceiros (gerido)</option>
-          <option value="ClientAp">Cliente → fornecedores (gerido)</option>
+          <option value="Agency">B · Fatto ← cliente</option>
+          <option value="ClientAr">A · Cliente ← terceiros</option>
+          <option value="ClientAp">A · Cliente → fornecedores</option>
+          <option value="AssistantPayout">C · Fatto → VA (oculto do cliente)</option>
         </Select>
         <div className="grid gap-3 sm:grid-cols-2">
           <Input
@@ -145,7 +149,7 @@ function AddPaymentModal({ open, onClose }: { open: boolean; onClose: () => void
             placeholder="Mensalidade, NF, taxa…"
           />
         </div>
-        {form.ledger !== 'Agency' && (
+        {form.ledger !== 'Agency' && form.ledger !== 'AssistantPayout' && (
           <Input
             label={form.ledger === 'ClientAr' ? 'Quem paga (terceiro)' : 'Fornecedor / terceiro'}
             value={form.counterpartyName}
@@ -239,6 +243,8 @@ export function FinancePage() {
       arPending: sum(of('ClientAr'), false),
       apPaid: sum(of('ClientAp'), true),
       apPending: sum(of('ClientAp'), false),
+      payoutPaid: sum(of('AssistantPayout'), true),
+      payoutPending: sum(of('AssistantPayout'), false),
     }
   }, [payments])
 
@@ -251,7 +257,7 @@ export function FinancePage() {
     <div>
       <PageHeader
         title={canManageAll ? 'Financeiro' : 'Meu financeiro'}
-        subtitle="Operação completa: Fatto, recebíveis e pagáveis do cliente — com baixa rápida."
+        subtitle="Gavetas separadas: negócio do cliente, mensalidade da Fatto e repasse da VA."
         actions={
           canManageAll && (
             <Button onClick={() => setShowAdd(true)}>Registrar movimento</Button>
@@ -260,7 +266,7 @@ export function FinancePage() {
       />
 
       {canManageAll && (
-        <div className="mb-4 grid gap-3 sm:grid-cols-3">
+        <div className="mb-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
           <Card>
             <p className="text-xs font-semibold uppercase text-ink-500">Fatto ← cliente</p>
             <p className="mt-1 text-lg font-semibold text-emerald-700">{money(totals.agencyPaid)}</p>
@@ -275,6 +281,12 @@ export function FinancePage() {
             <p className="text-xs font-semibold uppercase text-ink-500">Cliente → fornecedores</p>
             <p className="mt-1 text-lg font-semibold text-ink-800">{money(totals.apPaid)}</p>
             <p className="text-xs text-orange-700">A pagar {money(totals.apPending)}</p>
+          </Card>
+          <Card>
+            <p className="text-xs font-semibold uppercase text-ink-500">C · Fatto → VA</p>
+            <p className="mt-1 text-lg font-semibold text-ink-800">{money(totals.payoutPaid)}</p>
+            <p className="text-xs text-orange-700">A pagar {money(totals.payoutPending)}</p>
+            <p className="mt-1 text-xs text-ink-500">Margem {money(totals.agencyPaid - totals.payoutPaid)}</p>
           </Card>
         </div>
       )}
@@ -312,8 +324,9 @@ export function FinancePage() {
           className="min-w-[180px]"
         >
           <option value="all">Todos os livros</option>
-          <option value="Agency">Fatto ← cliente</option>
-          <option value="ClientAr">Cliente ← terceiros</option>
+          <option value="Agency">B · Fatto ← cliente</option>
+          <option value="ClientAr">A · Cliente ← terceiros</option>
+          <option value="AssistantPayout">C · Fatto → VA</option>
           <option value="ClientAp">Cliente → fornecedores</option>
         </Select>
         <Select

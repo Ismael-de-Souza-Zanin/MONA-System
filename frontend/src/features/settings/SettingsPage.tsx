@@ -1,11 +1,11 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
-import { Moon, Sun, UserPlus, Shield, Building2, User, Palette, Monitor } from 'lucide-react'
+import { UserPlus, Shield, Building2, User, Palette, Monitor } from 'lucide-react'
+import { AppearanceStudio } from '../../shared/theme/AppearanceStudio'
 import { api, getApiBase, setApiBaseOverride } from '../../shared/api/client'
 import { isDesktopApp } from '../../shared/desktop'
 import { useAuth } from '../../shared/auth/AuthContext'
-import { useTheme } from '../../shared/theme/ThemeContext'
 import type { AccessType, Organization, SharedUser, UserProfile } from '../../shared/types'
 import {
   ALL_PERMISSIONS,
@@ -29,7 +29,6 @@ type TabId = 'people' | 'access' | 'org' | 'user' | 'appearance' | 'desktop'
 export function SettingsPage() {
   const qc = useQueryClient()
   const { user } = useAuth()
-  const { theme, setTheme } = useTheme()
   const [searchParams, setSearchParams] = useSearchParams()
   const desktop = isDesktopApp()
 
@@ -401,42 +400,7 @@ export function SettingsPage() {
         </Card>
       )}
 
-      {tab === 'appearance' && (
-        <Card className="max-w-lg">
-          <p className="text-sm font-semibold text-ink-900">Tema</p>
-          <p className="mt-1 text-sm text-ink-500">
-            Claro ou escuro com a identidade verde da Fatto (não roxo genérico).
-          </p>
-          <div className="mt-4 grid grid-cols-2 gap-3">
-            <button
-              type="button"
-              onClick={() => setTheme('light')}
-              className={`flex flex-col items-start gap-2 rounded-2xl border p-4 text-left transition ${
-                theme === 'light'
-                  ? 'border-brand-800 bg-brand-50 ring-2 ring-brand-800/30'
-                  : 'border-ink-100 hover:border-brand-500/40'
-              }`}
-            >
-              <Sun size={20} className="text-brand-800" />
-              <span className="font-semibold text-ink-900">Claro</span>
-              <span className="text-xs text-ink-500">Operação diurna</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setTheme('dark')}
-              className={`flex flex-col items-start gap-2 rounded-2xl border p-4 text-left transition ${
-                theme === 'dark'
-                  ? 'border-brand-500 bg-brand-50 ring-2 ring-brand-500/40'
-                  : 'border-ink-100 hover:border-brand-500/40'
-              }`}
-            >
-              <Moon size={20} className="text-brand-500" />
-              <span className="font-semibold text-ink-900">Escuro</span>
-              <span className="text-xs text-ink-500">Verdes Fatto à noite</span>
-            </button>
-          </div>
-        </Card>
-      )}
+      {tab === 'appearance' && <AppearanceStudio />}
 
       {tab === 'desktop' && desktop && (
         <Card className="max-w-xl border-brand-800/20 bg-brand-50/30">

@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useMemo, useState } from 'react'
-import { Pencil, Plus, Trash2 } from 'lucide-react'
+import { ChevronDown, ChevronRight, Clock3, Pencil, Plus, ShieldCheck, Trash2 } from 'lucide-react'
 import { api } from '../../shared/api/client'
 import type { TodoItem } from '../../shared/types'
 import { Permissions } from '../../shared/permissions/constants'
@@ -27,6 +27,64 @@ type BoardColumn = {
   count?: number
 }
 
+function formatDue(todo: TodoItem) {
+  if (!todo.dueAtLocal) return 'sem prazo'
+  return new Date(todo.dueAtLocal).toLocaleString('pt-BR')
+}
+
+function compactNextAction(todo: TodoItem) {
+  if (todo.description?.trim()) {
+    const firstLine = todo.description.split('\n').find(Boolean)
+    if (firstLine) return firstLine.length > 92 ? `${firstLine.slice(0, 89)}...` : firstLine
+  }
+  if (todo.agendaEventTitle) return `Comparecer/acompanhar agenda: ${todo.agendaEventTitle}`
+  if (todo.comments?.length) return 'Revisar comentário mais recente e avançar a demanda'
+  return 'Executar próximo passo e registrar evidência'
+}
+
+function detailRows(todo: TodoItem) {
+  const sopTag = todo.tags?.find((tag) => /sop|proced|workflow|setup/i.test(tag))
+  return [
+    {
+      label: 'SOP aplicável',
+      value: sopTag ? `Relacionado a ${sopTag}` : 'Definir SOP/checklist se a demanda se repetir.',
+    },
+    {
+      label: 'Histórico de conversa',
+      value: todo.comments?.length
+        ? `${todo.comments.length} comentário(s) registrados nesta demanda.`
+        : todo.description || 'Sem histórico anexado ainda.',
+    },
+    {
+      label: 'Aprovações',
+      value:
+        todo.priority === 'Urgent' || todo.priority === 'High'
+          ? 'Revisar antes de ação externa ou mudança sensível.'
+          : 'Sem aprovação obrigatória marcada.',
+    },
+    {
+      label: 'Tempo / SLA',
+      value: todo.dueAtLocal
+        ? `${todo.isOverdue ? 'Atrasada desde' : 'Prazo'} ${formatDue(todo)}.`
+        : 'Sem SLA/prazo definido para esta demanda.',
+    },
+    {
+      label: 'Evidência',
+      value: todo.agendaEventTitle
+        ? `Vinculada à agenda: ${todo.agendaEventTitle}.`
+        : 'Registrar resultado, link, arquivo ou comentário ao concluir.',
+    },
+    {
+      label: 'Auditoria',
+      value: `Status ${todo.boardColumnName || todo.status}; responsável ${todo.ownerUserName || 'não definido'}.`,
+    },
+    {
+      label: 'Dependências',
+      value: todo.tags?.length ? todo.tags.join(', ') : 'Nenhuma dependência marcada.',
+    },
+  ]
+}
+
 function TodoCard({
   todo,
   columns,
@@ -40,31 +98,51 @@ function TodoCard({
   onAddComment: (todo: TodoItem) => void
   onSchedule: (todo: TodoItem) => void
 }) {
+  const [expanded, setExpanded] = useState(false)
+  const nextAction = compactNextAction(todo)
+
   return (
     <Card className={`p-3 ${todo.isOverdue ? 'ring-1 ring-red-300' : ''}`}>
       <div className="flex items-start justify-between gap-2">
-        <p className="font-medium text-ink-900">{todo.title}</p>
-        {todo.priority && todo.priority !== 'Normal' && (
-          <span className="rounded bg-amber-50 px-1.5 py-0.5 text-[10px] font-semibold uppercase text-amber-800">
-            {todo.priority}
-          </span>
-        )}
+        <div className="min-w-0">
+          <p className="font-medium text-ink-900">{todo.title}</p>
+          <p className="mt-1 line-clamp-2 text-xs text-ink-600">{nextAction}</p>
+        </div>
+        <button
+          type="button"
+          className="rounded p-1 text-ink-400 hover:bg-ink-50 hover:text-ink-700"
+          aria-label={expanded ? 'Ocultar contexto operacional' : 'Mostrar contexto operacional'}
+          onClick={() => setExpanded((current) => !current)}
+        >
+          {expanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+        </button>
       </div>
-      {todo.description && (
-        <p className="mt-1 line-clamp-2 text-xs text-ink-600">{todo.description}</p>
-      )}
-      <div className="mt-2 flex flex-wrap gap-1 text-xs text-ink-500">
-        {todo.ownerUserName && <span>{todo.ownerUserName}</span>}
-        {todo.clientName && <span>· {todo.clientName}</span>}
-        {todo.isGeneral && <span>· Geral</span>}
-        {todo.dueAtLocal && (
-          <span className={todo.isOverdue ? 'font-semibold text-red-700' : ''}>
-            · prazo {new Date(todo.dueAtLocal).toLocaleString('pt-BR')}
-            {todo.isOverdue ? ' · atrasada' : ''}
+
+      <div className="mt-3 grid gap-2 text-xs">
+        <div className="flex flex-wrap gap-1.5">
+          <span className="rounded-full bg-teal-50 px-2 py-1 font-medium text-teal-800">
+            {todo.clientName || (todo.isGeneral ? 'Geral' : 'Sem cliente')}
           </span>
-        )}
-        {todo.agendaEventTitle && <span>· agenda: {todo.agendaEventTitle}</span>}
+          <span className={`rounded-full px-2 py-1 font-medium ${
+            todo.priority === 'Urgent' || todo.priority === 'High'
+              ? 'bg-amber-50 text-amber-800'
+              : 'bg-ink-50 text-ink-600'
+          }`}>
+            {todo.priority || 'Normal'}
+          </span>
+          <span className={`rounded-full px-2 py-1 font-medium ${
+            todo.isOverdue ? 'bg-red-50 text-red-700' : 'bg-ink-50 text-ink-600'
+          }`}>
+            <Clock3 size={12} className="mr-1 inline" />
+            {formatDue(todo)}
+          </span>
+        </div>
+        <div className="rounded-lg bg-sand-50 px-2.5 py-2 text-ink-700">
+          <span className="font-semibold text-ink-900">Próxima ação: </span>
+          {nextAction}
+        </div>
       </div>
+
       {!!todo.tags?.length && (
         <div className="mt-2 flex flex-wrap gap-1">
           {todo.tags.map((tag) => (
@@ -74,9 +152,34 @@ function TodoCard({
           ))}
         </div>
       )}
-      {todo.comments?.length > 0 && (
-        <p className="mt-2 text-xs text-ink-500">{todo.comments.length} comentário(s)</p>
+
+      {expanded && (
+        <div className="mt-3 rounded-xl border border-ink-100 bg-white p-3">
+          <div className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase text-ink-500">
+            <ShieldCheck size={13} />
+            Contexto operacional
+          </div>
+          <dl className="grid gap-2">
+            {detailRows(todo).map((row) => (
+              <div key={row.label} className="grid gap-1 rounded-lg bg-ink-50/50 px-2.5 py-2 md:grid-cols-[120px_1fr]">
+                <dt className="text-xs font-semibold text-ink-700">{row.label}</dt>
+                <dd className="text-xs text-ink-600">{row.value}</dd>
+              </div>
+            ))}
+          </dl>
+          {todo.comments?.length > 0 && (
+            <div className="mt-3 space-y-2">
+              {todo.comments.slice(-2).map((comment) => (
+                <div key={comment.id} className="rounded-lg border border-ink-100 px-2.5 py-2">
+                  <p className="text-xs font-semibold text-ink-800">{comment.authorName}</p>
+                  <p className="mt-0.5 text-xs text-ink-600">{comment.content}</p>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       )}
+
       <div className="mt-3 flex flex-wrap gap-1">
         <Select
           value={todo.boardColumnId || ''}

@@ -1,6 +1,8 @@
 # Plano e ajustes para concluir o MVP — FattoVirtual
 
-Objetivo do MVP: a equipe da FattoVirtual **opera o dia a dia** (clientes, tarefas, agenda, financeiro, SOPs, portal do contratante) com estabilidade local/desktop, sem depender ainda do Access Graph completo.
+Mapa para a Ju (implantado / MVP / depois): [MAPA-JU-IMPLANTADO-MVP-DEPOIS.md](./MAPA-JU-IMPLANTADO-MVP-DEPOIS.md).
+
+Objetivo do MVP: a equipe da FattoVirtual **opera o dia a dia** (clientes, tarefas, agenda, financeiro, SOPs, portal do contratante) com estabilidade local/desktop, sem depender ainda do Access Graph completo. Continuam no MVP deste ciclo: continuidade (SOP + acessos + handoff), horas/retainer e inbox unificado. Segurança profunda (audit + authorize central) fica desenhada; o ciclo da Ju vê só o endurecimento visível.
 
 ---
 

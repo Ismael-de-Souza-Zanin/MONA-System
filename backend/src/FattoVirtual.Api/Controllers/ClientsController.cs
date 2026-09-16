@@ -80,6 +80,8 @@ public class ClientsController : ControllerBase
             .OrderByDescending(p => p.CreatedAt)
             .Take(120)
             .ToListAsync();
+        if (!User.HasPermission(Permissions.FinanceAll) && !User.IsOwner())
+            payments = payments.Where(p => p.Ledger != "AssistantPayout").ToList();
         var contracts = await _db.Contracts
             .Where(c => c.OrganizationId == orgId && c.ClientId == id)
             .OrderByDescending(c => c.CreatedAt)
@@ -95,7 +97,7 @@ public class ClientsController : ControllerBase
             .Take(20)
             .ToListAsync();
 
-        return Ok(MapDetail(client, payments, contracts, todos, events));
+        return Ok(MapDetail(client, payments, contracts, todos, events, User.HasPermission(Permissions.FinanceAll) || User.IsOwner()));
     }
 
     [HttpPost]
@@ -124,6 +126,7 @@ public class ClientsController : ControllerBase
             ContractCode = body.ContractCode,
             ContractRenewalDate = body.ContractRenewalDate,
             TimeZoneId = body.TimeZoneId ?? "America/Sao_Paulo",
+            RetainerHoursPerMonth = body.RetainerHoursPerMonth ?? 0,
             NeedsQuickResponse = body.NeedsQuickResponse ?? false,
             Status = ClientStatus.Active,
             OnboardingCompleted = false
@@ -168,6 +171,7 @@ public class ClientsController : ControllerBase
         client.ContractCode = body.ContractCode ?? client.ContractCode;
         if (body.ContractRenewalDate.HasValue) client.ContractRenewalDate = body.ContractRenewalDate;
         if (!string.IsNullOrWhiteSpace(body.TimeZoneId)) client.TimeZoneId = body.TimeZoneId!;
+        if (body.RetainerHoursPerMonth is decimal rh) client.RetainerHoursPerMonth = Math.Max(0, rh);
         client.UpdatedAt = DateTime.UtcNow;
         await _db.SaveChangesAsync();
         return Ok(MapList(client));
@@ -611,7 +615,8 @@ public class ClientsController : ControllerBase
         List<Domain.Entities.Payment> payments,
         List<Domain.Entities.Contract> contracts,
         List<Domain.Entities.TodoItem> todos,
-        List<Domain.Entities.AgendaEvent> events)
+        List<Domain.Entities.AgendaEvent> events,
+        bool canSeePayout)
     {
         var openTodos = todos.Where(t => t.Status != TodoStatus.Done).ToList();
         static (decimal paid, decimal pending) LedgerTotals(IEnumerable<Domain.Entities.Payment> list, string ledger)
@@ -622,6 +627,7 @@ public class ClientsController : ControllerBase
         var agency = LedgerTotals(payments, "Agency");
         var clientAr = LedgerTotals(payments, "ClientAr");
         var clientAp = LedgerTotals(payments, "ClientAp");
+        var payout = LedgerTotals(payments, "AssistantPayout");
         var paidTotal = agency.paid;
         var pendingTotal = agency.pending;
 
@@ -655,6 +661,7 @@ public class ClientsController : ControllerBase
             contractCode = c.ContractCode,
             contractRenewalDate = c.ContractRenewalDate,
             timeZoneId = c.TimeZoneId,
+            retainerHoursPerMonth = c.RetainerHoursPerMonth,
             onboardingCompleted = c.OnboardingCompleted,
             createdAt = c.CreatedAt,
             topics = c.Topics.Select(t => new { id = t.Id, clientId = c.Id, title = t.Title, content = t.Observation }),
@@ -766,6 +773,8 @@ public class ClientsController : ControllerBase
                 clientArPending = clientAr.pending,
                 clientApPaid = clientAp.paid,
                 clientApPending = clientAp.pending,
+                payoutPaid = canSeePayout ? payout.paid : (decimal?)null,
+                payoutPending = canSeePayout ? payout.pending : (decimal?)null,
                 openTodos = openTodos.Count,
                 invoices = c.Invoices.Count,
                 apps = c.ClientApps.Count,
@@ -798,7 +807,8 @@ public class ClientsController : ControllerBase
         string? AdditionalNotes,
         string? ContractCode,
         DateOnly? ContractRenewalDate,
-        string? TimeZoneId);
+        string? TimeZoneId,
+        decimal? RetainerHoursPerMonth);
     public record NotesBody(
         string? Crm, string? FinanceNotes, string? ContractNotes, string? ServiceWorkNotes, string? AdditionalNotes,
         string? RelationshipStage, string? NextAction, DateTime? NextActionAtUtc, bool? ClearNextAction);

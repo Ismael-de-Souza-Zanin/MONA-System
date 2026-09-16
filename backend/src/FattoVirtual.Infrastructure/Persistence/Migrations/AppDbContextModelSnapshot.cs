@@ -110,6 +110,10 @@ namespace FattoVirtual.Infrastructure.Persistence.Migrations
                     b.Property<DateTime>("EndsAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<string>("Kind")
+                        .IsRequired()
+                        .HasColumnType("text");
+
                     b.Property<Guid>("OrganizationId")
                         .HasColumnType("uuid");
 
@@ -260,6 +264,129 @@ namespace FattoVirtual.Infrastructure.Persistence.Migrations
                     b.HasIndex("UserId", "IsRead", "OccursAtUtc");
 
                     b.ToTable("AppNotifications");
+                });
+
+            modelBuilder.Entity("FattoVirtual.Domain.Entities.AttendancePoint", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Channel")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<Guid>("ClientId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("EscalationNotes")
+                        .HasColumnType("text");
+
+                    b.Property<string>("IntakeNotes")
+                        .HasColumnType("text");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<Guid>("OrganizationId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("ServiceItemId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int?>("SlaMinutes")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid?>("SopId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("WindowNote")
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ClientId");
+
+                    b.HasIndex("ServiceItemId");
+
+                    b.HasIndex("SopId");
+
+                    b.HasIndex("OrganizationId", "ClientId");
+
+                    b.ToTable("AttendancePoints");
+                });
+
+            modelBuilder.Entity("FattoVirtual.Domain.Entities.BusinessDecision", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("AgendaEventId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Body")
+                        .HasColumnType("text");
+
+                    b.Property<Guid?>("ClientId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("CreatedByUserId")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTime?>("DueAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("IsOpen")
+                        .HasColumnType("boolean");
+
+                    b.Property<Guid>("OrganizationId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("OwnerName")
+                        .HasColumnType("text");
+
+                    b.Property<string>("OwnerUserId")
+                        .HasColumnType("text");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<Guid?>("TodoItemId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("VisibleToClient")
+                        .HasColumnType("boolean");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AgendaEventId");
+
+                    b.HasIndex("ClientId");
+
+                    b.HasIndex("TodoItemId");
+
+                    b.HasIndex("OrganizationId", "ClientId", "IsOpen");
+
+                    b.ToTable("BusinessDecisions");
                 });
 
             modelBuilder.Entity("FattoVirtual.Domain.Entities.ChatMessage", b =>
@@ -482,6 +609,9 @@ namespace FattoVirtual.Infrastructure.Persistence.Migrations
                     b.Property<string>("RelationshipStage")
                         .IsRequired()
                         .HasColumnType("text");
+
+                    b.Property<decimal>("RetainerHoursPerMonth")
+                        .HasColumnType("numeric");
 
                     b.Property<string>("Segment")
                         .HasColumnType("text");
@@ -1974,6 +2104,65 @@ namespace FattoVirtual.Infrastructure.Persistence.Migrations
                     b.ToTable("SopSteps");
                 });
 
+            modelBuilder.Entity("FattoVirtual.Domain.Entities.TimeEntry", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("AgendaEventId")
+                        .HasColumnType("uuid");
+
+                    b.Property<bool>("Billable")
+                        .HasColumnType("boolean");
+
+                    b.Property<Guid?>("ClientId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("EmployeeId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("EndedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("Minutes")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Note")
+                        .HasColumnType("text");
+
+                    b.Property<Guid>("OrganizationId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("StartedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("TodoItemId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ClientId");
+
+                    b.HasIndex("EmployeeId");
+
+                    b.HasIndex("OrganizationId", "ClientId", "StartedAtUtc");
+
+                    b.HasIndex("OrganizationId", "UserId", "StartedAtUtc");
+
+                    b.ToTable("TimeEntries");
+                });
+
             modelBuilder.Entity("FattoVirtual.Domain.Entities.TodoBoardColumn", b =>
                 {
                     b.Property<Guid>("Id")
@@ -2492,6 +2681,70 @@ namespace FattoVirtual.Infrastructure.Persistence.Migrations
                     b.Navigation("RelatedAgendaEvent");
 
                     b.Navigation("RelatedTodoItem");
+                });
+
+            modelBuilder.Entity("FattoVirtual.Domain.Entities.AttendancePoint", b =>
+                {
+                    b.HasOne("FattoVirtual.Domain.Entities.Client", "Client")
+                        .WithMany()
+                        .HasForeignKey("ClientId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("FattoVirtual.Domain.Entities.Organization", "Organization")
+                        .WithMany()
+                        .HasForeignKey("OrganizationId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("FattoVirtual.Domain.Entities.ServiceItem", "ServiceItem")
+                        .WithMany()
+                        .HasForeignKey("ServiceItemId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("FattoVirtual.Domain.Entities.Sop", "Sop")
+                        .WithMany()
+                        .HasForeignKey("SopId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("Client");
+
+                    b.Navigation("Organization");
+
+                    b.Navigation("ServiceItem");
+
+                    b.Navigation("Sop");
+                });
+
+            modelBuilder.Entity("FattoVirtual.Domain.Entities.BusinessDecision", b =>
+                {
+                    b.HasOne("FattoVirtual.Domain.Entities.AgendaEvent", "AgendaEvent")
+                        .WithMany("Decisions")
+                        .HasForeignKey("AgendaEventId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("FattoVirtual.Domain.Entities.Client", "Client")
+                        .WithMany()
+                        .HasForeignKey("ClientId");
+
+                    b.HasOne("FattoVirtual.Domain.Entities.Organization", "Organization")
+                        .WithMany()
+                        .HasForeignKey("OrganizationId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("FattoVirtual.Domain.Entities.TodoItem", "TodoItem")
+                        .WithMany()
+                        .HasForeignKey("TodoItemId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("AgendaEvent");
+
+                    b.Navigation("Client");
+
+                    b.Navigation("Organization");
+
+                    b.Navigation("TodoItem");
                 });
 
             modelBuilder.Entity("FattoVirtual.Domain.Entities.ChatMessage", b =>
@@ -3109,6 +3362,29 @@ namespace FattoVirtual.Infrastructure.Persistence.Migrations
                     b.Navigation("Sop");
                 });
 
+            modelBuilder.Entity("FattoVirtual.Domain.Entities.TimeEntry", b =>
+                {
+                    b.HasOne("FattoVirtual.Domain.Entities.Client", "Client")
+                        .WithMany()
+                        .HasForeignKey("ClientId");
+
+                    b.HasOne("FattoVirtual.Domain.Entities.Employee", "Employee")
+                        .WithMany()
+                        .HasForeignKey("EmployeeId");
+
+                    b.HasOne("FattoVirtual.Domain.Entities.Organization", "Organization")
+                        .WithMany()
+                        .HasForeignKey("OrganizationId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Client");
+
+                    b.Navigation("Employee");
+
+                    b.Navigation("Organization");
+                });
+
             modelBuilder.Entity("FattoVirtual.Domain.Entities.TodoBoardColumn", b =>
                 {
                     b.HasOne("FattoVirtual.Domain.Entities.Organization", "Organization")
@@ -3226,6 +3502,8 @@ namespace FattoVirtual.Infrastructure.Persistence.Migrations
 
             modelBuilder.Entity("FattoVirtual.Domain.Entities.AgendaEvent", b =>
                 {
+                    b.Navigation("Decisions");
+
                     b.Navigation("LinkedTodos");
                 });
 

@@ -17,6 +17,8 @@ import {
   type SnapPreset,
   type WorkspaceTab,
 } from './WorkspaceTabsContext'
+import { useTheme } from '../shared/theme/ThemeContext'
+import { iconForPath } from '../shared/theme/tabIcon'
 
 const SNAP_ACTIONS: { preset: SnapPreset; label: string; icon: typeof PanelLeft }[] = [
   { preset: 'left', label: 'Metade esquerda', icon: PanelLeft },
@@ -35,6 +37,8 @@ type ResizeEdge = 'e' | 's' | 'se' | 'w' | 'n' | 'ne' | 'sw' | 'nw'
 
 function FloatingWindow({ tab }: { tab: WorkspaceTab }) {
   const { updateFloat, bringToFront, dockTab, closeTab, snapFloat } = useWorkspaceTabs()
+  const { appearance } = useTheme()
+  const TabIcon = iconForPath(tab.path)
   const layout = tab.float!
   const dragRef = useRef<{ ox: number; oy: number; x: number; y: number } | null>(null)
   const resizeRef = useRef<{
@@ -130,8 +134,8 @@ function FloatingWindow({ tab }: { tab: WorkspaceTab }) {
 
   return (
     <div
-      className={`fixed overflow-hidden rounded-2xl border bg-white shadow-2xl ${
-        highlighted ? 'border-brand-800 ring-4 ring-brand-800/15' : 'border-ink-200'
+      className={`mona-window fixed overflow-hidden border ${
+        highlighted ? 'ring-4 ring-brand-800/15' : ''
       }`}
       style={{
         left: layout.x,
@@ -143,12 +147,15 @@ function FloatingWindow({ tab }: { tab: WorkspaceTab }) {
       onPointerDown={() => bringToFront(tab.id)}
     >
       <div
-        className="relative flex h-10 shrink-0 cursor-grab items-center gap-1 border-b border-ink-100 bg-ink-50 px-2 active:cursor-grabbing"
+        className="mona-window__titlebar relative flex h-10 shrink-0 cursor-grab items-center gap-1 border-b px-2 active:cursor-grabbing"
         onPointerDown={onDragStart}
         onPointerMove={onDragMove}
         onPointerUp={onDragEnd}
       >
-        <p className="min-w-0 flex-1 truncate px-1 text-xs font-semibold text-ink-900">{tab.title}</p>
+        {appearance.chrome.tabIcons && (
+          <TabIcon size={14} className="shrink-0 text-ink-500" strokeWidth={1.9} />
+        )}
+        <p className="min-w-0 flex-1 truncate px-1 text-xs font-semibold">{tab.title}</p>
         <div className="relative shrink-0" data-snap-menu onPointerDown={(e) => e.stopPropagation()}>
           <button
             type="button"

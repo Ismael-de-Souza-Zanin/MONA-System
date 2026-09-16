@@ -17,9 +17,9 @@ public class Payment : BaseEntity, IOrganizationScoped
     public bool IsSettled { get; set; }
     public string? TargetUserId { get; set; }
     /// <summary>
-    /// Agency = Fatto/assistente recebe do cliente;
-    /// ClientAr = cliente recebe de terceiros (gerido);
-    /// ClientAp = cliente paga fornecedores/terceiros (gerido).
+    /// Agency = Fatto recebe do cliente (plano B);
+    /// ClientAr / ClientAp = negócio do cliente (plano A);
+    /// AssistantPayout = Fatto paga a VA (plano C — cliente nunca vê).
     /// </summary>
     public string Ledger { get; set; } = "Agency";
     /// <summary>Nome do terceiro (pagante ou fornecedor), quando Ledger ≠ Agency.</summary>

@@ -34,11 +34,15 @@ public class FinanceController : ControllerBase
         if (!User.HasPermission(Permissions.FinanceOwn) && !User.HasPermission(Permissions.FinanceAll))
             return StatusCode(403, new { detail = "Sem permissão." });
 
-        var q = _db.Payments.Include(p => p.Client).Include(p => p.Links)
+        var q = _db.Payments.Include(p => p.Client).Include(p => p.Employee).Include(p => p.Links)
             .Where(p => p.OrganizationId == User.GetOrganizationId());
 
         if (!User.HasPermission(Permissions.FinanceAll) || scope == "own")
-            q = q.Where(p => p.TargetUserId == User.GetUserId() || (p.TargetUserId == null && User.IsOwner()));
+        {
+            var uid = User.GetUserId();
+            q = q.Where(p => p.TargetUserId == uid || (p.TargetUserId == null && User.IsOwner()));
+            q = q.Where(p => p.Ledger != "AssistantPayout" || p.TargetUserId == uid);
+        }
 
         if (!string.IsNullOrWhiteSpace(linkedKind) && linkedId is Guid lid)
         {
@@ -55,9 +59,10 @@ public class FinanceController : ControllerBase
     public async Task<IActionResult> Mine()
     {
         var uid = User.GetUserId();
-        var items = await _db.Payments.Include(p => p.Client).Include(p => p.Links)
+        var items = await _db.Payments.Include(p => p.Client).Include(p => p.Employee).Include(p => p.Links)
             .Where(p => p.OrganizationId == User.GetOrganizationId() &&
-                        (p.TargetUserId == uid || (User.IsOwner() && p.TargetUserId == null)))
+                        (p.TargetUserId == uid || (User.IsOwner() && p.TargetUserId == null)) &&
+                        (p.Ledger != "AssistantPayout" || p.TargetUserId == uid || User.IsOwner()))
             .OrderByDescending(p => p.CreatedAt)
             .ToListAsync();
         return Ok(items.Select(MapPayment));
@@ -76,6 +81,7 @@ public class FinanceController : ControllerBase
         clientId = p.ClientId,
         clientName = p.Client?.Name,
         employeeId = p.EmployeeId,
+        employeeName = p.Employee?.Name,
         status = p.IsSettled ? "Paid" : "Pending",
         settleMethod = p.SettleMethod,
         proofFileName = p.ProofFileName,
@@ -98,8 +104,8 @@ public class FinanceController : ControllerBase
             return BadRequest(new { detail = "Informe um valor maior que zero." });
 
         var ledger = string.IsNullOrWhiteSpace(body.Ledger) ? "Agency" : body.Ledger!.Trim();
-        if (ledger is not ("Agency" or "ClientAr" or "ClientAp"))
-            return BadRequest(new { detail = "Ledger inválido. Use Agency, ClientAr ou ClientAp." });
+        if (ledger is not ("Agency" or "ClientAr" or "ClientAp" or "AssistantPayout"))
+            return BadRequest(new { detail = "Ledger inválido. Use Agency, ClientAr, ClientAp ou AssistantPayout." });
 
         if (body.ClientId is Guid cid)
         {

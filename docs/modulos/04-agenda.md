@@ -3,6 +3,9 @@
 ## O que é hoje
 Eventos em UTC, fuso do evento/cliente, lembretes internos, dual display (seu fuso × fuso do evento), criar follow-up (tarefa).
 
+## Reunião e decisões (MVP)
+Agenda **não** vira videoconferência. Evento tipo reunião ganha ata curta + **decisões** (dono, prazo, visível no portal?). Cada decisão pode abrir tarefa. Relatório do período lê esse log — ver [ARQUITETURA-NUCLEO-COMPLETO.md](../ARQUITETURA-NUCLEO-COMPLETO.md).
+
 ## Perguntas essenciais
 1. Precisa de sync com Google/Outlook Calendar?
 2. Como lida com reagendamento quando viaja?

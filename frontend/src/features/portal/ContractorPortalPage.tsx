@@ -47,6 +47,11 @@ type PortalData = {
     createdAt: string
   }[]
   faqs?: { question: string; answer: string }[]
+  report?: {
+    period?: string
+    todosDone?: number
+    decisions?: { title: string; isOpen: boolean; dueAtUtc?: string; createdAt: string }[]
+  }
   capabilities?: {
     canMessage?: boolean
     canUpload?: boolean
@@ -196,6 +201,22 @@ export function ContractorPortalPage() {
               <p className="mt-3 text-sm text-ink-600">
                 Acompanhe aqui mensagens, documentos e o andamento com a equipe.
               </p>
+            )}
+          </Card>
+        )}
+
+        {!!data.report && (
+          <Card>
+            <h2 className="font-semibold text-ink-900">O que foi feito neste mês</h2>
+            <p className="mt-1 text-sm text-ink-600">{data.report.todosDone ?? 0} entregas concluídas</p>
+            {!!data.report.decisions?.length && (
+              <ul className="mt-3 space-y-1.5 text-sm text-ink-800">
+                {data.report.decisions.map((d, i) => (
+                  <li key={i}>
+                    {d.isOpen ? 'Em aberto' : 'Fechada'}: {d.title}
+                  </li>
+                ))}
+              </ul>
             )}
           </Card>
         )}

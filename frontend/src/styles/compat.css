@@ -1,0 +1,43 @@
+/*
+  Compatibilidade — páginas ainda em utilitário Tailwind.
+  Não usar em componente novo. Migrar e apagar o seletor correspondente.
+*/
+
+.fv-card {
+  background: var(--mona-color-surface);
+  border: 1px solid var(--mona-color-border);
+  border-radius: var(--mona-radius-md);
+  box-shadow: var(--mona-shadow-sm);
+}
+
+.fv-pill {
+  border-radius: var(--mona-radius-pill);
+  padding: 0.2rem 0.65rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+html.dark .bg-white,
+html.dark .bg-white\/90,
+html.dark .bg-white\/80 {
+  background-color: var(--mona-color-surface) !important;
+}
+
+html.dark .border-sand-200,
+html.dark .border-ink-100,
+html.dark .border-ink-50 {
+  border-color: var(--mona-color-border) !important;
+}
+
+html.dark .text-red-600 {
+  color: var(--mona-color-danger);
+}
+
+html.dark .hover\:bg-red-50:hover {
+  background-color: var(--mona-color-danger-soft);
+}
+
+html.dark .hover\:bg-ink-50:hover,
+html.dark .hover\:bg-sand-100:hover {
+  background-color: var(--fv-ink-100);
+}
