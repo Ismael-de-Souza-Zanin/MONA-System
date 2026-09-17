@@ -53,7 +53,10 @@ body {
   font-size: calc(var(--mona-type-body) * var(--mona-type-scale));
   color: var(--mona-color-ink);
   background-color: var(--mona-color-bg);
-  background-image: var(--mona-color-bg-accent);
+  background-image:
+    radial-gradient(circle, var(--mona-dot-color) 1.15px, transparent 1.25px),
+    var(--mona-color-bg-accent);
+  background-size: 22px 22px, auto;
   background-attachment: fixed;
   -webkit-font-smoothing: antialiased;
 }

@@ -46,6 +46,12 @@ export interface AppearanceChrome {
   tabActiveInk: string
   windowRadius: WindowRadius
   windowShadow: WindowShadow
+  notchSize: number
+  notchDepth: number
+  notchScoop: number
+  notchPop: number
+  notchCircle: number
+  notchShadow: number
 }
 
 export interface AppearancePrefs {

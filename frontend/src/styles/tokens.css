@@ -2,11 +2,11 @@
   MONA design tokens
   -------------------
   1. Escala do produto (--mona-space, --mona-radius, --mona-z, fontes)
-  2. Tenant Fatto (--fv-* / --tenant-*) — identidade que a Ju já usa
+  2. Tenant (--fv-* / --tenant-*) — identidade da marca
   3. Semântica MONA (--mona-color-*) — o que componentes novos devem ler
 
-  Trocar de tenant no futuro = redefinir --tenant-* / --fv-*.
-  Nunca colocar hex em página. A júnior lê styles/README.md.
+  Paleta oficial:
+  M #7B5CFF · O #FF4FD8 · N #FF5B7A · A #FF9A2E · Base #0F0A1A
 */
 
 :root {
@@ -20,15 +20,16 @@
   --mona-space-10: 2.5rem;
   --mona-space-12: 3rem;
 
-  --mona-radius-sm: 8px;
-  --mona-radius-md: 14px;
-  --mona-radius-lg: 16px;
-  --mona-radius-xl: 20px;
+  --mona-radius-sm: 12px;
+  --mona-radius-md: 20px;
+  --mona-radius-lg: 24px;
+  --mona-radius-xl: 32px;
+  --mona-radius-2xl: 40px;
   --mona-radius-pill: 999px;
 
-  --mona-control-h: 42px;
-  --mona-control-h-sm: 34px;
-  --mona-control-h-lg: 48px;
+  --mona-control-h: 44px;
+  --mona-control-h-sm: 36px;
+  --mona-control-h-lg: 50px;
 
   --mona-z-base: 1;
   --mona-z-dock: 20;
@@ -37,8 +38,8 @@
   --mona-z-toast: 60;
   --mona-z-float: 70;
 
-  --mona-font-ui: "DM Sans", "Source Sans 3", system-ui, sans-serif;
-  --mona-font-display: "Fraunces", Georgia, serif;
+  --mona-font-ui: Nunito, "Nunito Sans", "DM Sans", system-ui, sans-serif;
+  --mona-font-display: Outfit, Nunito, system-ui, sans-serif;
 
   --mona-type-scale: 1;
   --mona-type-title: 1.5rem;
@@ -48,39 +49,66 @@
   --mona-type-sidebar: 0.875rem;
   --mona-type-tab: 0.75rem;
 
+  --mona-shell-pad: 12px;
+  --mona-sidebar-w: 248px;
+  --mona-sidebar-w-collapsed: 80px;
+  --mona-notch-size: 100px;
+  --mona-notch-depth: 65px;
+  --mona-notch-scoop: 25px;
+  --mona-notch-radius: 50px;
+  --mona-notch-lip: 40px;
+  --mona-notch-pop: 12px;
+  --mona-notch-pop-full: 8px;
+  --mona-notch-circle: 40px;
+  --mona-notch-circle-full: 32px;
+  --mona-notch-shadow: 5px 5px 0 rgb(0 0 0 / 0.25);
+
   --mona-shadow-sm: var(--fv-shadow);
-  --mona-ring-accent: 0 0 0 4px color-mix(in srgb, var(--mona-color-accent) 12%, transparent);
+  --mona-ring-accent: 0 0 0 4px color-mix(in srgb, var(--mona-color-accent) 16%, transparent);
+
+  --mona-color-purple: #7b5cff;
+  --mona-color-pink: #ff4fd8;
+  --mona-color-coral: #ff5b7a;
+  --mona-color-orange: #ff9a2e;
+  --mona-gradient-brand: linear-gradient(90deg, #7b5cff, #ff4fd8, #ff5b7a, #ff9a2e);
+  --mona-gradient-cta: linear-gradient(90deg, #7b5cff 0%, #ff4fd8 38%, #ff5b7a 68%, #ff9a2e 100%);
+  --mona-gradient-sunset: linear-gradient(180deg, #d9c6ff 0%, #ffb4ea 36%, #ffb6ae 66%, #ffd19a 100%);
 }
 
-/* Tenant Fatto — claro (padrão). Hex só vive aqui. */
+/* MONA — claro. Sunset da marca: violeta → magenta → coral → laranja. */
 :root,
 html[data-theme="light"],
+html[data-tenant="mona"],
 html[data-tenant="fatto"] {
-  --fv-brand-950: #003d3b;
-  --fv-brand-900: #004f4c;
-  --fv-brand-800: #006d69;
-  --fv-brand-700: #0a857f;
-  --fv-brand-600: #149991;
-  --fv-brand-500: #2ab0a7;
-  --fv-brand-200: #9fd9d5;
-  --fv-brand-100: #d9f3f1;
-  --fv-brand-50: #eef9f8;
-  --fv-ink-900: #12212b;
-  --fv-ink-700: #334155;
-  --fv-ink-500: #64748b;
-  --fv-ink-300: #cbd5e1;
-  --fv-ink-100: #eef1f4;
-  --fv-ink-50: #f5f7f8;
-  --fv-primary: #006d69;
-  --fv-primary-hover: #004f4c;
-  --fv-bg: #f0f5f4;
+  --fv-brand-950: #2a1470;
+  --fv-brand-900: #4c2ad4;
+  --fv-brand-800: #7b5cff;
+  --fv-brand-700: #8f74ff;
+  --fv-brand-600: #a78bff;
+  --fv-brand-500: #ff4fd8;
+  --fv-brand-200: #ffd0c2;
+  --fv-brand-100: #ffe4d6;
+  --fv-brand-50: #fff1ea;
+  --fv-ink-900: #0f0a1a;
+  --fv-ink-700: #3d2740;
+  --fv-ink-500: #7a6170;
+  --fv-ink-300: #ecd6d4;
+  --fv-ink-100: #f8ebe6;
+  --fv-ink-50: #fbf4ef;
+  --fv-primary: #7b5cff;
+  --fv-primary-hover: #6546f0;
+  --fv-bg: #f6ebe6;
   --fv-surface: #ffffff;
-  --fv-border: #e6ebef;
-  --fv-text: #12212b;
-  --fv-muted: #64748b;
-  --fv-radius: 14px;
-  --fv-shadow: 0 1px 2px rgba(18, 33, 43, 0.04), 0 8px 24px rgba(18, 33, 43, 0.06);
-  --fv-bg-accent: radial-gradient(900px 420px at 8% -8%, rgba(42, 176, 167, 0.16), transparent 55%);
+  --fv-border: #f0ddd4;
+  --fv-text: #0f0a1a;
+  --fv-muted: #7a6170;
+  --fv-radius: 20px;
+  --fv-shadow: 0 1px 2px rgba(15, 10, 26, 0.04), 0 12px 32px rgba(255, 91, 122, 0.12);
+  --fv-bg-accent:
+    radial-gradient(900px 420px at 6% -10%, rgba(123, 92, 255, 0.28), transparent 55%),
+    radial-gradient(720px 380px at 100% 0%, rgba(255, 79, 216, 0.22), transparent 50%),
+    radial-gradient(640px 360px at 88% 108%, rgba(255, 91, 122, 0.2), transparent 52%),
+    radial-gradient(560px 320px at 12% 108%, rgba(255, 154, 46, 0.22), transparent 48%);
 
   --tenant-accent: var(--fv-primary);
   --tenant-accent-hover: var(--fv-primary-hover);
@@ -109,70 +137,74 @@ html[data-tenant="fatto"] {
   --mona-color-warning: #d97706;
   --mona-color-warning-soft: #fff7ed;
   --mona-color-warning-ink: #c2410c;
-  --mona-color-info: #0284c7;
-  --mona-color-info-soft: #f0f9ff;
-  --mona-color-info-ink: #0369a1;
-  --mona-color-neutral: #64748b;
-  --mona-color-neutral-soft: #f1f5f9;
-  --mona-color-neutral-ink: #475569;
+  --mona-color-info: #7b5cff;
+  --mona-color-info-soft: #f3ecff;
+  --mona-color-info-ink: #4c2ad4;
+  --mona-color-neutral: #7a6170;
+  --mona-color-neutral-soft: #fff1ea;
+  --mona-color-neutral-ink: #3d2740;
 
   --mona-status-active: #10b981;
   --mona-status-active-soft: #ecfdf5;
   --mona-status-active-ink: #047857;
   --mona-status-inactive: #94a3b8;
-  --mona-status-inactive-soft: #f1f5f9;
-  --mona-status-inactive-ink: #475569;
-  --mona-status-notice: #0ea5e9;
-  --mona-status-notice-soft: #f0f9ff;
-  --mona-status-notice-ink: #0369a1;
-  --mona-status-hold: #f97316;
-  --mona-status-hold-soft: #fff7ed;
+  --mona-status-inactive-soft: #fff1ea;
+  --mona-status-inactive-ink: #3d2740;
+  --mona-status-notice: #ff5b7a;
+  --mona-status-notice-soft: #ffe8ea;
+  --mona-status-notice-ink: #c2410c;
+  --mona-status-hold: #ff9a2e;
+  --mona-status-hold-soft: #fff4e0;
   --mona-status-hold-ink: #c2410c;
 
+  --mona-dot-color: rgba(255, 91, 122, 0.2);
+  --mona-chrome-sidebar-gradient: linear-gradient(180deg, var(--mona-color-surface), var(--mona-color-surface));
   --mona-chrome-sidebar-bg: var(--mona-color-surface);
-  --mona-chrome-sidebar-ink: var(--fv-ink-700);
-  --mona-chrome-sidebar-border: var(--mona-color-border);
-  --mona-chrome-sidebar-active-bg: var(--mona-color-accent);
-  --mona-chrome-sidebar-active-ink: var(--mona-color-on-accent);
+  --mona-chrome-sidebar-ink: var(--mona-color-ink);
+  --mona-chrome-sidebar-border: transparent;
+  --mona-chrome-sidebar-active-bg: #ff4fd8;
+  --mona-chrome-sidebar-active-ink: #ffffff;
   --mona-chrome-sidebar-hover-bg: var(--fv-ink-50);
-  --mona-chrome-tab-active-bg: var(--mona-color-surface);
-  --mona-chrome-tab-active-ink: var(--fv-brand-900);
-  --mona-chrome-tab-ink: var(--fv-ink-500);
+  --mona-chrome-tab-active-bg: #ffffff;
+  --mona-chrome-tab-active-ink: #7b5cff;
+  --mona-chrome-tab-ink: #7a6170;
   --mona-chrome-window-bg: var(--mona-color-surface);
   --mona-chrome-window-title-bg: var(--fv-ink-50);
   --mona-chrome-window-radius: var(--mona-radius-xl);
   --mona-chrome-window-shadow: var(--fv-shadow);
 }
 
-/* Tenant Fatto — escuro. Mesmos verdes, atmosfera noturna. */
+/* MONA — escuro. Base #0F0A1A, neon magenta/roxo. */
 html.dark,
 html[data-theme="dark"] {
-  --fv-brand-950: #041412;
-  --fv-brand-900: #0a2e2b;
-  --fv-brand-800: #149991;
-  --fv-brand-700: #2ab0a7;
-  --fv-brand-600: #3fc4ba;
-  --fv-brand-500: #5fd4cb;
-  --fv-brand-200: #1a4a45;
-  --fv-brand-100: #143833;
-  --fv-brand-50: #0f2a27;
-  --fv-ink-900: #e8f6f4;
-  --fv-ink-700: #c5e0dc;
-  --fv-ink-500: #8ab5af;
-  --fv-ink-300: #3d5f5a;
-  --fv-ink-100: #1a322f;
-  --fv-ink-50: #102422;
-  --fv-primary: #2ab0a7;
-  --fv-primary-hover: #3fc4ba;
-  --fv-bg: #0a1514;
-  --fv-surface: #122422;
-  --fv-border: #1e3a36;
-  --fv-text: #e8f6f4;
-  --fv-muted: #8ab5af;
-  --fv-shadow: 0 1px 2px rgba(0, 0, 0, 0.35), 0 12px 32px rgba(0, 0, 0, 0.35);
+  --fv-brand-950: #0f0a1a;
+  --fv-brand-900: #1a142c;
+  --fv-brand-800: #8f74ff;
+  --fv-brand-700: #a78bff;
+  --fv-brand-600: #c4b5ff;
+  --fv-brand-500: #ff4fd8;
+  --fv-brand-200: #3a2a63;
+  --fv-brand-100: #2a1e48;
+  --fv-brand-50: #1c1630;
+  --fv-ink-900: #f6f1ff;
+  --fv-ink-700: #d8cff0;
+  --fv-ink-500: #9b90b8;
+  --fv-ink-300: #3d3358;
+  --fv-ink-100: #22183a;
+  --fv-ink-50: #18122c;
+  --fv-primary: #8f74ff;
+  --fv-primary-hover: #a78bff;
+  --fv-bg: #0f0a1a;
+  --fv-surface: #1a142c;
+  --fv-border: #2e2448;
+  --fv-text: #f6f1ff;
+  --fv-muted: #9b90b8;
+  --fv-shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 18px 40px rgba(0, 0, 0, 0.4);
   --fv-bg-accent:
-    radial-gradient(1000px 500px at 12% -12%, rgba(20, 153, 145, 0.28), transparent 55%),
-    radial-gradient(700px 400px at 90% 10%, rgba(0, 77, 75, 0.45), transparent 50%);
+    radial-gradient(1000px 500px at 12% -12%, rgba(123, 92, 255, 0.38), transparent 55%),
+    radial-gradient(700px 400px at 90% 10%, rgba(255, 79, 216, 0.22), transparent 50%),
+    radial-gradient(640px 360px at 80% 110%, rgba(255, 91, 122, 0.16), transparent 50%),
+    radial-gradient(520px 300px at 10% 100%, rgba(255, 154, 46, 0.14), transparent 48%);
 
   --tenant-accent: var(--fv-primary);
   --tenant-accent-hover: var(--fv-primary-hover);
@@ -188,7 +220,7 @@ html[data-theme="dark"] {
   --mona-color-accent-hover: var(--fv-primary-hover);
   --mona-color-accent-soft: var(--fv-brand-50);
   --mona-color-accent-muted: var(--fv-brand-100);
-  --mona-color-on-accent: #041412;
+  --mona-color-on-accent: #0f0a1a;
   --mona-color-client-accent: var(--mona-color-accent);
 
   --mona-color-danger: #f87171;
@@ -201,10 +233,10 @@ html[data-theme="dark"] {
   --mona-color-warning: #fb923c;
   --mona-color-warning-soft: rgba(251, 146, 60, 0.14);
   --mona-color-warning-ink: #fdba74;
-  --mona-color-info: #38bdf8;
-  --mona-color-info-soft: rgba(56, 189, 248, 0.12);
-  --mona-color-info-ink: #7dd3fc;
-  --mona-color-neutral: #8ab5af;
+  --mona-color-info: #a78bff;
+  --mona-color-info-soft: rgba(123, 92, 255, 0.16);
+  --mona-color-info-ink: #c4b5ff;
+  --mona-color-neutral: #9b90b8;
   --mona-color-neutral-soft: var(--fv-ink-100);
   --mona-color-neutral-ink: var(--fv-ink-700);
 
@@ -214,21 +246,23 @@ html[data-theme="dark"] {
   --mona-status-inactive: #64748b;
   --mona-status-inactive-soft: var(--fv-ink-100);
   --mona-status-inactive-ink: #94a3b8;
-  --mona-status-notice: #38bdf8;
-  --mona-status-notice-soft: rgba(56, 189, 248, 0.14);
-  --mona-status-notice-ink: #7dd3fc;
-  --mona-status-hold: #fb923c;
-  --mona-status-hold-soft: rgba(251, 146, 60, 0.16);
+  --mona-status-notice: #a78bff;
+  --mona-status-notice-soft: rgba(123, 92, 255, 0.16);
+  --mona-status-notice-ink: #c4b5ff;
+  --mona-status-hold: #ff9a2e;
+  --mona-status-hold-soft: rgba(255, 154, 46, 0.16);
   --mona-status-hold-ink: #fdba74;
 
+  --mona-dot-color: rgba(255, 154, 46, 0.2);
+  --mona-chrome-sidebar-gradient: linear-gradient(180deg, var(--mona-color-surface), var(--mona-color-surface));
   --mona-chrome-sidebar-bg: var(--mona-color-surface);
   --mona-chrome-sidebar-ink: var(--fv-ink-700);
-  --mona-chrome-sidebar-border: var(--mona-color-border);
-  --mona-chrome-sidebar-active-bg: var(--mona-color-accent);
-  --mona-chrome-sidebar-active-ink: var(--mona-color-on-accent);
-  --mona-chrome-sidebar-hover-bg: var(--fv-ink-100);
+  --mona-chrome-sidebar-border: transparent;
+  --mona-chrome-sidebar-active-bg: #ff4fd8;
+  --mona-chrome-sidebar-active-ink: #ffffff;
+  --mona-chrome-sidebar-hover-bg: rgba(255, 255, 255, 0.08);
   --mona-chrome-tab-active-bg: var(--mona-color-surface);
-  --mona-chrome-tab-active-ink: var(--fv-brand-500);
+  --mona-chrome-tab-active-ink: #c4b5ff;
   --mona-chrome-tab-ink: var(--fv-ink-500);
   --mona-chrome-window-bg: var(--mona-color-surface);
   --mona-chrome-window-title-bg: var(--fv-ink-50);

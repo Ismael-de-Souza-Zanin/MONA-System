@@ -9,6 +9,7 @@ const OVERRIDES = [
   '--fv-border',
   '--fv-text',
   '--fv-muted',
+  '--fv-bg-accent',
   '--fv-brand-800',
   '--fv-brand-900',
   '--fv-brand-700',
@@ -48,6 +49,10 @@ const OVERRIDES = [
   '--mona-chrome-sidebar-active-bg',
   '--mona-chrome-sidebar-active-ink',
   '--mona-chrome-sidebar-hover-bg',
+  '--mona-chrome-sidebar-gradient',
+  '--mona-gradient-cta',
+  '--mona-color-bg-accent',
+  '--mona-dot-color',
   '--mona-chrome-tab-active-bg',
   '--mona-chrome-tab-active-ink',
   '--mona-chrome-tab-ink',
@@ -55,6 +60,16 @@ const OVERRIDES = [
   '--mona-chrome-window-title-bg',
   '--mona-chrome-window-radius',
   '--mona-chrome-window-shadow',
+  '--mona-notch-size',
+  '--mona-notch-depth',
+  '--mona-notch-scoop',
+  '--mona-notch-radius',
+  '--mona-notch-lip',
+  '--mona-notch-pop',
+  '--mona-notch-pop-full',
+  '--mona-notch-circle',
+  '--mona-notch-circle-full',
+  '--mona-notch-shadow',
 ] as const
 
 function setVar(name: string, value: string) {
@@ -69,10 +84,18 @@ function rem(n: number) {
   return `${n}rem`
 }
 
+function px(n: number) {
+  return `${Math.round(n)}px`
+}
+
+function clamp(n: number, min: number, max: number) {
+  return Math.min(max, Math.max(min, n))
+}
+
 const RADIUS: Record<AppearancePrefs['chrome']['windowRadius'], string> = {
-  sm: '8px',
-  md: '14px',
-  lg: '20px',
+  sm: '12px',
+  md: '20px',
+  lg: '32px',
 }
 
 function windowShadow(kind: AppearancePrefs['chrome']['windowShadow'], ink: string) {
@@ -82,13 +105,26 @@ function windowShadow(kind: AppearancePrefs['chrome']['windowShadow'], ink: stri
   return `0 1px 2px ${mix(ink, 'transparent', 8)}, 0 10px 28px ${mix(ink, 'transparent', 10)}`
 }
 
+const SUNSET_CTA = 'linear-gradient(90deg, #7b5cff 0%, #ff4fd8 38%, #ff5b7a 68%, #ff9a2e 100%)'
+const SUNSET_BG_LIGHT =
+  'radial-gradient(900px 420px at 6% -10%, rgba(123, 92, 255, 0.28), transparent 55%), radial-gradient(720px 380px at 100% 0%, rgba(255, 79, 216, 0.22), transparent 50%), radial-gradient(640px 360px at 88% 108%, rgba(255, 91, 122, 0.2), transparent 52%), radial-gradient(560px 320px at 12% 108%, rgba(255, 154, 46, 0.22), transparent 48%)'
+const SUNSET_BG_DARK =
+  'radial-gradient(1000px 500px at 12% -12%, rgba(123, 92, 255, 0.38), transparent 55%), radial-gradient(700px 400px at 90% 10%, rgba(255, 79, 216, 0.22), transparent 50%), radial-gradient(640px 360px at 80% 110%, rgba(255, 91, 122, 0.16), transparent 50%), radial-gradient(520px 300px at 10% 100%, rgba(255, 154, 46, 0.14), transparent 48%)'
+
+function sidebarGradient(prefs: AppearancePrefs) {
+  if (prefs.preset === 'studio-sand') {
+    return 'linear-gradient(180deg, #fff6ea 0%, #ffdcc4 52%, #ffc8a8 100%)'
+  }
+  return `linear-gradient(180deg, ${prefs.chrome.sidebarBg}, ${prefs.chrome.sidebarBg})`
+}
+
 export function applyAppearance(prefs: AppearancePrefs) {
   const root = document.documentElement
   const { colors, type, chrome, mode } = prefs
 
   root.classList.toggle('dark', mode === 'dark')
   root.dataset.theme = mode
-  root.dataset.tenant = 'fatto'
+  root.dataset.tenant = 'mona'
   root.dataset.tabStyle = chrome.tabStyle
   root.dataset.tabIcons = chrome.tabIcons ? 'on' : 'off'
   root.style.colorScheme = mode
@@ -153,6 +189,11 @@ export function applyAppearance(prefs: AppearancePrefs) {
   setVar('--mona-chrome-sidebar-active-bg', chrome.sidebarActiveBg)
   setVar('--mona-chrome-sidebar-active-ink', chrome.sidebarActiveInk)
   setVar('--mona-chrome-sidebar-hover-bg', mix(chrome.sidebarInk, chrome.sidebarBg, 8))
+  setVar('--mona-chrome-sidebar-gradient', sidebarGradient(prefs))
+  setVar('--mona-gradient-cta', SUNSET_CTA)
+  setVar('--fv-bg-accent', prefs.mode === 'dark' ? SUNSET_BG_DARK : SUNSET_BG_LIGHT)
+  setVar('--mona-color-bg-accent', prefs.mode === 'dark' ? SUNSET_BG_DARK : SUNSET_BG_LIGHT)
+  setVar('--mona-dot-color', prefs.mode === 'dark' ? 'rgba(255, 154, 46, 0.2)' : 'rgba(255, 91, 122, 0.2)')
   setVar('--mona-chrome-tab-active-bg', chrome.tabActiveBg)
   setVar('--mona-chrome-tab-active-ink', chrome.tabActiveInk)
   setVar('--mona-chrome-tab-ink', colors.muted)
@@ -160,6 +201,23 @@ export function applyAppearance(prefs: AppearancePrefs) {
   setVar('--mona-chrome-window-title-bg', mix(colors.bg, colors.surface, 70))
   setVar('--mona-chrome-window-radius', RADIUS[chrome.windowRadius])
   setVar('--mona-chrome-window-shadow', windowShadow(chrome.windowShadow, colors.ink))
+
+  const notchSize = clamp(chrome.notchSize ?? 100, 64, 160)
+  const notchDepth = clamp(chrome.notchDepth ?? 65, 36, 96)
+  const notchScoop = clamp(chrome.notchScoop ?? 25, 10, 40)
+  const notchPop = clamp(chrome.notchPop ?? 12, 0, 36)
+  const notchCircle = clamp(chrome.notchCircle ?? 40, 32, 64)
+  const notchShadow = clamp(chrome.notchShadow ?? 5, 0, 18)
+  setVar('--mona-notch-size', px(notchSize))
+  setVar('--mona-notch-depth', px(notchDepth))
+  setVar('--mona-notch-scoop', px(notchScoop))
+  setVar('--mona-notch-radius', px(Math.min(notchSize / 2, notchDepth)))
+  setVar('--mona-notch-lip', px(Math.min(notchDepth / 2, Math.max(notchScoop, Math.round(notchSize * 0.4)))))
+  setVar('--mona-notch-pop', px(notchPop))
+  setVar('--mona-notch-pop-full', px(notchPop * (8 / 12)))
+  setVar('--mona-notch-circle', px(notchCircle))
+  setVar('--mona-notch-circle-full', px(notchCircle * (36 / 46)))
+  setVar('--mona-notch-shadow', `${px(notchShadow)} ${px(notchShadow)} 0 rgb(0 0 0 / ${0.08 + notchShadow * 0.03})`)
 }
 
 export function clearAppearanceOverrides() {

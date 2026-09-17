@@ -14,7 +14,7 @@ import {
 } from 'lucide-react'
 import { Button, Card, Checkbox, Select } from '../ui'
 import { displayFonts, uiFonts } from './fonts'
-import { PRESET_META, presetPrefs } from './presets'
+import { PRESET_META, defaultNotchChrome, hydrateAppearance, presetPrefs } from './presets'
 import { useAppearance } from './ThemeContext'
 import type { AppearancePrefs, AppearanceStage, TabStyle, TypeScale, WindowRadius, WindowShadow } from './types'
 
@@ -28,16 +28,16 @@ const STAGES: { id: AppearanceStage; label: string; hint: string; icon: typeof P
   { id: 'presets', label: 'Identidade', hint: 'Look pronto e intenção visual', icon: Wand2 },
   { id: 'palette', label: 'Cores', hint: 'Marca, contraste e swatches', icon: Paintbrush },
   { id: 'type', label: 'Tipografia', hint: 'Fonte, escala e leitura', icon: Type },
-  { id: 'chrome', label: 'Interface', hint: 'Menu, abas e janelas', icon: Layers3 },
+  { id: 'chrome', label: 'Interface', hint: 'Recorte do menu, abas e janelas', icon: Layers3 },
 ]
 
 const ACCENT_SWATCHES = [
-  '#006d69',
+  '#7b5cff',
+  '#ff4fd8',
+  '#ff5b7a',
+  '#ff9a2e',
   '#0e7490',
   '#2563eb',
-  '#7c3aed',
-  '#c2410c',
-  '#9a4b2e',
   '#111827',
   '#111111',
 ]
@@ -135,6 +135,40 @@ function ColorField({
           spellCheck={false}
         />
       </span>
+    </label>
+  )
+}
+
+function RangeField({
+  label,
+  hint,
+  value,
+  min,
+  max,
+  step = 1,
+  unit = 'px',
+  onChange,
+}: {
+  label: string
+  hint?: string
+  value: number
+  min: number
+  max: number
+  step?: number
+  unit?: string
+  onChange: (n: number) => void
+}) {
+  return (
+    <label className="mona-field">
+      <span className="mona-field__label">
+        {label}{' '}
+        <span className="text-[var(--mona-color-muted)]">
+          ({value}
+          {unit})
+        </span>
+      </span>
+      {hint && <span className="mb-1 block text-xs text-[var(--mona-color-muted)]">{hint}</span>}
+      <input type="range" min={min} max={max} step={step} value={value} onChange={(e) => onChange(Number(e.target.value))} />
     </label>
   )
 }
@@ -303,7 +337,7 @@ export function AppearanceStudio() {
     try {
       const parsed = JSON.parse(raw) as AppearancePrefs
       if (!parsed.colors || !parsed.type || !parsed.chrome) throw new Error('Tema incompleto')
-      setAppearance({ ...parsed, preset: 'custom' })
+      setAppearance(hydrateAppearance({ ...parsed, preset: 'custom' }))
     } catch {
       window.alert('Tema inválido. Confira o JSON e tente novamente.')
     }
@@ -560,7 +594,75 @@ export function AppearanceStudio() {
           )}
 
           {stage === 'chrome' && (
-            <div className="grid gap-4 lg:grid-cols-2">
+            <div className="space-y-4">
+              <Card>
+                <div className="mb-3 flex flex-wrap items-start justify-between gap-3">
+                  <div>
+                    <p className="text-sm font-semibold">Recorte do item ativo</p>
+                    <p className="mt-1 text-xs text-[var(--mona-color-muted)]">
+                      O U do menu recolhido. Recolha a barra à esquerda para ver o ajuste ao vivo.
+                    </p>
+                  </div>
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    onClick={() => patchAppearance({ chrome: { ...appearance.chrome, ...defaultNotchChrome } })}
+                  >
+                    Restaurar recorte
+                  </Button>
+                </div>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <RangeField
+                    label="Tamanho"
+                    hint="Altura do recorte em U"
+                    value={appearance.chrome.notchSize ?? 100}
+                    min={64}
+                    max={160}
+                    onChange={(notchSize) => patchAppearance({ chrome: { ...appearance.chrome, notchSize } })}
+                  />
+                  <RangeField
+                    label="Profundidade"
+                    hint="Quanto o U entra no menu"
+                    value={appearance.chrome.notchDepth ?? 65}
+                    min={36}
+                    max={96}
+                    onChange={(notchDepth) => patchAppearance({ chrome: { ...appearance.chrome, notchDepth } })}
+                  />
+                  <RangeField
+                    label="Curva"
+                    hint="Canto de encontro com a barra"
+                    value={appearance.chrome.notchScoop ?? 25}
+                    min={10}
+                    max={40}
+                    onChange={(notchScoop) => patchAppearance({ chrome: { ...appearance.chrome, notchScoop } })}
+                  />
+                  <RangeField
+                    label="Avanço do ícone"
+                    hint="Quanto o círculo entra no recorte"
+                    value={appearance.chrome.notchPop ?? 12}
+                    min={0}
+                    max={36}
+                    onChange={(notchPop) => patchAppearance({ chrome: { ...appearance.chrome, notchPop } })}
+                  />
+                  <RangeField
+                    label="Círculo"
+                    hint="Diâmetro do botão ativo"
+                    value={appearance.chrome.notchCircle ?? 40}
+                    min={32}
+                    max={64}
+                    onChange={(notchCircle) => patchAppearance({ chrome: { ...appearance.chrome, notchCircle } })}
+                  />
+                  <RangeField
+                    label="Sombra"
+                    hint="Relevo do círculo sobre o recorte"
+                    value={appearance.chrome.notchShadow ?? 5}
+                    min={0}
+                    max={18}
+                    onChange={(notchShadow) => patchAppearance({ chrome: { ...appearance.chrome, notchShadow } })}
+                  />
+                </div>
+              </Card>
+              <div className="grid gap-4 lg:grid-cols-2">
               <Card>
                 <p className="mb-3 text-sm font-semibold">Menu lateral</p>
                 <div className="grid gap-4">
@@ -626,6 +728,7 @@ export function AppearanceStudio() {
                   />
                 </div>
               </Card>
+            </div>
             </div>
           )}
 

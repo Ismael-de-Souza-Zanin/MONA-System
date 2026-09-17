@@ -8,11 +8,11 @@ import {
   type ReactNode,
 } from 'react'
 import { applyAppearance } from './applyAppearance'
-import { defaultAppearance, markCustom, presetPrefs } from './presets'
+import { defaultAppearance, hydrateAppearance, markCustom, presetPrefs } from './presets'
 import type { AppearancePrefs, ThemeMode } from './types'
 
 const LEGACY_THEME_KEY = 'fatto_theme'
-const STORAGE_KEY = 'fatto_appearance_v1'
+const STORAGE_KEY = 'mona_appearance_v1'
 
 type ThemeContextValue = {
   theme: ThemeMode
@@ -32,7 +32,17 @@ function readStored(): AppearancePrefs {
     const raw = localStorage.getItem(STORAGE_KEY)
     if (raw) {
       const parsed = JSON.parse(raw) as AppearancePrefs
-      if (parsed?.colors && parsed?.type && parsed?.chrome) return parsed
+      if (parsed?.colors && parsed?.type && parsed?.chrome) {
+        if (
+          parsed.preset === 'fatto-light' &&
+          (parsed.colors.bg === '#f4eefb' ||
+            parsed.chrome.sidebarBg === '#f3e7ff' ||
+            parsed.chrome.sidebarBg === '#d9c6ff')
+        ) {
+          return presetPrefs('fatto-light')
+        }
+        return hydrateAppearance(parsed)
+      }
     }
     const legacy = localStorage.getItem(LEGACY_THEME_KEY)
     if (legacy === 'dark' || legacy === 'light') return defaultAppearance(legacy)
@@ -44,7 +54,7 @@ function readStored(): AppearancePrefs {
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
   const [appearance, setAppearanceState] = useState<AppearancePrefs>(() => {
-    const initial = readStored()
+    const initial = hydrateAppearance(readStored())
     applyAppearance(initial)
     return initial
   })

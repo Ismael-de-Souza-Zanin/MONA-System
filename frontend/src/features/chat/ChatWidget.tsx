@@ -138,7 +138,8 @@ export function ChatWidget() {
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="fixed bottom-4 right-4 z-[60] flex h-14 w-14 items-center justify-center rounded-full bg-brand-800 text-white shadow-xl ring-4 ring-brand-800/15 transition hover:bg-brand-900"
+        className="fixed bottom-4 right-4 z-[60] flex h-14 w-14 items-center justify-center rounded-full text-white shadow-xl ring-4 ring-orange-400/20 transition hover:brightness-110"
+        style={{ background: 'var(--mona-gradient-cta)' }}
         aria-label="Abrir chat interno"
         title="Chat interno"
       >
@@ -149,7 +150,7 @@ export function ChatWidget() {
 
   return (
     <div className="fixed bottom-4 right-4 z-[60] flex h-[min(560px,calc(100vh-5rem))] w-[min(400px,calc(100vw-1.5rem))] flex-col overflow-hidden rounded-2xl border border-ink-100 bg-white shadow-2xl">
-      <div className="flex items-center gap-2 border-b border-ink-100 bg-brand-800 px-3 py-2.5 text-white">
+      <div className="flex items-center gap-2 border-b border-ink-100 px-3 py-2.5 text-white" style={{ background: 'var(--mona-gradient-cta)' }}>
         <MessageSquare size={16} />
         <p className="flex-1 text-sm font-semibold">Chat interno</p>
         <button

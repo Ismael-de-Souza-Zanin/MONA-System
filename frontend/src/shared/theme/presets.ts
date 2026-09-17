@@ -1,17 +1,17 @@
 import type { AppearanceChrome, AppearanceColors, AppearancePrefs, AppearanceType } from './types'
 
-const fattoLightColors: AppearanceColors = {
-  accent: '#006d69',
-  bg: '#f0f5f4',
+const monaLightColors: AppearanceColors = {
+  accent: '#7b5cff',
+  bg: '#f6ebe6',
   surface: '#ffffff',
-  ink: '#12212b',
-  muted: '#64748b',
-  border: '#e6ebef',
+  ink: '#0f0a1a',
+  muted: '#7a6170',
+  border: '#f0ddd4',
 }
 
-const fattoLightType: AppearanceType = {
-  uiFont: 'dm-sans',
-  displayFont: 'fraunces',
+const monaLightType: AppearanceType = {
+  uiFont: 'nunito',
+  displayFont: 'outfit',
   scale: 1,
   titleSize: 1.5,
   subtitleSize: 0.875,
@@ -21,17 +21,27 @@ const fattoLightType: AppearanceType = {
   tabSize: 0.75,
 }
 
-const fattoLightChrome: AppearanceChrome = {
+export const defaultNotchChrome = {
+  notchSize: 100,
+  notchDepth: 65,
+  notchScoop: 25,
+  notchPop: 12,
+  notchCircle: 40,
+  notchShadow: 5,
+}
+
+const monaLightChrome: AppearanceChrome = {
   sidebarBg: '#ffffff',
-  sidebarInk: '#334155',
-  sidebarActiveBg: '#006d69',
+  sidebarInk: '#0f0a1a',
+  sidebarActiveBg: '#ff4fd8',
   sidebarActiveInk: '#ffffff',
   tabStyle: 'pill',
   tabIcons: true,
   tabActiveBg: '#ffffff',
-  tabActiveInk: '#004f4c',
+  tabActiveInk: '#7b5cff',
   windowRadius: 'lg',
   windowShadow: 'soft',
+  ...defaultNotchChrome,
 }
 
 export const PRESET_META: {
@@ -40,10 +50,10 @@ export const PRESET_META: {
   blurb: string
   mode: AppearancePrefs['mode']
 }[] = [
-  { id: 'fatto-light', name: 'Fatto claro', blurb: 'Verde da casa, operação diurna.', mode: 'light' },
-  { id: 'fatto-dark', name: 'Fatto escuro', blurb: 'Os mesmos verdes, à noite.', mode: 'dark' },
+  { id: 'fatto-light', name: 'MONA claro', blurb: 'Sunset da marca: violeta, magenta, coral e laranja.', mode: 'light' },
+  { id: 'fatto-dark', name: 'MONA escuro', blurb: 'Base profunda com neon da marca.', mode: 'dark' },
   { id: 'studio-sand', name: 'Studio areia', blurb: 'Quente, editorial, menos clínico.', mode: 'light' },
-  { id: 'mona-ink', name: 'MONA tinta', blurb: 'Noite profunda com ouro.', mode: 'dark' },
+  { id: 'mona-ink', name: 'MONA tinta', blurb: 'Noite com o gradiente da marca.', mode: 'dark' },
   { id: 'ocean', name: 'Oceano', blurb: 'Ardósia e azul de trabalho longo.', mode: 'light' },
   { id: 'high-contrast', name: 'Alto contraste', blurb: 'Máxima leitura, bordas firmes.', mode: 'light' },
 ]
@@ -55,24 +65,22 @@ export function presetPrefs(id: Exclude<AppearancePrefs['preset'], 'custom'>): A
         preset: id,
         mode: 'dark',
         colors: {
-          accent: '#2ab0a7',
-          bg: '#0a1514',
-          surface: '#122422',
-          ink: '#e8f6f4',
-          muted: '#8ab5af',
-          border: '#1e3a36',
+          accent: '#8f74ff',
+          bg: '#0f0a1a',
+          surface: '#1a142c',
+          ink: '#f6f1ff',
+          muted: '#9b90b8',
+          border: '#2e2448',
         },
-        type: { ...fattoLightType },
+        type: { ...monaLightType },
         chrome: {
-          sidebarBg: '#122422',
-          sidebarInk: '#c5e0dc',
-          sidebarActiveBg: '#2ab0a7',
-          sidebarActiveInk: '#041412',
-          tabStyle: 'pill',
-          tabIcons: true,
-          tabActiveBg: '#122422',
-          tabActiveInk: '#5fd4cb',
-          windowRadius: 'lg',
+          ...monaLightChrome,
+          sidebarBg: '#1a142c',
+          sidebarInk: '#d8cff0',
+          sidebarActiveBg: '#ff4fd8',
+          sidebarActiveInk: '#ffffff',
+          tabActiveBg: '#1a142c',
+          tabActiveInk: '#c4b5ff',
           windowShadow: 'strong',
         },
       }
@@ -81,25 +89,24 @@ export function presetPrefs(id: Exclude<AppearancePrefs['preset'], 'custom'>): A
         preset: id,
         mode: 'light',
         colors: {
-          accent: '#9a4b2e',
+          accent: '#ff5b7a',
           bg: '#f6f1ea',
           surface: '#fffdf9',
           ink: '#2c2118',
           muted: '#7a6a5c',
           border: '#e8ddd0',
         },
-        type: { ...fattoLightType, uiFont: 'nunito', displayFont: 'fraunces' },
+        type: { ...monaLightType, uiFont: 'nunito', displayFont: 'outfit' },
         chrome: {
+          ...monaLightChrome,
           sidebarBg: '#fffdf9',
           sidebarInk: '#5c4a3c',
-          sidebarActiveBg: '#9a4b2e',
+          sidebarActiveBg: '#ff5b7a',
           sidebarActiveInk: '#fffdf9',
           tabStyle: 'chip',
-          tabIcons: true,
           tabActiveBg: '#fffdf9',
-          tabActiveInk: '#9a4b2e',
+          tabActiveInk: '#ff5b7a',
           windowRadius: 'md',
-          windowShadow: 'soft',
         },
       }
     case 'mona-ink':
@@ -107,24 +114,22 @@ export function presetPrefs(id: Exclude<AppearancePrefs['preset'], 'custom'>): A
         preset: id,
         mode: 'dark',
         colors: {
-          accent: '#c9a227',
-          bg: '#12141a',
-          surface: '#1c1f28',
-          ink: '#f3efe4',
-          muted: '#9a9386',
-          border: '#2a2e3a',
+          accent: '#ff4fd8',
+          bg: '#0f0a1a',
+          surface: '#161022',
+          ink: '#f6f1ff',
+          muted: '#9b90b8',
+          border: '#2a2240',
         },
-        type: { ...fattoLightType, uiFont: 'outfit', displayFont: 'playfair' },
+        type: { ...monaLightType, uiFont: 'outfit', displayFont: 'outfit' },
         chrome: {
-          sidebarBg: '#1c1f28',
-          sidebarInk: '#d8d2c4',
-          sidebarActiveBg: '#c9a227',
-          sidebarActiveInk: '#12141a',
-          tabStyle: 'pill',
-          tabIcons: true,
-          tabActiveBg: '#1c1f28',
-          tabActiveInk: '#e6c96a',
-          windowRadius: 'md',
+          ...monaLightChrome,
+          sidebarBg: '#161022',
+          sidebarInk: '#d8cff0',
+          sidebarActiveBg: '#ff4fd8',
+          sidebarActiveInk: '#ffffff',
+          tabActiveBg: '#161022',
+          tabActiveInk: '#ff9a2e',
           windowShadow: 'strong',
         },
       }
@@ -140,18 +145,17 @@ export function presetPrefs(id: Exclude<AppearancePrefs['preset'], 'custom'>): A
           muted: '#5b7380',
           border: '#d5e2e8',
         },
-        type: { ...fattoLightType, uiFont: 'source-sans', displayFont: 'fraunces' },
+        type: { ...monaLightType, uiFont: 'source-sans', displayFont: 'outfit' },
         chrome: {
+          ...monaLightChrome,
           sidebarBg: '#ffffff',
           sidebarInk: '#3d5560',
           sidebarActiveBg: '#0e7490',
           sidebarActiveInk: '#ffffff',
           tabStyle: 'underline',
-          tabIcons: true,
           tabActiveBg: '#f0f6f8',
           tabActiveInk: '#0e7490',
           windowRadius: 'md',
-          windowShadow: 'soft',
         },
       }
     case 'high-contrast':
@@ -166,15 +170,14 @@ export function presetPrefs(id: Exclude<AppearancePrefs['preset'], 'custom'>): A
           muted: '#333333',
           border: '#111111',
         },
-        type: { ...fattoLightType, uiFont: 'inter', displayFont: 'inter', scale: 1.1 },
+        type: { ...monaLightType, uiFont: 'inter', displayFont: 'inter', scale: 1.1 },
         chrome: {
+          ...monaLightChrome,
           sidebarBg: '#ffffff',
           sidebarInk: '#111111',
           sidebarActiveBg: '#111111',
           sidebarActiveInk: '#ffffff',
           tabStyle: 'underline',
-          tabIcons: true,
-          tabActiveBg: '#ffffff',
           tabActiveInk: '#111111',
           windowRadius: 'sm',
           windowShadow: 'strong',
@@ -185,10 +188,28 @@ export function presetPrefs(id: Exclude<AppearancePrefs['preset'], 'custom'>): A
       return {
         preset: 'fatto-light',
         mode: 'light',
-        colors: { ...fattoLightColors },
-        type: { ...fattoLightType },
-        chrome: { ...fattoLightChrome },
+        colors: { ...monaLightColors },
+        type: { ...monaLightType },
+        chrome: { ...monaLightChrome },
       }
+  }
+}
+
+export function hydrateAppearance(prefs: AppearancePrefs): AppearancePrefs {
+  const chrome = { ...monaLightChrome, ...prefs.chrome }
+  if (chrome.notchSize === 78 && chrome.notchDepth === 52 && (chrome.notchPop === 28 || chrome.notchPop === 12)) {
+    Object.assign(chrome, defaultNotchChrome)
+  }
+  if (chrome.sidebarBg === '#d9c6ff' || chrome.sidebarBg === '#f3e7ff') {
+    chrome.sidebarBg = '#ffffff'
+    if (chrome.sidebarInk === '#3d2740') chrome.sidebarInk = '#0f0a1a'
+  }
+  if (chrome.notchCircle === 46) chrome.notchCircle = 40
+  return {
+    ...prefs,
+    colors: { ...monaLightColors, ...prefs.colors },
+    type: { ...monaLightType, ...prefs.type },
+    chrome,
   }
 }
 

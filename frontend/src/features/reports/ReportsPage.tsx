@@ -145,7 +145,7 @@ export function ReportsPage() {
     )
   }
 
-  if (isLoading || !data) return <LoadingSpinner />
+  if (isLoading || !data || Array.isArray(data) || !data.todos) return <LoadingSpinner />
 
   const subtitle =
     lens === 'adm'

@@ -21,6 +21,7 @@ import {
   Bolt,
   HelpCircle,
   BarChart3,
+  LayoutGrid,
 } from 'lucide-react'
 import type { Permission } from '../permissions/constants'
 import { Permissions } from '../permissions/constants'
@@ -70,6 +71,59 @@ export interface MenuPreferenceItem {
   customLabel?: string | null
 }
 
+export interface NavGroup {
+  id: string
+  label: string
+  collapsible: boolean
+  icon: LucideIcon
+  keys: string[]
+}
+
+export const NAV_GROUPS: NavGroup[] = [
+  {
+    id: 'principal',
+    label: 'Principal',
+    collapsible: false,
+    icon: LayoutDashboard,
+    keys: ['dashboard', 'operacao', 'agenda'],
+  },
+  {
+    id: 'gestao',
+    label: 'Gestão',
+    collapsible: true,
+    icon: Users,
+    keys: ['clientes', 'prestadores', 'parceiras', 'servicos', 'contratos'],
+  },
+  {
+    id: 'operacao-group',
+    label: 'Operação',
+    collapsible: true,
+    icon: ListChecks,
+    keys: ['tarefas', 'sops', 'onboarding'],
+  },
+  {
+    id: 'comunicacao',
+    label: 'Comunicação',
+    collapsible: true,
+    icon: MessagesSquare,
+    keys: ['emails', 'whatsapp', 'chat'],
+  },
+  {
+    id: 'financeiro',
+    label: 'Financeiro',
+    collapsible: true,
+    icon: Wallet,
+    keys: ['financeiro', 'relatorios'],
+  },
+  {
+    id: 'mais',
+    label: 'Mais',
+    collapsible: true,
+    icon: LayoutGrid,
+    keys: ['piramide', 'apps', 'faqs', 'compartilhar', 'notificacoes'],
+  },
+]
+
 export function resolveMenu(
   prefs: MenuPreferenceItem[] | undefined,
   allowed: NavDefinition[],
@@ -88,4 +142,27 @@ export function resolveMenu(
   }
   for (const rest of byKey.values()) ordered.push(rest)
   return ordered
+}
+
+export function groupedNav(visible: NavDefinition[]) {
+  const byKey = new Map(visible.map((item) => [item.key, item]))
+  return NAV_GROUPS.map((group) => ({
+    ...group,
+    items: group.keys.map((key) => byKey.get(key)).filter((item): item is NavDefinition => Boolean(item)),
+  })).filter((group) => group.items.length > 0)
+}
+
+export function navGroupIdForPath(pathname: string): string | null {
+  for (const group of NAV_GROUPS) {
+    for (const key of group.keys) {
+      const def = NAV_DEFINITIONS.find((item) => item.key === key)
+      if (!def) continue
+      if (def.to === '/') {
+        if (pathname === '/') return group.id
+        continue
+      }
+      if (pathname === def.to || pathname.startsWith(`${def.to}/`)) return group.id
+    }
+  }
+  return null
 }

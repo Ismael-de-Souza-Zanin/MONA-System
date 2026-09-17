@@ -1,39 +1,59 @@
-import logoUrl from '../../assets/logo.png'
+import iconUrl from '../../assets/icon.png'
+import wordmarkUrl from '../../assets/logo-wordmark.png'
 
 type BrandLogoProps = {
   size?: number
   className?: string
-  /** Só o ícone (sem título ao lado) — o PNG já traz o nome da marca */
   title?: string
   subtitle?: string
   showWordmark?: boolean
+  variant?: 'icon' | 'wordmark'
 }
 
 export function BrandLogo({
-  size = 36,
+  size = 40,
   className = '',
-  title = 'Fatto Virtual',
+  title = 'MONA',
   subtitle,
   showWordmark = false,
+  variant = 'icon',
 }: BrandLogoProps) {
-  return (
-    <div className={`flex min-w-0 items-center gap-2.5 ${className}`}>
+  if (variant === 'wordmark') {
+    return (
       <img
-        src={logoUrl}
+        src={wordmarkUrl}
         alt={title}
-        width={size}
         height={size}
-        className="shrink-0 rounded-xl object-cover shadow-sm ring-1 ring-black/10"
+        className={`h-auto max-w-full object-contain ${className}`.trim()}
+        style={{ height: size }}
         draggable={false}
       />
+    )
+  }
+
+  return (
+    <div className={`flex min-w-0 items-center gap-2.5 ${className}`}>
+      <span
+        className="relative shrink-0 overflow-hidden rounded-[22%] shadow-sm"
+        style={{ width: size, height: size }}
+      >
+        <img
+          src={iconUrl}
+          alt={title}
+          width={size}
+          height={size}
+          className="h-full w-full scale-[1.22] object-cover"
+          draggable={false}
+        />
+      </span>
       {showWordmark && (
         <div className="min-w-0">
-          <p className="truncate text-sm font-semibold leading-tight text-ink-900 brand-font">{title}</p>
-          {subtitle ? <p className="truncate text-[11px] text-ink-500">{subtitle}</p> : null}
+          <p className="mona-wordmark truncate text-[1.05rem] font-extrabold leading-none tracking-tight">{title}</p>
+          {subtitle ? <p className="mt-0.5 truncate text-[10px] font-semibold uppercase tracking-[0.14em] text-ink-500">{subtitle}</p> : null}
         </div>
       )}
     </div>
   )
 }
 
-export { logoUrl }
+export { iconUrl, wordmarkUrl as logoUrl }

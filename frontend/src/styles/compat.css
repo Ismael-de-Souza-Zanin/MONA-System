@@ -6,7 +6,7 @@
 .fv-card {
   background: var(--mona-color-surface);
   border: 1px solid var(--mona-color-border);
-  border-radius: var(--mona-radius-md);
+  border-radius: var(--mona-radius-lg);
   box-shadow: var(--mona-shadow-sm);
 }
 
