@@ -25,7 +25,11 @@ import {
   Sun,
   Plus,
   ChevronDown,
+  CalendarDays,
+  Pin,
 } from 'lucide-react'
+import { useQuery } from '@tanstack/react-query'
+import { api } from '../shared/api/client'
 import { useAuth } from '../shared/auth/AuthContext'
 import { useTheme } from '../shared/theme/ThemeContext'
 import { iconForPath } from '../shared/theme/tabIcon'
@@ -37,7 +41,7 @@ import { WorkspaceTabsProvider, useWorkspaceTabs } from './WorkspaceTabsContext'
 import { FloatingTabsLayer } from './FloatingTabsLayer'
 import { ChatWidget } from '../features/chat/ChatWidget'
 import type { LucideIcon } from 'lucide-react'
-import { BrandLogo, Button } from '../shared/ui'
+import { BrandLogo } from '../shared/ui'
 
 const WHATSAPP_URL = 'https://wa.me/5511999999999'
 const SIDEBAR_KEY = 'fatto_sidebar_collapsed'
@@ -63,7 +67,7 @@ function fanOffset(index: number, count: number, radius = 128) {
 }
 
 function BrandMark({ compact }: { compact?: boolean }) {
-  return <BrandLogo size={compact ? 40 : 42} showWordmark={!compact} title="MONA" />
+  return <BrandLogo size={compact ? 48 : 42} showWordmark={!compact} title="MONA" />
 }
 
 function SidebarLink({
@@ -393,7 +397,7 @@ type TabMenuState = {
 const TAB_MENU_W = 220
 const TAB_MENU_H = 340
 
-function WorkspaceTabBar() {
+function WorkspaceTabBar({ variant = 'bar' }: { variant?: 'bar' | 'stack' }) {
   const {
     tabs,
     activeId,
@@ -477,11 +481,182 @@ function WorkspaceTabBar() {
     setMenu(null)
   }
 
-  if (docked.length <= 1 && floating.length === 0) return null
+  if (variant !== 'stack' && docked.length <= 1 && floating.length === 0) return null
+  if (variant === 'stack' && docked.length === 0 && floating.length === 0) return null
 
   const menuTab = menu ? tabs.find((t) => t.id === menu.tabId) : null
   const canCloseRight = menu?.mode === 'docked' && menu.dockIndex < menu.dockCount - 1
   const canCloseOthers = tabs.length > 1
+  const stackedDocked =
+    variant === 'stack'
+      ? [
+          ...docked.filter((tab) => tab.id !== activeId).slice(-2),
+          ...docked.filter((tab) => tab.id === activeId),
+        ]
+      : docked
+
+  const menuPortal =
+    menu &&
+    menuTab &&
+    createPortal(
+      <div
+        ref={menuRef}
+        role="menu"
+        className="fixed z-[200] min-w-[210px] overflow-hidden rounded-xl border border-ink-100 bg-surface py-1 shadow-xl"
+        style={{ left: menu.x, top: menu.y, width: TAB_MENU_W }}
+      >
+        <p className="truncate border-b border-ink-50 px-3 py-1.5 text-[11px] font-semibold text-ink-500">
+          {menuTab.title}
+        </p>
+        <TabMenuItem label="Ativar" onClick={() => run(() => activateTab(menu.tabId))} />
+        <TabMenuItem
+          label="Recarregar"
+          onClick={() =>
+            run(() => {
+              activateTab(menu.tabId)
+              navigate(0)
+            })
+          }
+        />
+        <div className="my-1 border-t border-ink-50" />
+        {menu.mode === 'docked' ? (
+          <TabMenuItem
+            label="Flutuar janela"
+            onClick={() => run(() => floatTab(menu.tabId))}
+          />
+        ) : (
+          <>
+            <TabMenuItem label="Encaixar" onClick={() => run(() => dockTab(menu.tabId))} />
+            <TabMenuItem
+              label="Maximizar"
+              onClick={() => run(() => snapFloat(menu.tabId, 'maximize'))}
+            />
+            <TabMenuItem
+              label="Metade esquerda"
+              onClick={() => run(() => snapFloat(menu.tabId, 'left'))}
+            />
+            <TabMenuItem
+              label="Metade direita"
+              onClick={() => run(() => snapFloat(menu.tabId, 'right'))}
+            />
+            <TabMenuItem
+              label="Encaixar todas as flutuantes"
+              onClick={() => run(() => dockAll())}
+            />
+          </>
+        )}
+        <div className="my-1 border-t border-ink-50" />
+        <TabMenuItem label="Fechar" onClick={() => run(() => closeTab(menu.tabId))} />
+        <TabMenuItem
+          label="Fechar outras"
+          disabled={!canCloseOthers}
+          onClick={() => run(() => closeOthers(menu.tabId))}
+        />
+        {menu.mode === 'docked' && (
+          <TabMenuItem
+            label="Fechar à direita"
+            disabled={!canCloseRight}
+            onClick={() => run(() => closeToTheRight(menu.tabId))}
+          />
+        )}
+        <TabMenuItem label="Fechar todas" danger onClick={() => run(() => closeAll())} />
+      </div>,
+      document.body,
+    )
+
+  if (variant === 'stack') {
+    return (
+      <>
+        {stackedDocked.map((tab, index) => {
+          const isFront = index === stackedDocked.length - 1
+          return (
+          <div
+            key={tab.id}
+            data-tab-id={tab.id}
+            draggable
+            onDragStart={() => setDragIndex(docked.findIndex((item) => item.id === tab.id))}
+            onDragOver={(e) => e.preventDefault()}
+            onDrop={() => {
+              const to = docked.findIndex((item) => item.id === tab.id)
+              if (dragIndex === null || dragIndex === to) return
+              reorderDocked(dragIndex, to)
+              setDragIndex(null)
+            }}
+            onContextMenu={(e) =>
+              openMenu(e, tab.id, 'docked', docked.findIndex((item) => item.id === tab.id))
+            }
+            onDoubleClick={() => {
+              if (window.matchMedia('(min-width: 768px)').matches) floatTab(tab.id)
+            }}
+            onClick={() => activateTab(tab.id)}
+            className={`mona-stack__card ${activeId === tab.id ? 'is-active' : ''} ${isFront ? 'is-front' : ''}`}
+            style={{ zIndex: 8 + index }}
+            title="Clique para abrir · clique direito gerencia"
+          >
+            <i className="mona-stack__handle" aria-hidden />
+            <div className="flex items-start justify-between gap-2">
+              <div className="min-w-0 text-left">
+                <p className="flex items-center gap-1.5 text-sm font-semibold text-ink-900">
+                  {showTabIcons &&
+                    (() => {
+                      const TabIcon = iconForPath(tab.path)
+                      return <TabIcon size={14} className="shrink-0" strokeWidth={2} />
+                    })()}
+                  <span className="truncate">{tab.title}</span>
+                </p>
+                <p className="mt-1 truncate text-[11px] text-ink-500">
+                  {activeId === tab.id ? 'Aberto agora' : 'Clique para voltar'}
+                </p>
+              </div>
+              {docked.length > 1 && (
+              <button
+                type="button"
+                className="shrink-0 rounded-full p-1 text-ink-500 hover:bg-ink-100 hover:text-ink-800"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  closeTab(tab.id)
+                }}
+                aria-label={`Fechar ${tab.title}`}
+              >
+                <X size={14} />
+              </button>
+              )}
+            </div>
+          </div>
+          )
+        })}
+        {floating.map((tab, index) => (
+          <div
+            key={tab.id}
+            data-tab-id={tab.id}
+            onContextMenu={(e) => openMenu(e, tab.id, 'floating', -1)}
+            className={`mona-stack__card is-float ${activeId === tab.id ? 'is-active' : ''}`}
+            style={{ zIndex: stackedDocked.length + index + 1 }}
+            onClick={() => activateTab(tab.id)}
+          >
+            <i className="mona-stack__handle" aria-hidden />
+            <div className="flex items-start justify-between gap-2">
+              <button type="button" className="min-w-0 text-left" onClick={() => activateTab(tab.id)}>
+                <p className="truncate text-sm font-semibold text-brand-900">{tab.title}</p>
+                <p className="mt-1 text-[11px] text-brand-800">Janela flutuante</p>
+              </button>
+              <button
+                type="button"
+                className="shrink-0 rounded-full px-2 py-1 text-[10px] text-brand-800 hover:bg-white"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  dockTab(tab.id)
+                }}
+              >
+                Encaixar
+              </button>
+            </div>
+          </div>
+        ))}
+        {menuPortal}
+      </>
+    )
+  }
 
   return (
     <div className="mona-tabbar flex min-w-0 flex-col gap-1 border-b px-2 py-1.5 sm:flex-row sm:items-stretch sm:gap-2">
@@ -641,73 +816,113 @@ function WorkspaceTabBar() {
         </div>
       )}
 
-      {menu &&
-        menuTab &&
-        createPortal(
-          <div
-            ref={menuRef}
-            role="menu"
-            className="fixed z-[200] min-w-[210px] overflow-hidden rounded-xl border border-ink-100 bg-surface py-1 shadow-xl"
-            style={{ left: menu.x, top: menu.y, width: TAB_MENU_W }}
-          >
-            <p className="truncate border-b border-ink-50 px-3 py-1.5 text-[11px] font-semibold text-ink-500">
-              {menuTab.title}
-            </p>
-            <TabMenuItem label="Ativar" onClick={() => run(() => activateTab(menu.tabId))} />
-            <TabMenuItem
-              label="Recarregar"
-              onClick={() =>
-                run(() => {
-                  activateTab(menu.tabId)
-                  navigate(0)
+      {menuPortal}
+    </div>
+  )
+}
+
+function tzCity(id?: string) {
+  if (!id) return '—'
+  return id.split('/').pop()?.replace(/_/g, ' ') || id
+}
+
+function DockAgendaPin() {
+  const navigate = useNavigate()
+  const location = useLocation()
+  const { preferences, saveTravel, browserTimeZone } = useUserPreferences()
+  const { data: stats } = useQuery({
+    queryKey: ['dashboard-stats'],
+    queryFn: () => api.get<{ agendaToday?: number; myAgenda?: number }>('/dashboard/stats'),
+  })
+  const [now, setNow] = useState(() => new Date())
+  const tz = preferences?.effectiveTimeZoneId || preferences?.timeZoneId || 'America/Sao_Paulo'
+  const homeTz = preferences?.homeTimeZoneId || preferences?.timeZoneId || 'America/Sao_Paulo'
+  const away =
+    Boolean(preferences?.isAwayFromHome) ||
+    Boolean(browserTimeZone && homeTz && browserTimeZone !== homeTz && !preferences?.travelModeEnabled)
+  const onAgenda = location.pathname.startsWith('/agenda')
+
+  useEffect(() => {
+    const id = window.setInterval(() => setNow(new Date()), 30_000)
+    return () => window.clearInterval(id)
+  }, [])
+
+  const time = now.toLocaleTimeString('pt-BR', {
+    timeZone: tz,
+    hour: '2-digit',
+    minute: '2-digit',
+  })
+  const day = now.toLocaleDateString('pt-BR', {
+    timeZone: tz,
+    weekday: 'short',
+    day: 'numeric',
+    month: 'short',
+  })
+  const count = stats?.agendaToday ?? stats?.myAgenda ?? 0
+
+  return (
+    <div
+      className={`mona-panel mona-panel--pin ${onAgenda ? 'is-active' : ''}`}
+      role="link"
+      tabIndex={0}
+      onClick={() => navigate('/agenda')}
+      onKeyDown={(event) => {
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault()
+          navigate('/agenda')
+        }
+      }}
+      title="Agenda fixa"
+    >
+      <span className="mona-pin__bar">
+        <Pin size={11} strokeWidth={2.4} />
+        Agenda
+      </span>
+      <div className="mona-pin__body">
+        <span className="mona-blob left-3 top-2 h-12 w-16 bg-[color:var(--mona-color-purple)]/30" />
+        <span className="mona-blob right-2 top-4 h-10 w-12 bg-[color:var(--mona-color-pink)]/35" />
+        <span className="mona-blob bottom-2 left-8 h-8 w-14 bg-[color:var(--mona-color-orange)]/35" />
+        <div className="relative z-[1]">
+          <p className="mona-pin__time">{time}</p>
+          <p className="mona-pin__tz">{tzCity(tz)}</p>
+          <p className="mona-pin__meta">
+            {day} · {count} hoje
+          </p>
+          {preferences?.travelModeEnabled ? (
+            <button
+              type="button"
+              className="mona-pin__action"
+              onClick={(event) => {
+                event.stopPropagation()
+                void saveTravel({ travelModeEnabled: false })
+              }}
+            >
+              Voltar ao fuso casa
+            </button>
+          ) : away && browserTimeZone ? (
+            <button
+              type="button"
+              className="mona-pin__action"
+              onClick={(event) => {
+                event.stopPropagation()
+                void saveTravel({
+                  detectedTimeZoneId: browserTimeZone,
+                  travelModeEnabled: true,
+                  travelTimeZoneId: browserTimeZone,
+                  travelLabel: browserTimeZone,
                 })
-              }
-            />
-            <div className="my-1 border-t border-ink-50" />
-            {menu.mode === 'docked' ? (
-              <TabMenuItem
-                label="Flutuar janela"
-                onClick={() => run(() => floatTab(menu.tabId))}
-              />
-            ) : (
-              <>
-                <TabMenuItem label="Encaixar" onClick={() => run(() => dockTab(menu.tabId))} />
-                <TabMenuItem
-                  label="Maximizar"
-                  onClick={() => run(() => snapFloat(menu.tabId, 'maximize'))}
-                />
-                <TabMenuItem
-                  label="Metade esquerda"
-                  onClick={() => run(() => snapFloat(menu.tabId, 'left'))}
-                />
-                <TabMenuItem
-                  label="Metade direita"
-                  onClick={() => run(() => snapFloat(menu.tabId, 'right'))}
-                />
-                <TabMenuItem
-                  label="Encaixar todas as flutuantes"
-                  onClick={() => run(() => dockAll())}
-                />
-              </>
-            )}
-            <div className="my-1 border-t border-ink-50" />
-            <TabMenuItem label="Fechar" onClick={() => run(() => closeTab(menu.tabId))} />
-            <TabMenuItem
-              label="Fechar outras"
-              disabled={!canCloseOthers}
-              onClick={() => run(() => closeOthers(menu.tabId))}
-            />
-            {menu.mode === 'docked' && (
-              <TabMenuItem
-                label="Fechar à direita"
-                disabled={!canCloseRight}
-                onClick={() => run(() => closeToTheRight(menu.tabId))}
-              />
-            )}
-            <TabMenuItem label="Fechar todas" danger onClick={() => run(() => closeAll())} />
-          </div>,
-          document.body,
-        )}
+              }}
+            >
+              Usar fuso local
+            </button>
+          ) : (
+            <span className="mona-pin__hint">
+              <CalendarDays size={12} strokeWidth={2.2} />
+              Abrir agenda
+            </span>
+          )}
+        </div>
+      </div>
     </div>
   )
 }
@@ -754,7 +969,7 @@ function UserMenu({
     <div className="relative" ref={ref}>
       <button
         type="button"
-        className="flex items-center gap-2 rounded-full border border-ink-100 bg-ink-50/70 p-1 sm:gap-3 sm:py-1.5 sm:pl-1.5 sm:pr-2.5"
+        className="flex items-center gap-2 rounded-full p-1 sm:gap-2.5 sm:py-1 sm:pl-1 sm:pr-2.5"
         aria-expanded={open}
         aria-haspopup="menu"
         onClick={() => setOpen((v) => !v)}
@@ -762,9 +977,8 @@ function UserMenu({
         <div className="mona-avatar flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold sm:h-9 sm:w-9">
           {initials}
         </div>
-        <div className="hidden leading-tight sm:block">
-          <p className="text-sm font-semibold text-ink-900">{name}</p>
-          <p className="text-xs text-ink-500">{role}</p>
+        <div className="hidden min-w-0 leading-tight sm:block">
+          <p className="truncate text-sm font-semibold text-ink-900">{name?.split(' ')[0]}</p>
         </div>
         <ChevronDown
           size={14}
@@ -879,7 +1093,7 @@ function AppShell() {
   const location = useLocation()
   const [searchParams] = useSearchParams()
   const embed = searchParams.get('embed') === '1'
-  const { preferences, saveTravel, browserTimeZone } = useUserPreferences()
+  const { preferences } = useUserPreferences()
   const { notifications, unread, markRead, markAll } = useNotifications()
   const [notifOpen, setNotifOpen] = useState(false)
   const [isMobile, setIsMobile] = useState(
@@ -903,13 +1117,6 @@ function AppShell() {
   })
   const [fanGroupId, setFanGroupId] = useState<string | null>(null)
   const sidebarRef = useRef<HTMLElement>(null)
-  const effectiveTz = preferences?.effectiveTimeZoneId || preferences?.timeZoneId || 'America/Sao_Paulo'
-  const homeTz = preferences?.homeTimeZoneId || preferences?.timeZoneId || 'America/Sao_Paulo'
-  const detectedDiffers =
-    !!browserTimeZone &&
-    !!homeTz &&
-    browserTimeZone !== homeTz &&
-    !preferences?.travelModeEnabled
 
   useEffect(() => {
     if (!isMobile) localStorage.setItem(SIDEBAR_KEY, collapsed ? '1' : '0')
@@ -1013,6 +1220,8 @@ function AppShell() {
   const contentMargin = 12 + railW + 12
   const drawerOpen = isMobile && !collapsed
   const compactRail = collapsed && !drawerOpen
+  const brandH = compactRail ? 80 : 72
+  const menuTop = 12 + brandH + 10
 
   return (
     <div className="mona-shell">
@@ -1024,25 +1233,34 @@ function AppShell() {
           onClick={() => setCollapsed(true)}
         />
       )}
+      <NavLink
+        to="/"
+        end
+        className={`mona-brand ${compactRail ? 'is-compact' : 'is-wide'}`}
+        style={{ width: railW, height: brandH }}
+        aria-label="MONA"
+        title="MONA"
+      >
+        <BrandMark compact={compactRail} />
+        {import.meta.env.VITE_FAKE_API === '1' && !compactRail && (
+          <span className="rounded-full bg-white/70 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-ink-700">
+            Fake
+          </span>
+        )}
+      </NavLink>
       <aside
         ref={sidebarRef}
         className={`mona-sidebar fixed z-30 flex flex-col overflow-visible transition-[width] ${
           compactRail ? 'is-compact w-20' : 'w-[248px]'
         }`}
-        style={{ top: 12, bottom: 12, left: 12 }}
+        style={{ top: menuTop, bottom: 12, left: 12 }}
       >
         <SidebarIndicator
           enabled
           layout={compactRail ? 'compact' : 'full'}
           tick={`${openGroups.join(',')}|${fanGroupId ?? ''}`}
         />
-        <div className={`relative z-[3] flex shrink-0 items-center gap-2 px-3 pt-4 ${compactRail ? 'flex-col' : 'px-4'}`}>
-          <BrandMark compact={compactRail} />
-          {import.meta.env.VITE_FAKE_API === '1' && !compactRail && (
-            <span className="rounded-full bg-white/70 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-ink-700">
-              Fake
-            </span>
-          )}
+        <div className={`relative z-[3] flex shrink-0 items-center ${compactRail ? 'justify-center pt-3' : 'justify-end px-3 pt-3'}`}>
           {compactRail ? (
             <button
               type="button"
@@ -1056,7 +1274,7 @@ function AppShell() {
           ) : (
             <button
               type="button"
-              className="ml-auto rounded-full p-1.5 text-ink-500 hover:bg-white/40"
+              className="rounded-full p-1.5 text-ink-500 hover:bg-white/40"
               title="Recolher menu"
               onClick={() => setCollapsed(true)}
             >
@@ -1184,19 +1402,37 @@ function AppShell() {
         className="mona-canvas my-3 mr-3 min-w-0 flex-1 transition-[margin]"
         style={{ marginLeft: contentMargin }}
       >
-        <header className="mona-topbar">
-          <div className="flex min-w-0 items-center gap-2 px-3 py-3 sm:gap-4 sm:px-6">
-            {collapsed && (
+        <section className="mona-workspace">
+          {isMobile && collapsed && (
+          <header className="mona-topbar">
+            <div className="flex min-w-0 items-center gap-2 px-3 pt-3 sm:px-4">
               <button
                 type="button"
-                className="mona-icon-btn shrink-0 md:hidden"
+                className="mona-icon-btn shrink-0"
                 onClick={() => setCollapsed(false)}
                 aria-label="Abrir menu"
               >
                 <PanelLeftOpen size={16} />
               </button>
-            )}
-            <div className="relative mx-auto min-w-0 w-full max-w-xl">
+            </div>
+          </header>
+          )}
+
+          <main className="mona-canvas__main px-3 pb-24 pt-3 sm:px-6 sm:pb-28 sm:pt-4 lg:px-8">
+            <Outlet />
+          </main>
+
+          <div className="mona-command">
+            <button
+              type="button"
+              className="mona-command__plus"
+              title="Nova tarefa"
+              aria-label="Nova tarefa"
+              onClick={() => navigate('/todos')}
+            >
+              <Plus size={18} strokeWidth={2.4} />
+            </button>
+            <div className="mona-command__field">
               <Search className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-ink-500" size={16} />
               <input
                 type="search"
@@ -1210,129 +1446,93 @@ function AppShell() {
                 }}
               />
             </div>
-            <div className="relative ml-auto flex shrink-0 items-center gap-2 sm:gap-3">
-              <button
-                type="button"
-                className="mona-icon-btn"
-                aria-label={theme === 'dark' ? 'Tema claro' : 'Tema escuro'}
-                title={theme === 'dark' ? 'Tema claro' : 'Tema escuro'}
-                onClick={() => toggleTheme()}
-              >
-                {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
-              </button>
-              <button
-                type="button"
-                className="mona-icon-btn relative"
-                aria-label="Notificações"
-                onClick={() => setNotifOpen((v) => !v)}
-              >
-                <Bell size={18} />
-                {unread > 0 && (
-                  <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white">
-                    {unread}
-                  </span>
-                )}
-              </button>
-              {notifOpen && (
-                <div className="absolute right-0 top-12 z-40 w-[min(24rem,calc(100vw-1.5rem))] rounded-3xl border border-ink-100 bg-white p-3 shadow-xl">
-                  <div className="mb-2 flex items-center justify-between">
-                    <p className="text-sm font-semibold text-ink-900">Alertas</p>
-                    <div className="flex gap-2">
-                      <button type="button" className="text-xs text-brand-800" onClick={() => markAll()}>
-                        Marcar vistas
-                      </button>
+          </div>
+        </section>
+
+        <aside className="mona-dock">
+          <div className="mona-panel mona-panel--tools">
+            <button
+              type="button"
+              className="mona-icon-btn"
+              aria-label={theme === 'dark' ? 'Tema claro' : 'Tema escuro'}
+              title={theme === 'dark' ? 'Tema claro' : 'Tema escuro'}
+              onClick={() => toggleTheme()}
+            >
+              {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
+            </button>
+            <button
+              type="button"
+              className="mona-icon-btn relative"
+              aria-label="Notificações"
+              onClick={() => setNotifOpen((v) => !v)}
+            >
+              <Bell size={18} />
+              {unread > 0 && (
+                <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white">
+                  {unread}
+                </span>
+              )}
+            </button>
+            {notifOpen && (
+              <div className="absolute right-0 top-[calc(100%+10px)] z-40 w-[min(24rem,calc(100vw-1.5rem))] rounded-3xl border border-ink-100 bg-white p-3 shadow-xl">
+                <div className="mb-2 flex items-center justify-between">
+                  <p className="text-sm font-semibold text-ink-900">Alertas</p>
+                  <div className="flex gap-2">
+                    <button type="button" className="text-xs text-brand-800" onClick={() => markAll()}>
+                      Marcar vistas
+                    </button>
+                    <button
+                      type="button"
+                      className="text-xs text-ink-500"
+                      onClick={() => {
+                        setNotifOpen(false)
+                        navigate('/notificacoes')
+                      }}
+                    >
+                      Gerenciar
+                    </button>
+                  </div>
+                </div>
+                <ul className="max-h-80 space-y-2 overflow-y-auto">
+                  {notifications.length === 0 && (
+                    <li className="py-6 text-center text-sm text-ink-500">Nenhuma notificação</li>
+                  )}
+                  {notifications.slice(0, 8).map((n) => (
+                    <li key={n.id}>
                       <button
                         type="button"
-                        className="text-xs text-ink-500"
+                        className={`w-full rounded-2xl px-3 py-2 text-left text-sm ${n.isRead ? 'bg-ink-50/50' : 'bg-brand-50'}`}
                         onClick={() => {
+                          markRead(n.id)
+                          if (n.link) navigate(n.link)
                           setNotifOpen(false)
-                          navigate('/notificacoes')
                         }}
                       >
-                        Gerenciar
+                        <p className="font-medium text-ink-900">{n.title}</p>
+                        <p className="text-xs text-ink-600">{n.body}</p>
+                        <p className="mt-1 text-[11px] text-ink-500">
+                          {new Date(n.occursAtLocal).toLocaleString('pt-BR')}
+                          {n.resolutionStatus ? ` · ${n.resolutionStatus}` : ''}
+                        </p>
                       </button>
-                    </div>
-                  </div>
-                  <ul className="max-h-80 space-y-2 overflow-y-auto">
-                    {notifications.length === 0 && (
-                      <li className="py-6 text-center text-sm text-ink-500">Nenhuma notificação</li>
-                    )}
-                    {notifications.slice(0, 8).map((n) => (
-                      <li key={n.id}>
-                        <button
-                          type="button"
-                          className={`w-full rounded-2xl px-3 py-2 text-left text-sm ${n.isRead ? 'bg-ink-50/50' : 'bg-brand-50'}`}
-                          onClick={() => {
-                            markRead(n.id)
-                            if (n.link) navigate(n.link)
-                            setNotifOpen(false)
-                          }}
-                        >
-                          <p className="font-medium text-ink-900">{n.title}</p>
-                          <p className="text-xs text-ink-600">{n.body}</p>
-                          <p className="mt-1 text-[11px] text-ink-500">
-                            {new Date(n.occursAtLocal).toLocaleString('pt-BR')}
-                            {n.resolutionStatus ? ` · ${n.resolutionStatus}` : ''}
-                          </p>
-                        </button>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-              <UserMenu
-                name={user?.name}
-                role={user?.isOwner ? 'Conta principal' : 'Usuário compartilhado'}
-                initials={initials}
-                unread={unread}
-                onLogout={() => void handleLogout()}
-              />
-            </div>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            <UserMenu
+              name={user?.name}
+              role={user?.isOwner ? 'Conta principal' : 'Usuário compartilhado'}
+              initials={initials}
+              unread={unread}
+              onLogout={() => void handleLogout()}
+            />
           </div>
-          <WorkspaceTabBar />
-        </header>
-
-        <main className="mona-canvas__main px-3 py-4 sm:px-6 sm:py-6 lg:px-8">
-          {(preferences?.isAwayFromHome || detectedDiffers) && (
-            <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-3xl bg-brand-50 px-4 py-3 text-sm text-ink-900">
-              <div>
-                {preferences?.travelModeEnabled ? (
-                  <p>
-                    Modo viagem: <strong>{effectiveTz}</strong>
-                    {preferences.travelLabel ? ` (${preferences.travelLabel})` : ''}. Casa: {homeTz}.
-                  </p>
-                ) : (
-                  <p>
-                    Dispositivo em <strong>{browserTimeZone}</strong>; fuso casa é <strong>{homeTz}</strong>.
-                  </p>
-                )}
-              </div>
-              <div className="flex gap-2">
-                {!preferences?.travelModeEnabled && browserTimeZone && (
-                  <Button
-                    size="sm"
-                    onClick={() =>
-                      void saveTravel({
-                        detectedTimeZoneId: browserTimeZone,
-                        travelModeEnabled: true,
-                        travelTimeZoneId: browserTimeZone,
-                        travelLabel: browserTimeZone,
-                      })
-                    }
-                  >
-                    Usar fuso local
-                  </Button>
-                )}
-                {preferences?.travelModeEnabled && (
-                  <Button size="sm" variant="secondary" onClick={() => void saveTravel({ travelModeEnabled: false })}>
-                    Voltar ao fuso casa
-                  </Button>
-                )}
-              </div>
-            </div>
-          )}
-          <Outlet />
-        </main>
+          <div className="mona-dock__stack">
+            <WorkspaceTabBar variant="stack" />
+          </div>
+          <DockAgendaPin />
+        </aside>
       </div>
 
       <FloatingTabsLayer />

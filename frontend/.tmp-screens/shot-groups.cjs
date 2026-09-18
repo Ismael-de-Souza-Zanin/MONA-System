@@ -14,8 +14,20 @@ async function main() {
   await page.goto('http://localhost:5174/login', { waitUntil: 'networkidle0', timeout: 30000 })
   await page.evaluate(() => localStorage.setItem('fatto_sidebar_collapsed', '1'))
   await page.click('button[type="submit"]')
-  await page.waitForSelector('.mona-sidebar.is-compact', { timeout: 20000 })
+  await page.waitForSelector('.mona-brand', { timeout: 20000 })
   await new Promise((r) => setTimeout(r, 700))
+  await page.screenshot({ path: path.join(out, 'brand-compact.png') })
+  const layout = await page.evaluate(() => {
+    const brand = document.querySelector('.mona-brand').getBoundingClientRect()
+    const side = document.querySelector('.mona-sidebar').getBoundingClientRect()
+    return {
+      brandH: Math.round(brand.height),
+      brandR: getComputedStyle(document.querySelector('.mona-brand')).borderRadius,
+      gap: Math.round(side.top - brand.bottom),
+      sameLeft: Math.round(brand.left) === Math.round(side.left),
+    }
+  })
+  console.log('brand', JSON.stringify(layout))
   const sidebar = await page.$('.mona-sidebar')
   const hints = await page.evaluate(() =>
     [...document.querySelectorAll('.mona-fan')].map((fan, i) => {

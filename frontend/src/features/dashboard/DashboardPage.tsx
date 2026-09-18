@@ -170,8 +170,8 @@ export function DashboardPage() {
 
   return (
     <div>
-      <section className="mona-hero">
-        <div className="relative z-[1] max-w-xl">
+      <section className="mona-hero mona-hero--stage">
+        <div className="relative z-[2] max-w-xl">
           <p className="text-sm font-semibold text-brand-800">
             {greeting()}, {firstName(user?.name)}
           </p>
@@ -189,6 +189,20 @@ export function DashboardPage() {
           <span className="mona-blob bottom-2 left-10 h-10 w-14 bg-[color:var(--mona-color-orange)]/45" />
           <div className="absolute inset-0 flex items-center justify-center">
             <BrandLogo size={88} />
+          </div>
+        </div>
+        <div className="mona-hero__card">
+          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-ink-500">Hoje</p>
+          <p className="mt-1 text-sm capitalize text-ink-700">{today}</p>
+          <div className="mt-3 space-y-2">
+            <Link to="/todos" className="flex items-center justify-between rounded-2xl bg-brand-50 px-3 py-2.5 text-sm">
+              <span>Tarefas pendentes</span>
+              <strong>{stats?.myTodos ?? 0}</strong>
+            </Link>
+            <Link to="/agenda" className="mona-tint-orange flex items-center justify-between rounded-2xl px-3 py-2.5 text-sm">
+              <span>Agenda de hoje</span>
+              <strong>{stats?.agendaToday ?? stats?.myAgenda ?? 0}</strong>
+            </Link>
           </div>
         </div>
       </section>
@@ -214,83 +228,55 @@ export function DashboardPage() {
         </Link>
       </div>
 
-      <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_280px]">
-        <div className="min-w-0">
-          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-            {cards.slice(0, 4).map((card, index) => (
-              <KpiCard
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        {cards.slice(0, 4).map((card, index) => (
+          <KpiCard
+            key={card.label}
+            to={card.to}
+            label={card.label}
+            value={card.value}
+            hint={'hint' in card ? card.hint : undefined}
+            icon={card.icon}
+            tone={KPI_TONES[index % KPI_TONES.length]}
+          />
+        ))}
+      </div>
+
+      <div className="mt-6 grid gap-4 lg:grid-cols-[1.4fr_1fr]">
+        <Card className="rounded-[24px]">
+          <div className="mb-4 flex items-center justify-between">
+            <h2 className="text-base font-semibold text-ink-900">Atalhos do sistema</h2>
+            <ArrowUpRight size={16} className="text-ink-500" />
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2">
+            {cards.map((card) => (
+              <Link
                 key={card.label}
                 to={card.to}
-                label={card.label}
-                value={card.value}
-                hint={'hint' in card ? card.hint : undefined}
-                icon={card.icon}
-                tone={KPI_TONES[index % KPI_TONES.length]}
-              />
+                className="rounded-2xl border border-ink-100 px-4 py-3 transition hover:border-brand-500/40 hover:bg-brand-50/40"
+              >
+                <p className="text-sm font-medium text-ink-900">{card.label}</p>
+                <p className="mt-1 text-xs text-ink-500">Abrir módulo</p>
+              </Link>
             ))}
           </div>
+        </Card>
 
-          <div className="mt-6 grid gap-4 lg:grid-cols-[1.4fr_1fr]">
-            <Card className="rounded-[24px]">
-              <div className="mb-4 flex items-center justify-between">
-                <h2 className="text-base font-semibold text-ink-900">Atalhos do sistema</h2>
-                <ArrowUpRight size={16} className="text-ink-500" />
-              </div>
-              <div className="grid gap-3 sm:grid-cols-2">
-                {cards.map((card) => (
-                  <Link
-                    key={card.label}
-                    to={card.to}
-                    className="rounded-2xl border border-ink-100 px-4 py-3 transition hover:border-brand-500/40 hover:bg-brand-50/40"
-                  >
-                    <p className="text-sm font-medium text-ink-900">{card.label}</p>
-                    <p className="mt-1 text-xs text-ink-500">Abrir módulo</p>
-                  </Link>
-                ))}
-              </div>
-            </Card>
-
-            <Card className="rounded-[24px]">
-              <h2 className="mb-4 text-base font-semibold text-ink-900">Ações rápidas</h2>
-              <div className="space-y-2">
-                {quickLinks.map((item) => (
-                  <Link
-                    key={item.label}
-                    to={item.to}
-                    className="flex items-center justify-between rounded-2xl border border-ink-100 px-3 py-2.5 text-sm font-medium text-ink-800 transition hover:bg-ink-50"
-                  >
-                    {item.label}
-                    <ArrowUpRight size={14} className="text-brand-800" />
-                  </Link>
-                ))}
-              </div>
-            </Card>
+        <Card className="rounded-[24px]">
+          <h2 className="mb-4 text-base font-semibold text-ink-900">Ações rápidas</h2>
+          <div className="space-y-2">
+            {quickLinks.map((item) => (
+              <Link
+                key={item.label}
+                to={item.to}
+                className="flex items-center justify-between rounded-2xl border border-ink-100 px-3 py-2.5 text-sm font-medium text-ink-800 transition hover:bg-ink-50"
+              >
+                {item.label}
+                <ArrowUpRight size={14} className="text-brand-800" />
+              </Link>
+            ))}
           </div>
-        </div>
-
-        <aside className="hidden xl:block">
-          <Card className="rounded-[24px]">
-            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-ink-500">Meu perfil</p>
-            <div className="mt-4 flex items-center gap-3">
-              <BrandLogo size={52} />
-              <div className="min-w-0">
-                <p className="truncate font-semibold text-ink-900">{user?.name}</p>
-                <p className="text-xs text-ink-500">{user?.isOwner ? 'Conta principal' : 'Usuário compartilhado'}</p>
-              </div>
-            </div>
-            <p className="mt-5 text-xs capitalize text-ink-500">{today}</p>
-            <div className="mt-3 space-y-2">
-              <Link to="/todos" className="flex items-center justify-between rounded-2xl bg-brand-50 px-3 py-2.5 text-sm">
-                <span>Tarefas pendentes</span>
-                <strong>{stats?.myTodos ?? 0}</strong>
-              </Link>
-              <Link to="/agenda" className="mona-tint-orange flex items-center justify-between rounded-2xl px-3 py-2.5 text-sm">
-                <span>Agenda de hoje</span>
-                <strong>{stats?.agendaToday ?? stats?.myAgenda ?? 0}</strong>
-              </Link>
-            </div>
-          </Card>
-        </aside>
+        </Card>
       </div>
     </div>
   )

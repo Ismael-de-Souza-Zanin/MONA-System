@@ -392,10 +392,36 @@
     color: var(--mona-color-info-ink);
   }
 
-  .mona-shell {
-    height: 100vh;
-    height: 100dvh;
+  .mona-brand {
+    position: fixed;
+    z-index: 31;
+    top: 12px;
+    left: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
     overflow: hidden;
+    text-decoration: none;
+    background: var(--mona-chrome-sidebar-bg);
+    background-image: var(--mona-chrome-sidebar-gradient);
+    box-shadow: 0 14px 32px color-mix(in srgb, var(--mona-color-coral) 14%, transparent);
+    color: var(--mona-chrome-sidebar-ink);
+    transition: width 0.2s ease, height 0.2s ease, border-radius 0.2s ease;
+  }
+
+  .mona-brand.is-compact {
+    border-radius: 50%;
+  }
+
+  .mona-brand.is-wide {
+    justify-content: flex-start;
+    padding: 0 1rem;
+    border-radius: var(--mona-radius-xl);
+  }
+
+  .mona-brand:hover {
+    filter: brightness(1.02);
   }
 
   .mona-sidebar {
@@ -845,16 +871,239 @@
   }
 
   .mona-canvas {
-    display: flex;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 248px;
+    grid-template-rows: minmax(0, 1fr);
+    gap: 10px;
     height: calc(100dvh - 24px);
     max-height: calc(100dvh - 24px);
     min-width: 0;
-    flex: 1;
+    overflow: visible;
+    background: transparent;
+    box-shadow: none;
+    border-radius: 0;
+  }
+
+  @media (max-width: 1023px) {
+    .mona-canvas {
+      grid-template-columns: minmax(0, 1fr);
+      grid-template-rows: auto minmax(0, 1fr);
+    }
+
+    .mona-dock {
+      order: -1;
+      flex-direction: row;
+      flex-wrap: wrap;
+      align-items: stretch;
+      max-height: none;
+    }
+
+    .mona-dock__stack {
+      flex: 1 1 220px;
+      flex-direction: row;
+      justify-content: flex-end;
+      padding: 0;
+    }
+
+    .mona-dock__stack > * + * {
+      margin-top: 0;
+      margin-left: -2.4rem;
+    }
+
+    .mona-stack__card {
+      min-width: 148px;
+      margin-top: 0;
+      flex: 1 1 160px;
+      max-height: none;
+    }
+
+    .mona-panel--pin {
+      flex: 0 0 168px;
+    }
+  }
+
+  .mona-workspace {
+    position: relative;
+    display: flex;
+    min-width: 0;
+    min-height: 0;
     flex-direction: column;
     overflow: hidden;
     border-radius: var(--mona-radius-xl);
     background: var(--mona-color-surface);
     box-shadow: 0 18px 48px color-mix(in srgb, var(--mona-color-coral) 14%, transparent);
+  }
+
+  .mona-dock {
+    position: relative;
+    display: flex;
+    min-height: 0;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .mona-panel {
+    background: var(--mona-color-surface);
+    box-shadow: 0 14px 32px color-mix(in srgb, var(--mona-color-coral) 12%, transparent);
+    border-radius: var(--mona-radius-xl);
+  }
+
+  .mona-panel--tools {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.15rem;
+    padding: 0.28rem 0.3rem 0.28rem 0.35rem;
+    border-radius: 999px;
+  }
+
+  .mona-panel--tools .mona-icon-btn {
+    border: 0;
+    background: transparent;
+    width: 36px;
+    height: 36px;
+  }
+
+  .mona-dock__stack {
+    display: flex;
+    min-height: 0;
+    flex: 1;
+    flex-direction: column;
+    justify-content: flex-end;
+    padding: 0.2rem 0.1rem 0.2rem 0.95rem;
+  }
+
+  .mona-stack__card {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    width: 100%;
+    min-height: 76px;
+    flex: 1 1 0;
+    max-height: 128px;
+    margin-top: -3.1rem;
+    padding: 1.05rem 1rem 1rem 1.15rem;
+    border: 0;
+    border-radius: 28px;
+    background: color-mix(in srgb, var(--mona-color-surface) 82%, var(--fv-ink-50));
+    box-shadow: 0 16px 34px color-mix(in srgb, var(--mona-color-coral) 13%, transparent);
+    text-align: left;
+    cursor: pointer;
+  }
+
+  .mona-dock__stack > :first-child {
+    margin-top: 0;
+  }
+
+  .mona-stack__card.is-active,
+  .mona-stack__card.is-front {
+    z-index: 8;
+    flex: 1.45 1 0;
+    max-height: 168px;
+    background: var(--mona-color-surface);
+  }
+
+  .mona-stack__card.is-float {
+    background: color-mix(in srgb, var(--mona-color-surface) 80%, var(--mona-color-purple) 8%);
+  }
+
+  .mona-stack__handle {
+    position: absolute;
+    left: -13px;
+    top: 28%;
+    width: 14px;
+    height: 42px;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--fv-ink-200) 58%, var(--mona-color-surface));
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--mona-color-border) 55%, transparent);
+  }
+
+  .mona-panel--pin {
+    display: flex;
+    flex: 0 0 198px;
+    flex-direction: column;
+    overflow: hidden;
+    border: 0;
+    padding: 0.7rem 0.75rem 0.75rem;
+    text-align: left;
+    cursor: pointer;
+  }
+
+  .mona-panel--pin.is-active {
+    box-shadow: 0 16px 36px color-mix(in srgb, var(--mona-color-orange) 22%, transparent);
+  }
+
+  .mona-pin__bar {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    width: fit-content;
+    margin-bottom: 0.65rem;
+    padding: 0.18rem 0.55rem;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--fv-ink-200) 28%, var(--mona-color-surface));
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--mona-color-muted);
+  }
+
+  .mona-pin__body {
+    position: relative;
+    min-height: 0;
+    flex: 1;
+    overflow: hidden;
+    border-radius: 22px;
+    padding: 0.85rem 0.9rem;
+    background:
+      radial-gradient(120px 80px at 80% 20%, color-mix(in srgb, var(--mona-color-orange) 28%, transparent), transparent 70%),
+      radial-gradient(140px 90px at 20% 90%, color-mix(in srgb, var(--mona-color-purple) 22%, transparent), transparent 70%),
+      color-mix(in srgb, var(--fv-ink-50) 80%, var(--mona-color-surface));
+  }
+
+  .mona-pin__time {
+    margin: 0;
+    font-family: var(--mona-font-display);
+    font-size: 1.7rem;
+    font-weight: 700;
+    letter-spacing: -0.05em;
+    line-height: 1;
+    color: var(--mona-color-ink);
+  }
+
+  .mona-pin__tz {
+    margin: 0.35rem 0 0;
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: var(--mona-color-ink);
+  }
+
+  .mona-pin__meta {
+    margin: 0.2rem 0 0;
+    font-size: 0.7rem;
+    color: var(--mona-color-muted);
+  }
+
+  .mona-pin__action,
+  .mona-pin__hint {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    margin-top: 0.7rem;
+    border: 0;
+    border-radius: 999px;
+    padding: 0.28rem 0.6rem;
+    background: color-mix(in srgb, var(--mona-color-surface) 78%, transparent);
+    font-size: 0.68rem;
+    font-weight: 600;
+    color: var(--mona-color-ink);
+    cursor: pointer;
+  }
+
+  .mona-pin__hint {
+    cursor: inherit;
   }
 
   .mona-canvas__main {
@@ -872,24 +1121,66 @@
     z-index: 20;
     flex-shrink: 0;
     background: color-mix(in srgb, var(--mona-color-surface) 88%, transparent);
-    backdrop-filter: blur(16px);
+  }
+
+  .mona-command {
+    position: absolute;
+    left: 1.1rem;
+    bottom: 1.1rem;
+    z-index: 25;
+    display: flex;
+    width: min(460px, calc(100% - 2.2rem));
+    align-items: center;
+    gap: 0.7rem;
+    pointer-events: none;
+  }
+
+  .mona-command__plus,
+  .mona-command__field {
+    pointer-events: auto;
+  }
+
+  .mona-command__plus {
+    display: flex;
+    width: 46px;
+    height: 46px;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    border: 0;
+    border-radius: 50%;
+    background: var(--mona-color-surface);
+    color: var(--mona-color-ink);
+    box-shadow: 0 12px 28px color-mix(in srgb, var(--mona-color-coral) 18%, transparent);
+    cursor: pointer;
+  }
+
+  .mona-command__plus:hover {
+    filter: brightness(1.03);
+  }
+
+  .mona-command__field {
+    position: relative;
+    min-width: 0;
+    flex: 1;
   }
 
   .mona-search {
     width: 100%;
-    border: 1px solid var(--mona-color-border);
+    border: 0;
     border-radius: var(--mona-radius-pill);
-    background: var(--fv-ink-50);
-    padding: 0.6rem 1rem 0.6rem 2.5rem;
+    background: var(--mona-color-surface);
+    padding: 0.8rem 1rem 0.8rem 2.6rem;
     font-size: 0.875rem;
     color: var(--mona-color-ink);
     outline: none;
+    box-shadow: 0 12px 28px color-mix(in srgb, var(--mona-color-coral) 16%, transparent);
+  }
 
-    &:focus {
-      background: var(--mona-color-surface);
-      border-color: var(--mona-color-accent);
-      box-shadow: var(--mona-ring-accent);
-    }
+  .mona-search:focus {
+    box-shadow:
+      var(--mona-ring-accent),
+      0 12px 28px color-mix(in srgb, var(--mona-color-coral) 16%, transparent);
   }
 
   .mona-icon-btn {
@@ -918,7 +1209,7 @@
 
   .mona-hero {
     position: relative;
-    overflow: hidden;
+    overflow: visible;
     display: flex;
     flex-wrap: wrap;
     align-items: center;
@@ -933,6 +1224,37 @@
       radial-gradient(360px 180px at 8% 100%, color-mix(in srgb, var(--mona-color-pink) 18%, transparent), transparent 70%),
       radial-gradient(320px 160px at 0% 0%, color-mix(in srgb, var(--mona-color-purple) 16%, transparent), transparent 70%),
       linear-gradient(180deg, color-mix(in srgb, var(--mona-color-coral) 8%, var(--mona-color-surface)), var(--mona-color-surface));
+  }
+
+  .mona-hero--stage {
+    min-height: 340px;
+    margin-bottom: 3.4rem;
+    overflow: visible;
+    padding: 1.6rem 1.5rem 6.2rem;
+  }
+
+  .mona-hero--stage .mona-hero__art {
+    position: absolute;
+    top: 1.2rem;
+    right: 19.5rem;
+    bottom: auto;
+    left: auto;
+    width: 120px;
+    height: 120px;
+    pointer-events: none;
+    opacity: 0.55;
+  }
+
+  .mona-hero__card {
+    position: absolute;
+    right: 1.15rem;
+    bottom: -1.55rem;
+    z-index: 3;
+    width: min(280px, calc(100% - 2rem));
+    padding: 1rem 1.15rem;
+    border-radius: 28px;
+    background: var(--mona-color-surface);
+    box-shadow: 0 22px 44px color-mix(in srgb, var(--mona-color-coral) 18%, transparent);
   }
 
   .mona-hero__title {
