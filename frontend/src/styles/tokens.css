@@ -52,16 +52,16 @@
   --mona-shell-pad: 12px;
   --mona-sidebar-w: 248px;
   --mona-sidebar-w-collapsed: 80px;
-  --mona-notch-size: 100px;
-  --mona-notch-depth: 65px;
-  --mona-notch-scoop: 25px;
-  --mona-notch-radius: 50px;
-  --mona-notch-lip: 40px;
-  --mona-notch-pop: 12px;
+  --mona-notch-size: 64px;
+  --mona-notch-depth: 59px;
+  --mona-notch-scoop: 19px;
+  --mona-notch-radius: 32px;
+  --mona-notch-lip: 24px;
+  --mona-notch-pop: 11px;
   --mona-notch-pop-full: 8px;
-  --mona-notch-circle: 40px;
-  --mona-notch-circle-full: 32px;
-  --mona-notch-shadow: 5px 5px 0 rgb(0 0 0 / 0.25);
+  --mona-notch-circle: 39px;
+  --mona-notch-circle-full: 31px;
+  --mona-notch-shadow: 12px 12px 0 rgb(0 0 0 / 0.25);
 
   --mona-shadow-sm: var(--fv-shadow);
   --mona-ring-accent: 0 0 0 4px color-mix(in srgb, var(--mona-color-accent) 16%, transparent);

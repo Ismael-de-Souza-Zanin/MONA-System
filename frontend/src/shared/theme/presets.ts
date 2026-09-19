@@ -22,12 +22,12 @@ const monaLightType: AppearanceType = {
 }
 
 export const defaultNotchChrome = {
-  notchSize: 100,
-  notchDepth: 65,
-  notchScoop: 25,
-  notchPop: 12,
-  notchCircle: 40,
-  notchShadow: 5,
+  notchSize: 64,
+  notchDepth: 59,
+  notchScoop: 19,
+  notchPop: 11,
+  notchCircle: 39,
+  notchShadow: 12,
 }
 
 const monaLightChrome: AppearanceChrome = {
@@ -103,7 +103,6 @@ export function presetPrefs(id: Exclude<AppearancePrefs['preset'], 'custom'>): A
           sidebarInk: '#5c4a3c',
           sidebarActiveBg: '#ff5b7a',
           sidebarActiveInk: '#fffdf9',
-          tabStyle: 'chip',
           tabActiveBg: '#fffdf9',
           tabActiveInk: '#ff5b7a',
           windowRadius: 'md',
@@ -152,7 +151,6 @@ export function presetPrefs(id: Exclude<AppearancePrefs['preset'], 'custom'>): A
           sidebarInk: '#3d5560',
           sidebarActiveBg: '#0e7490',
           sidebarActiveInk: '#ffffff',
-          tabStyle: 'underline',
           tabActiveBg: '#f0f6f8',
           tabActiveInk: '#0e7490',
           windowRadius: 'md',
@@ -177,7 +175,6 @@ export function presetPrefs(id: Exclude<AppearancePrefs['preset'], 'custom'>): A
           sidebarInk: '#111111',
           sidebarActiveBg: '#111111',
           sidebarActiveInk: '#ffffff',
-          tabStyle: 'underline',
           tabActiveInk: '#111111',
           windowRadius: 'sm',
           windowShadow: 'strong',
@@ -197,14 +194,19 @@ export function presetPrefs(id: Exclude<AppearancePrefs['preset'], 'custom'>): A
 
 export function hydrateAppearance(prefs: AppearancePrefs): AppearancePrefs {
   const chrome = { ...monaLightChrome, ...prefs.chrome }
-  if (chrome.notchSize === 78 && chrome.notchDepth === 52 && (chrome.notchPop === 28 || chrome.notchPop === 12)) {
-    Object.assign(chrome, defaultNotchChrome)
-  }
+  const factoryNotch =
+    (chrome.notchSize === 100 && chrome.notchDepth === 65) ||
+    (chrome.notchSize === 78 && chrome.notchDepth === 52) ||
+    chrome.notchCircle === 46 ||
+    (chrome.notchSize === 100 && chrome.notchCircle === 40)
+  if (factoryNotch) Object.assign(chrome, defaultNotchChrome)
   if (chrome.sidebarBg === '#d9c6ff' || chrome.sidebarBg === '#f3e7ff') {
     chrome.sidebarBg = '#ffffff'
     if (chrome.sidebarInk === '#3d2740') chrome.sidebarInk = '#0f0a1a'
   }
-  if (chrome.notchCircle === 46) chrome.notchCircle = 40
+  if (chrome.tabStyle === 'underline' || chrome.tabStyle === 'chip') {
+    if (prefs.preset !== 'custom') chrome.tabStyle = 'pill'
+  }
   return {
     ...prefs,
     colors: { ...monaLightColors, ...prefs.colors },

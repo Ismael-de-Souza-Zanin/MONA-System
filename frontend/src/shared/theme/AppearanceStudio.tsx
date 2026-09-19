@@ -615,7 +615,7 @@ export function AppearanceStudio() {
                   <RangeField
                     label="Tamanho"
                     hint="Altura do recorte em U"
-                    value={appearance.chrome.notchSize ?? 100}
+                    value={appearance.chrome.notchSize ?? 64}
                     min={64}
                     max={160}
                     onChange={(notchSize) => patchAppearance({ chrome: { ...appearance.chrome, notchSize } })}
@@ -623,7 +623,7 @@ export function AppearanceStudio() {
                   <RangeField
                     label="Profundidade"
                     hint="Quanto o U entra no menu"
-                    value={appearance.chrome.notchDepth ?? 65}
+                    value={appearance.chrome.notchDepth ?? 59}
                     min={36}
                     max={96}
                     onChange={(notchDepth) => patchAppearance({ chrome: { ...appearance.chrome, notchDepth } })}
@@ -631,7 +631,7 @@ export function AppearanceStudio() {
                   <RangeField
                     label="Curva"
                     hint="Canto de encontro com a barra"
-                    value={appearance.chrome.notchScoop ?? 25}
+                    value={appearance.chrome.notchScoop ?? 19}
                     min={10}
                     max={40}
                     onChange={(notchScoop) => patchAppearance({ chrome: { ...appearance.chrome, notchScoop } })}
@@ -639,7 +639,7 @@ export function AppearanceStudio() {
                   <RangeField
                     label="Avanço do ícone"
                     hint="Quanto o círculo entra no recorte"
-                    value={appearance.chrome.notchPop ?? 12}
+                    value={appearance.chrome.notchPop ?? 11}
                     min={0}
                     max={36}
                     onChange={(notchPop) => patchAppearance({ chrome: { ...appearance.chrome, notchPop } })}
@@ -647,7 +647,7 @@ export function AppearanceStudio() {
                   <RangeField
                     label="Círculo"
                     hint="Diâmetro do botão ativo"
-                    value={appearance.chrome.notchCircle ?? 40}
+                    value={appearance.chrome.notchCircle ?? 39}
                     min={32}
                     max={64}
                     onChange={(notchCircle) => patchAppearance({ chrome: { ...appearance.chrome, notchCircle } })}
@@ -655,7 +655,7 @@ export function AppearanceStudio() {
                   <RangeField
                     label="Sombra"
                     hint="Relevo do círculo sobre o recorte"
-                    value={appearance.chrome.notchShadow ?? 5}
+                    value={appearance.chrome.notchShadow ?? 12}
                     min={0}
                     max={18}
                     onChange={(notchShadow) => patchAppearance({ chrome: { ...appearance.chrome, notchShadow } })}

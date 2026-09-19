@@ -89,23 +89,37 @@ function TodoCard({
   todo,
   columns,
   onMove,
+  onToggleDone,
   onAddComment,
   onSchedule,
 }: {
   todo: TodoItem
   columns: BoardColumn[]
   onMove: (id: string, boardColumnId: string) => void
+  onToggleDone: (todo: TodoItem, done: boolean) => void
   onAddComment: (todo: TodoItem) => void
   onSchedule: (todo: TodoItem) => void
 }) {
   const [expanded, setExpanded] = useState(false)
   const nextAction = compactNextAction(todo)
+  const doneColumn = columns.find((column) => column.marksComplete)
+  const checked = todo.status === 'Done' || Boolean(doneColumn && todo.boardColumnId === doneColumn.id)
 
   return (
     <Card className={`p-3 ${todo.isOverdue ? 'ring-1 ring-red-300' : ''}`}>
       <div className="flex items-start justify-between gap-2">
-        <div className="min-w-0">
-          <p className="font-medium text-ink-900">{todo.title}</p>
+        <div className="min-w-0 flex-1">
+          <div className="mona-checklist">
+            <input
+              id={`todo-check-${todo.id}`}
+              type="checkbox"
+              checked={checked}
+              onChange={(event) => onToggleDone(todo, event.target.checked)}
+            />
+            <label htmlFor={`todo-check-${todo.id}`} className="font-medium">
+              {todo.title}
+            </label>
+          </div>
           <p className="mt-1 line-clamp-2 text-xs text-ink-600">{nextAction}</p>
         </div>
         <button
@@ -266,6 +280,23 @@ export function TodosPage() {
       void qc.invalidateQueries({ queryKey: ['todos'] })
       void qc.invalidateQueries({ queryKey: ['todo-columns'] })
       void qc.invalidateQueries({ queryKey: ['notifications'] })
+    },
+  })
+
+  const completeMutation = useMutation({
+    mutationFn: (id: string) => api.patch(`/todos/${id}`, { status: 'Done' }),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ['todos'] })
+      void qc.invalidateQueries({ queryKey: ['todo-columns'] })
+      void qc.invalidateQueries({ queryKey: ['notifications'] })
+    },
+  })
+
+  const reopenMutation = useMutation({
+    mutationFn: (id: string) => api.patch(`/todos/${id}`, { status: 'Todo' }),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ['todos'] })
+      void qc.invalidateQueries({ queryKey: ['todo-columns'] })
     },
   })
 
@@ -432,6 +463,17 @@ export function TodosPage() {
                       todo={todo}
                       columns={columns}
                       onMove={(id, boardColumnId) => moveMutation.mutate({ id, boardColumnId })}
+                      onToggleDone={(item, done) => {
+                        const completeColumn = columns.find((column) => column.marksComplete)
+                        const openColumn = columns.find((column) => !column.marksComplete)
+                        if (done) {
+                          if (completeColumn) moveMutation.mutate({ id: item.id, boardColumnId: completeColumn.id })
+                          else completeMutation.mutate(item.id)
+                          return
+                        }
+                        if (openColumn) moveMutation.mutate({ id: item.id, boardColumnId: openColumn.id })
+                        else reopenMutation.mutate(item.id)
+                      }}
                       onAddComment={setCommentTodo}
                       onSchedule={setScheduleTodo}
                     />

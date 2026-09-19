@@ -12,6 +12,12 @@
   initial-value: 0px;
 }
 
+@property --mona-notch-x {
+  syntax: "<length>";
+  inherits: true;
+  initial-value: 0px;
+}
+
 @layer mona {
   .mona-page {
     min-width: 0;
@@ -146,6 +152,134 @@
     width: 1rem;
     height: 1rem;
     accent-color: var(--mona-color-accent);
+  }
+
+  .mona-checklist {
+    --background: var(--mona-color-surface, #ffffff);
+    --text: var(--mona-color-ink, #414856);
+    --check: var(--mona-color-accent, #4f29f0);
+    --disabled: var(--mona-color-muted, #c3c8de);
+    display: grid;
+    grid-template-columns: 15px minmax(0, 1fr);
+    align-items: center;
+    column-gap: 15px;
+    width: 100%;
+    min-width: 0;
+
+    label {
+      color: var(--text);
+      position: relative;
+      cursor: pointer;
+      display: grid;
+      align-items: center;
+      width: fit-content;
+      max-width: 100%;
+      min-width: 0;
+      font-size: 0.8125rem;
+      line-height: 1.25;
+      transition: color 0.3s ease;
+
+      &::before,
+      &::after {
+        content: "";
+        position: absolute;
+      }
+
+      &::before {
+        height: 2px;
+        width: 8px;
+        left: -27px;
+        background: var(--check);
+        border-radius: 2px;
+        transition: background 0.3s ease;
+      }
+
+      &::after {
+        height: 4px;
+        width: 4px;
+        top: 8px;
+        left: -25px;
+        border-radius: 50%;
+      }
+    }
+
+    input[type="checkbox"] {
+      appearance: none;
+      -webkit-appearance: none;
+      position: relative;
+      height: 15px;
+      width: 15px;
+      outline: none;
+      border: 0;
+      margin: 0;
+      cursor: pointer;
+      background: var(--background);
+      display: grid;
+      align-items: center;
+
+      &::before,
+      &::after {
+        content: "";
+        position: absolute;
+        height: 2px;
+        top: auto;
+        background: var(--check);
+        border-radius: 2px;
+      }
+
+      &::before {
+        width: 0;
+        right: 60%;
+        transform-origin: right bottom;
+      }
+
+      &::after {
+        width: 0;
+        left: 40%;
+        transform-origin: left bottom;
+      }
+
+      &:checked {
+        &::before {
+          animation: mona-check-01 0.4s ease forwards;
+        }
+
+        &::after {
+          animation: mona-check-02 0.4s ease forwards;
+        }
+
+        + label {
+          color: var(--disabled);
+          animation: mona-check-move 0.3s ease 0.1s forwards;
+
+          &::before {
+            background: var(--disabled);
+            animation: mona-check-slice 0.4s ease forwards;
+          }
+
+          &::after {
+            animation: mona-check-firework 0.5s ease forwards 0.1s;
+          }
+        }
+      }
+    }
+  }
+
+  .mona-day__task {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.45rem;
+    min-width: 0;
+    padding: 0.2rem 0.15rem;
+
+    em {
+      flex-shrink: 0;
+      font-style: normal;
+      font-size: 0.65rem;
+      font-weight: 600;
+      color: var(--mona-color-danger-ink, #b42318);
+    }
   }
 
   .mona-btn {
@@ -772,11 +906,155 @@
 
   .mona-sidebar.is-compact .mona-sidebar__link.is-compact.is-notch-item .mona-sidebar__link-inner {
     z-index: 2;
-    transform: translateX(var(--mona-notch-pop, 12px));
+    transform: translateX(var(--mona-notch-pop, 11px));
     transition-delay: 0.2s;
     background: var(--mona-color-surface);
     color: var(--mona-color-ink);
-    box-shadow: 0 var(--mona-notch-shadow, 5px 5px 0 rgb(0 0 0 / 0.25));
+    box-shadow: 0 var(--mona-notch-shadow, 12px 12px 0 rgb(0 0 0 / 0.25));
+  }
+
+  .mona-sidebar.is-mobile-dock {
+    flex-direction: row;
+    align-items: flex-end;
+    justify-content: space-between;
+    width: auto;
+    padding: 0 12px 8px;
+    border-radius: 28px 28px 0 0;
+    overflow: visible;
+    box-shadow: 0 -8px 24px color-mix(in srgb, var(--mona-color-coral) 12%, transparent);
+    transition: --mona-notch-x 0.3s ease-out;
+
+    &.is-notch-ready {
+      transition: --mona-notch-x 0.3s ease-out;
+    }
+
+    &.has-notch::before {
+      -webkit-mask-position: 0 0, left var(--mona-notch-x) top -3px;
+      mask-position: 0 0, left var(--mona-notch-x) top -3px;
+    }
+
+    .mona-sidebar__nav {
+      display: block;
+      min-width: 0;
+      flex: 1;
+      height: calc(100% + 36px);
+      margin-top: -36px;
+      overflow: visible;
+    }
+
+    .mona-sidebar__compact {
+      display: flex;
+      flex-direction: row;
+      align-items: flex-end;
+      justify-content: space-between;
+      width: 100%;
+      min-width: 0;
+      height: 100%;
+      padding: 36px 0 0;
+    }
+
+    .mona-sidebar__compact > ul {
+      display: contents;
+    }
+
+    .mona-sidebar__compact > ul > li,
+    .mona-sidebar__compact > .mona-fan,
+    .mona-sidebar__compact > [data-sidebar-dock],
+    .mona-sidebar__cta-slot {
+      display: flex;
+      flex: 1 1 0;
+      align-items: flex-end;
+      justify-content: center;
+      width: auto;
+      min-width: 0;
+      max-width: none;
+      min-height: 0;
+      height: 80px;
+      padding: 0;
+    }
+
+    .mona-sidebar__cta {
+      width: var(--mona-notch-circle, 39px);
+      height: var(--mona-notch-circle, 39px);
+      margin: 0;
+      padding: 0;
+    }
+
+    .mona-sidebar__link.is-compact {
+      width: 100%;
+      height: 80px;
+    }
+
+    .mona-sidebar__link.is-compact.is-notch-item .mona-sidebar__link-inner {
+      transform: translateY(calc(var(--mona-notch-pop, 11px) * -2.2));
+      box-shadow: 0 5px 5px rgb(0 0 0 / 0.25);
+    }
+
+    .group > [role="tooltip"] {
+      left: 50%;
+      top: auto;
+      bottom: calc(100% + 8px);
+      transform: translateX(-50%);
+    }
+  }
+
+  .mona-shell.is-mobile {
+    overflow-x: hidden;
+    width: 100%;
+    max-width: 100vw;
+  }
+
+  .mona-shell.is-mobile .mona-canvas {
+    display: flex;
+    flex-direction: column;
+    width: auto;
+    max-width: calc(100vw - 24px);
+    height: calc(100dvh - 12px - 80px);
+    max-height: calc(100dvh - 12px - 80px);
+    overflow: hidden;
+    gap: 8px;
+  }
+
+  .mona-shell.is-mobile .mona-workspace {
+    flex: 1 1 auto;
+    min-height: 0;
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .mona-shell.is-mobile .mona-topbar {
+    overflow: visible;
+  }
+
+  .mona-shell.is-mobile .mona-topbar > div {
+    padding-left: 4.25rem;
+    overflow: visible;
+  }
+
+  .mona-shell.is-mobile .mona-topbar .mona-panel--tools {
+    margin-left: 0;
+    flex: 0 0 auto;
+  }
+
+  .mona-shell.is-mobile .mona-topbar__search {
+    width: auto;
+    min-width: 0;
+    flex: 1 1 0;
+  }
+
+  .mona-shell.is-mobile .mona-tabbar {
+    background: transparent;
+    padding: 0;
+    flex: 0 0 auto;
+  }
+
+  .mona-shell.is-mobile .mona-chat-fab,
+  .mona-shell.is-mobile .mona-chat-panel {
+    bottom: 96px;
+  }
+
+  .mona-shell.is-mobile .mona-canvas__main {
+    overflow-x: hidden;
   }
 
   .mona-sidebar:not(.is-compact) .mona-sidebar__link:not(.is-compact) .mona-sidebar__link-label {
@@ -911,14 +1189,10 @@
     }
 
     .mona-stack__card {
-      min-width: 148px;
+      min-width: 180px;
       margin-top: 0;
-      flex: 1 1 160px;
+      flex: 1 1 180px;
       max-height: none;
-    }
-
-    .mona-panel--pin {
-      flex: 0 0 168px;
     }
   }
 
@@ -979,17 +1253,19 @@
     z-index: 1;
     display: flex;
     width: 100%;
-    min-height: 76px;
+    min-height: 0;
     flex: 1 1 0;
-    max-height: 128px;
-    margin-top: -3.1rem;
-    padding: 1.05rem 1rem 1rem 1.15rem;
+    max-height: 240px;
+    flex-direction: column;
+    align-items: stretch;
+    overflow: hidden;
+    margin-top: -2.6rem;
+    padding: 0.95rem 0.9rem 0.9rem 1.05rem;
     border: 0;
     border-radius: 28px;
     background: color-mix(in srgb, var(--mona-color-surface) 82%, var(--fv-ink-50));
     box-shadow: 0 16px 34px color-mix(in srgb, var(--mona-color-coral) 13%, transparent);
     text-align: left;
-    cursor: pointer;
   }
 
   .mona-dock__stack > :first-child {
@@ -1000,7 +1276,7 @@
   .mona-stack__card.is-front {
     z-index: 8;
     flex: 1.45 1 0;
-    max-height: 168px;
+    max-height: 320px;
     background: var(--mona-color-surface);
   }
 
@@ -1104,6 +1380,97 @@
 
   .mona-pin__hint {
     cursor: inherit;
+  }
+
+  .mona-day__head {
+    display: flex;
+    width: 100%;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 0.5rem;
+    border: 0;
+    background: transparent;
+    padding: 0;
+    text-align: left;
+    cursor: pointer;
+  }
+
+  .mona-day__clock {
+    display: flex;
+    align-items: baseline;
+    gap: 0.45rem;
+    margin-top: 0.45rem;
+  }
+
+  .mona-day__clock strong {
+    font-family: var(--mona-font-display);
+    font-size: 1.35rem;
+    font-weight: 700;
+    letter-spacing: -0.04em;
+    line-height: 1;
+  }
+
+  .mona-day__clock span {
+    font-size: 0.72rem;
+    color: var(--mona-color-muted);
+  }
+
+  .mona-day__list {
+    display: flex;
+    min-height: 0;
+    flex: 1;
+    flex-direction: column;
+    gap: 0.35rem;
+    margin: 0.55rem 0 0;
+    overflow: auto;
+    padding: 0;
+    list-style: none;
+  }
+
+  .mona-day__empty {
+    font-size: 0.75rem;
+    color: var(--mona-color-muted);
+  }
+
+  .mona-day__row {
+    display: flex;
+    width: 100%;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.45rem;
+    border: 0;
+    border-radius: 14px;
+    background: color-mix(in srgb, var(--mona-color-surface) 70%, var(--fv-ink-50));
+    padding: 0.42rem 0.55rem;
+    text-align: left;
+    font-size: 0.75rem;
+    color: var(--mona-color-ink);
+    cursor: pointer;
+  }
+
+  .mona-day__row em {
+    flex-shrink: 0;
+    font-style: normal;
+    font-size: 0.65rem;
+    font-weight: 600;
+    color: var(--mona-color-muted);
+  }
+
+  .mona-topbar__search {
+    position: relative;
+    width: min(240px, 100%);
+    flex-shrink: 0;
+  }
+
+  .mona-topbar .mona-search {
+    box-shadow: none;
+    border: 1px solid var(--mona-color-border);
+    background: color-mix(in srgb, var(--fv-ink-50) 72%, var(--mona-color-surface));
+    padding: 0.52rem 0.85rem 0.52rem 2.2rem;
+  }
+
+  .mona-topbar .mona-search:focus {
+    box-shadow: var(--mona-ring-accent);
   }
 
   .mona-canvas__main {
@@ -1318,8 +1685,146 @@
   }
 
   .mona-tabbar {
+    display: flex;
+    min-width: 0;
+    align-items: center;
+    gap: 0.4rem;
     background: color-mix(in srgb, var(--fv-ink-50) 80%, transparent);
     border-color: var(--mona-color-border);
+    padding: 0.3rem 0.15rem;
+  }
+
+  .mona-tabbar__strip {
+    display: flex;
+    min-width: 0;
+    flex: 1;
+    gap: 0.25rem;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scrollbar-width: thin;
+  }
+
+  .mona-tabbar.is-compact .mona-tabbar__strip {
+    display: none;
+  }
+
+  .mona-tabbar__more {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.2rem;
+    min-width: 2rem;
+    height: 2rem;
+    padding: 0 0.45rem;
+    border: 0;
+    border-radius: 999px;
+    background: color-mix(in srgb, #fff 70%, transparent);
+    color: var(--mona-color-ink);
+    cursor: pointer;
+
+    span {
+      font-size: 0.65rem;
+      font-weight: 800;
+    }
+
+    &:hover {
+      background: #fff;
+    }
+  }
+
+  .mona-tabbar__current {
+    display: none;
+    max-width: 7.5rem;
+    border: 0;
+    background: transparent;
+    padding: 0;
+    color: var(--mona-color-ink);
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-align: left;
+    cursor: pointer;
+  }
+
+  .mona-tabbar.is-compact .mona-tabbar__current {
+    display: none;
+  }
+
+  .mona-tablist {
+    position: fixed;
+    z-index: 200;
+    display: flex;
+    width: min(18rem, calc(100vw - 2rem));
+    max-height: min(22rem, 60vh);
+    flex-direction: column;
+    overflow: auto;
+    padding: 0.35rem;
+    border: 1px solid var(--mona-color-border);
+    border-radius: 1rem;
+    background: var(--mona-color-surface);
+    box-shadow: 0 16px 36px rgb(0 0 0 / 0.16);
+  }
+
+  .mona-tablist__row {
+    display: flex;
+    align-items: center;
+    gap: 0.15rem;
+    border-radius: 0.75rem;
+
+    &.is-active {
+      background: color-mix(in srgb, var(--mona-color-accent) 12%, transparent);
+    }
+  }
+
+  .mona-tablist__open {
+    display: flex;
+    min-width: 0;
+    flex: 1;
+    align-items: center;
+    gap: 0.5rem;
+    border: 0;
+    background: transparent;
+    padding: 0.55rem 0.6rem;
+    color: var(--mona-color-ink);
+    font-size: 0.8125rem;
+    text-align: left;
+    cursor: pointer;
+
+    em {
+      margin-left: auto;
+      font-size: 0.65rem;
+      font-style: normal;
+      color: var(--mona-color-muted);
+    }
+  }
+
+  .mona-tablist__close {
+    display: flex;
+    width: 1.75rem;
+    height: 1.75rem;
+    align-items: center;
+    justify-content: center;
+    border: 0;
+    border-radius: 999px;
+    background: transparent;
+    color: var(--mona-color-muted);
+    cursor: pointer;
+
+    &:hover {
+      background: var(--fv-ink-50, #f6f1ea);
+      color: var(--mona-color-ink);
+    }
+  }
+
+  .mona-tablist__all {
+    margin-top: 0.2rem;
+    border: 0;
+    border-top: 1px solid var(--mona-color-border);
+    background: transparent;
+    padding: 0.55rem 0.6rem;
+    color: var(--mona-color-muted);
+    font-size: 0.75rem;
+    text-align: left;
+    cursor: pointer;
   }
 
   .mona-tab {
@@ -1368,5 +1873,99 @@ html.dark .mona-sidebar__promo {
 @keyframes mona-icon-draw {
   to {
     stroke-dashoffset: 0;
+  }
+}
+
+@keyframes mona-check-move {
+  50% {
+    padding-left: 8px;
+    padding-right: 0;
+  }
+  100% {
+    padding-right: 4px;
+  }
+}
+
+@keyframes mona-check-slice {
+  60% {
+    width: 100%;
+    left: 4px;
+  }
+  100% {
+    width: 100%;
+    left: -2px;
+    padding-left: 0;
+  }
+}
+
+@keyframes mona-check-01 {
+  0% {
+    width: 4px;
+    top: auto;
+    transform: rotate(0);
+  }
+  50% {
+    width: 0;
+    top: auto;
+    transform: rotate(0);
+  }
+  51% {
+    width: 0;
+    top: 8px;
+    transform: rotate(45deg);
+  }
+  100% {
+    width: 5px;
+    top: 8px;
+    transform: rotate(45deg);
+  }
+}
+
+@keyframes mona-check-02 {
+  0% {
+    width: 4px;
+    top: auto;
+    transform: rotate(0);
+  }
+  50% {
+    width: 0;
+    top: auto;
+    transform: rotate(0);
+  }
+  51% {
+    width: 0;
+    top: 8px;
+    transform: rotate(-45deg);
+  }
+  100% {
+    width: 10px;
+    top: 8px;
+    transform: rotate(-45deg);
+  }
+}
+
+@keyframes mona-check-firework {
+  0% {
+    opacity: 1;
+    box-shadow:
+      0 0 0 -2px #4f29f0,
+      0 0 0 -2px #4f29f0,
+      0 0 0 -2px #4f29f0,
+      0 0 0 -2px #4f29f0,
+      0 0 0 -2px #4f29f0,
+      0 0 0 -2px #4f29f0;
+  }
+  30% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    box-shadow:
+      0 -15px 0 0 #4f29f0,
+      14px -8px 0 0 #4f29f0,
+      14px 8px 0 0 #4f29f0,
+      0 15px 0 0 #4f29f0,
+      -14px 8px 0 0 #4f29f0,
+      -14px -8px 0 0 #4f29f0;
   }
 }
