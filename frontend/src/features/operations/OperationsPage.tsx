@@ -8,6 +8,7 @@ import { usePermissions } from '../../shared/permissions/hooks'
 import {
   Button,
   Card,
+  ErrorAlert,
   Input,
   LoadingSpinner,
   MobileHero,
@@ -16,6 +17,7 @@ import {
   MobileStat,
   MobileTip,
   PageHeader,
+  Select,
 } from '../../shared/ui'
 
 type QueueItem = {
@@ -78,14 +80,17 @@ export function OperationsPage() {
   const canWrite = hasPermission(Permissions.ClientsWrite)
   const qc = useQueryClient()
   const [newGroup, setNewGroup] = useState('')
+  const [search, setSearch] = useState('')
+  const [clientFilter, setClientFilter] = useState('')
+  const [kindFilter, setKindFilter] = useState('')
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, error, refetch } = useQuery({
     queryKey: ['operations-queue'],
     queryFn: () => api.get<QueueResponse>('/operations/queue'),
     refetchInterval: 20_000,
   })
 
-  const { data: groups = [] } = useQuery({
+  const { data: groups = [], error: groupsError } = useQuery({
     queryKey: ['client-groups'],
     queryFn: () => api.get<ClientGroup[]>('/client-groups'),
     retry: 1,
@@ -100,6 +105,15 @@ export function OperationsPage() {
     },
   })
 
+  if (error && !data) {
+    return (
+      <div className="space-y-3">
+        <PageHeader title="Modo operação" subtitle="Não foi possível carregar a fila." />
+        <ErrorAlert message={error.message} />
+        <Button onClick={() => void refetch()}>Tentar novamente</Button>
+      </div>
+    )
+  }
   if (isLoading || !data) return <LoadingSpinner />
 
   const summary = data.summary ?? {
@@ -111,6 +125,34 @@ export function OperationsPage() {
   }
   const byGroup = data.byGroup ?? []
   const queue = data.queue ?? []
+  const query = search.trim().toLocaleLowerCase('pt-BR')
+  const visibleQueue = queue
+    .filter(
+      (item) =>
+        (!clientFilter || item.clientId === clientFilter) &&
+        (!kindFilter || (kindFilter === 'todo' ? item.kind.startsWith('todo') : item.kind === kindFilter)) &&
+        (!query ||
+          [item.title, item.body, item.clientName, item.meta].some((value) =>
+            value?.toLocaleLowerCase('pt-BR').includes(query),
+          )),
+    )
+    .sort(
+      (a, b) =>
+        Number(b.priority === 'Urgent') - Number(a.priority === 'Urgent') ||
+        Number(b.kind === 'todo_overdue') - Number(a.kind === 'todo_overdue') ||
+        (a.dueAtUtc ? Date.parse(a.dueAtUtc) : Infinity) - (b.dueAtUtc ? Date.parse(b.dueAtUtc) : Infinity),
+    )
+  const queueClients = [
+    ...new Map(
+      queue.filter((item) => item.clientId).map((item) => [item.clientId!, item.clientName || 'Cliente']),
+    ).entries(),
+  ].sort((a, b) => a[1].localeCompare(b[1], 'pt-BR'))
+  const hasFilters = !!(search || clientFilter || kindFilter)
+  const clearFilters = () => {
+    setSearch('')
+    setClientFilter('')
+    setKindFilter('')
+  }
   const groupRows =
     groups.length > 0
       ? groups.map((g) => ({
@@ -207,6 +249,9 @@ export function OperationsPage() {
         title="Modo operação"
         subtitle={`${data.organization?.name ?? 'Org'}. Fila do dia para a equipe — organize clientes em grupos que vocês mesmos definem. Fuso ${data.effectiveTimeZoneId ?? '—'}.`}
       />
+      {error && (
+        <ErrorAlert message={`A atualização falhou. Exibindo a última fila carregada: ${error.message}`} />
+      )}
 
       <div className="mb-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
         {[
@@ -235,6 +280,8 @@ export function OperationsPage() {
             Criados pela equipe — renomeie, apague, agrupe como fizer sentido no operacional. Sem catálogo fixo de
             “tipo de negócio” no produto.
           </p>
+          {groupsError && <ErrorAlert message={groupsError.message} />}
+          {createGroup.error && <ErrorAlert message={createGroup.error.message} />}
           <ul className="space-y-2">
             {groupRows.length === 0 && (
               <li className="rounded-xl border border-dashed border-ink-200 px-3 py-4 text-center text-sm text-ink-500">
@@ -302,11 +349,49 @@ export function OperationsPage() {
             <h2 className="font-semibold text-ink-900">Fila de agora</h2>
             <p className="text-xs text-ink-500">Atualiza a cada 20s</p>
           </div>
+          <div className="mb-3 grid gap-3 sm:grid-cols-3">
+            <Input
+              label="Buscar na fila"
+              placeholder="Título, cliente ou descrição"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+            <Select label="Cliente na fila" value={clientFilter} onChange={(e) => setClientFilter(e.target.value)}>
+              <option value="">Todos os clientes</option>
+              {queueClients.map(([id, name]) => (
+                <option key={id} value={id}>
+                  {name}
+                </option>
+              ))}
+            </Select>
+            <Select label="Tipo de pendência" value={kindFilter} onChange={(e) => setKindFilter(e.target.value)}>
+              <option value="">Todos os tipos</option>
+              {Object.entries(KIND_LABEL)
+                .filter(([kind]) => kind !== 'todo_overdue')
+                .map(([kind, label]) => (
+                  <option key={kind} value={kind}>
+                    {label}
+                  </option>
+                ))}
+            </Select>
+          </div>
+          <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+            <p className="text-xs text-ink-500" role="status">
+              {visibleQueue.length} de {queue.length} itens carregados · urgentes e atrasadas primeiro
+            </p>
+            {hasFilters && (
+              <Button size="sm" variant="ghost" onClick={clearFilters}>
+                Limpar filtros
+              </Button>
+            )}
+          </div>
           {queue.length === 0 ? (
             <p className="py-8 text-center text-sm text-ink-500">Fila limpa — bom momento para organizar grupos ou SOPs.</p>
+          ) : visibleQueue.length === 0 ? (
+            <p className="py-8 text-center text-sm text-ink-500">Nenhuma pendência corresponde aos filtros.</p>
           ) : (
             <ul className="space-y-2">
-              {queue.map((item) => {
+              {visibleQueue.map((item) => {
                 const Icon = kindIcon(item.kind)
                 return (
                   <li key={`${item.kind}-${item.id}`}>

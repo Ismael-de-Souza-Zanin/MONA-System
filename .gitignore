@@ -24,3 +24,6 @@ backend/src/FattoVirtual.Api/storage/
 
 # Packaged desktop binaries (gerados no build; >50MB)
 entregavel/app/*.exe
+
+.env.oracle
+

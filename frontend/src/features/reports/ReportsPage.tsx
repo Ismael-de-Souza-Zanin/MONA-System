@@ -8,6 +8,7 @@ import {
   Button,
   Card,
   Checkbox,
+  ErrorAlert,
   Input,
   LoadingSpinner,
   MobileChip,
@@ -62,6 +63,9 @@ export function ReportsPage() {
   const { hasPermission } = usePermissions()
   const qc = useQueryClient()
   const canAdm = !!user?.isOwner || hasPermission(Permissions.FinanceAll)
+  const canTime = hasPermission(Permissions.TodosWrite)
+  const canDecision = hasPermission(Permissions.AgendaWrite)
+  const canClientWrite = hasPermission(Permissions.ClientsWrite)
   const [lens, setLens] = useState<Lens>(canAdm ? 'adm' : 'va')
   const [period, setPeriod] = useState<Period>('week')
   const [clientId, setClientId] = useState('')
@@ -85,7 +89,7 @@ export function ReportsPage() {
     return `/reports?${p.toString()}`
   }, [lens, period, clientId])
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, error, refetch } = useQuery({
     queryKey: ['ops-report', lens, period, clientId],
     queryFn: () => api.get<Report>(reportQuery),
     enabled: lens !== 'client' || !!clientId,
@@ -110,11 +114,13 @@ export function ReportsPage() {
         title: decTitle,
         clientId: clientId || null,
         visibleToClient: decVisible,
-        createTodo: decTodo,
+        createTodo: canTime && decTodo,
       }),
     onSuccess: () => {
       setDecTitle('')
       void qc.invalidateQueries({ queryKey: ['ops-report'] })
+      void qc.invalidateQueries({ queryKey: ['todos'] })
+      void qc.invalidateQueries({ queryKey: ['operations-queue'] })
     },
   })
 
@@ -142,12 +148,16 @@ export function ReportsPage() {
       api.get<{ id: string; name: string; channel: string; slaMinutes?: number }[]>(
         `/attendance-points${clientId ? `?clientId=${clientId}` : ''}`,
       ),
+    enabled: hasPermission(Permissions.ClientsRead),
   })
 
   if (lens === 'client' && !clientId) {
     return (
       <div>
         <PageHeader title="Relatórios operacionais" subtitle="Escolha o cliente para ver o que ele pode validar." />
+        <Button variant="ghost" onClick={() => setLens(canAdm ? 'adm' : 'va')}>
+          Voltar ao meu relatório
+        </Button>
         <Select label="Cliente" value={clientId} onChange={(e) => setClientId(e.target.value)}>
           <option value="">— escolha —</option>
           {clients.map((c) => (
@@ -160,7 +170,24 @@ export function ReportsPage() {
     )
   }
 
-  if (isLoading || !data || Array.isArray(data) || !data.todos) return <LoadingSpinner />
+  if (error) {
+    return (
+      <div className="space-y-3">
+        <PageHeader title="Relatórios operacionais" subtitle="Não foi possível carregar o relatório." />
+        <ErrorAlert message={error.message} />
+        <Button onClick={() => void refetch()}>Tentar novamente</Button>
+        {clientId && (
+          <Button variant="ghost" onClick={() => setClientId('')}>
+            Limpar cliente
+          </Button>
+        )}
+      </div>
+    )
+  }
+  if (isLoading) return <LoadingSpinner />
+  if (!data || Array.isArray(data) || !data.todos) {
+    return <ErrorAlert message="O relatório retornou dados incompletos. Tente recarregar a página." />
+  }
 
   const subtitle =
     lens === 'adm'
@@ -287,38 +314,46 @@ export function ReportsPage() {
       )}
 
       <div className="mt-6 grid gap-4 lg:grid-cols-2">
-        <Card>
-          <h2 className="text-base font-semibold text-ink-900">Registrar tempo</h2>
-          <div className="mt-3 grid gap-3 sm:grid-cols-2">
-            <Input label="Minutos" type="number" value={timeMinutes} onChange={(e) => setTimeMinutes(e.target.value)} />
-            <Input label="Nota" value={timeNote} onChange={(e) => setTimeNote(e.target.value)} />
-          </div>
-          <div className="mt-3">
-            <Button disabled={timeMut.isPending} onClick={() => timeMut.mutate()}>
-              Lançar horas
-            </Button>
-          </div>
-        </Card>
+        {canTime && (
+          <Card>
+            <h2 className="text-base font-semibold text-ink-900">Registrar tempo</h2>
+            <div className="mt-3 grid gap-3 sm:grid-cols-2">
+              <Input label="Minutos" type="number" value={timeMinutes} onChange={(e) => setTimeMinutes(e.target.value)} />
+              <Input label="Nota" value={timeNote} onChange={(e) => setTimeNote(e.target.value)} />
+            </div>
+            <div className="mt-3">
+              <Button disabled={timeMut.isPending} onClick={() => timeMut.mutate()}>
+                Lançar horas
+              </Button>
+            </div>
+            {timeMut.error && <ErrorAlert message={timeMut.error.message} />}
+          </Card>
+        )}
 
-        <Card>
-          <h2 className="text-base font-semibold text-ink-900">Decisão de negócio</h2>
-          <div className="mt-3 space-y-3">
-            <Textarea label="O que ficou combinado" value={decTitle} onChange={(e) => setDecTitle(e.target.value)} />
-            <Checkbox
-              label="Cliente pode ver no portal"
-              checked={decVisible}
-              onChange={(e) => setDecVisible(e.target.checked)}
-            />
-            <Checkbox
-              label="Abrir tarefa automaticamente"
-              checked={decTodo}
-              onChange={(e) => setDecTodo(e.target.checked)}
-            />
-            <Button disabled={!decTitle.trim() || decMut.isPending} onClick={() => decMut.mutate()}>
-              Registrar decisão
-            </Button>
-          </div>
-        </Card>
+        {canDecision && (
+          <Card>
+            <h2 className="text-base font-semibold text-ink-900">Decisão de negócio</h2>
+            <div className="mt-3 space-y-3">
+              <Textarea label="O que ficou combinado" value={decTitle} onChange={(e) => setDecTitle(e.target.value)} />
+              <Checkbox
+                label="Cliente pode ver no portal"
+                checked={decVisible}
+                onChange={(e) => setDecVisible(e.target.checked)}
+              />
+              {canTime && (
+                <Checkbox
+                  label="Abrir tarefa automaticamente"
+                  checked={decTodo}
+                  onChange={(e) => setDecTodo(e.target.checked)}
+                />
+              )}
+              <Button disabled={!decTitle.trim() || decMut.isPending} onClick={() => decMut.mutate()}>
+                Registrar decisão
+              </Button>
+            </div>
+            {decMut.error && <ErrorAlert message={decMut.error.message} />}
+          </Card>
+        )}
       </div>
 
       <div className="mt-4 grid gap-4 lg:grid-cols-2">
@@ -356,6 +391,7 @@ export function ReportsPage() {
         </Card>
       </div>
 
+      {canClientWrite && (
       <Card className="mt-4">
         <h2 className="text-base font-semibold text-ink-900">Ponto de atendimento e pacote de horas</h2>
         <p className="mt-1 text-sm text-ink-500">
@@ -392,6 +428,8 @@ export function ReportsPage() {
             Salvar pacote
           </Button>
         </div>
+        {pointMut.error && <ErrorAlert message={pointMut.error.message} />}
+        {retainerMut.error && <ErrorAlert message={retainerMut.error.message} />}
         {points.length > 0 && (
           <ul className="mt-3 text-sm text-ink-700">
             {points.map((p) => (
@@ -403,6 +441,7 @@ export function ReportsPage() {
           </ul>
         )}
       </Card>
+      )}
       </div>
     </div>
   )

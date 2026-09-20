@@ -11,9 +11,8 @@ export function LoginPage() {
   const location = useLocation()
   const from = (location.state as { from?: { pathname: string } })?.from?.pathname || '/'
 
-  const fakeApi = import.meta.env.VITE_FAKE_API === '1'
-  const [email, setEmail] = useState(fakeApi ? 'ju@fattovirtual.com' : '')
-  const [password, setPassword] = useState(fakeApi ? 'Admin123!' : '')
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState('')
 
@@ -79,12 +78,7 @@ export function LoginPage() {
           <h2 className="mt-4 text-2xl font-semibold text-ink-900 app-font">Bem-vinda de volta</h2>
           <p className="mt-1 text-sm text-ink-500">Faça login para acessar sua conta</p>
 
-          <form onSubmit={handleSubmit} className="mt-6 space-y-4">
-            {fakeApi && (
-              <div className="rounded-2xl border border-brand-200 bg-brand-50 px-3 py-2 text-xs text-brand-900">
-                Modo front-only: API fake, sem Docker e sem banco. Entre com a conta pré-preenchida.
-              </div>
-            )}
+          <form onSubmit={handleSubmit} className="mt-6 space-y-4" autoComplete="off">
             {error && <ErrorAlert message={error} />}
 
             <div className="relative">
@@ -92,10 +86,11 @@ export function LoginPage() {
               <Input
                 label="E-mail"
                 type="email"
+                name="mona-login-email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                autoComplete="email"
+                autoComplete="off"
                 placeholder="seu@email.com"
                 className="pl-10"
               />
@@ -106,10 +101,12 @@ export function LoginPage() {
               <Input
                 label="Senha"
                 type={showPassword ? 'text' : 'password'}
+                name="mona-login-password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                autoComplete="current-password"
+                autoComplete="new-password"
+                placeholder="Sua senha"
                 className="pl-10 pr-11"
               />
               <button

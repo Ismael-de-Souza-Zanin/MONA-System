@@ -3,8 +3,9 @@ import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 import { fakeApiPlugin } from './fake-api/plugin.ts'
 
-export default defineConfig(({ mode }) => {
-  const fakeApi = mode !== 'api'
+export default defineConfig(({ mode, command }) => {
+  // Fake API só no `vite` de desenvolvimento. Build de produção / `dev:api` usam API real.
+  const fakeApi = command === 'serve' && mode !== 'api'
 
   return {
     // Desktop Electron (file://) precisa de assets relativos

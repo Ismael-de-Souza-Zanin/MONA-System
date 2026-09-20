@@ -1,0 +1,65 @@
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-fattovirtual}
+      POSTGRES_USER: ${POSTGRES_USER:-fatto}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    # Sem porta no host — banco só na rede interna do Docker
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-fatto} -d ${POSTGRES_DB:-fattovirtual}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+
+  api:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    restart: unless-stopped
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ASPNETCORE_URLS: http://+:8080
+      ConnectionStrings__DefaultConnection: Host=db;Port=5432;Database=${POSTGRES_DB:-fattovirtual};Username=${POSTGRES_USER:-fatto};Password=${POSTGRES_PASSWORD}
+      Jwt__Key: ${JWT_KEY}
+      Jwt__Issuer: ${JWT_ISSUER:-MONA}
+      Jwt__Audience: ${JWT_AUDIENCE:-MONA}
+      Security__CredentialEncryptionKey: ${CREDENTIAL_ENCRYPTION_KEY}
+      EmailKit__OutboxDirectory: /app/email-outbox
+      WhatsAppKit__OutboxDirectory: /app/whatsapp-outbox
+    volumes:
+      - email-outbox:/app/email-outbox
+      - whatsapp-outbox:/app/whatsapp-outbox
+    depends_on:
+      db:
+        condition: service_healthy
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+
+  web:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    depends_on:
+      - api
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+
+volumes:
+  pgdata:
+  email-outbox:
+  whatsapp-outbox:

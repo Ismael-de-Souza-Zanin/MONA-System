@@ -812,8 +812,8 @@ function seed() {
     chatThreads,
     chatMessages,
     timeEntries: [
-      { id: 'te-1', minutes: 90, clientId: 'c-ana', note: 'Caixa e follow-up', startedAtUtc: iso(-4), userId: 'u-ju' },
-      { id: 'te-2', minutes: 45, clientId: 'c-bruno', note: 'Minuta do contrato', startedAtUtc: iso(-20), userId: 'u-ju' },
+      { id: 'te-1', minutes: 90, clientId: 'c-ana', note: 'Caixa e follow-up', startedAtUtc: iso(-4), userId: 'u-ju', billable: true },
+      { id: 'te-2', minutes: 45, clientId: 'c-bruno', note: 'Minuta do contrato', startedAtUtc: iso(-20), userId: 'u-ju', billable: true },
     ],
     decisions: [
       {
@@ -850,7 +850,7 @@ function reportRange(period?: string | null) {
   const dow = today.getUTCDay()
   return {
     from: new Date(today.getTime() - dow * 86_400_000),
-    to: new Date(today.getTime() + (8 - dow) * 86_400_000),
+    to: new Date(today.getTime() + (7 - dow) * 86_400_000),
   }
 }
 
@@ -877,7 +877,8 @@ function buildReport(query: URLSearchParams) {
   const scopedClients = db.clients.filter((c) => !clientId || c.id === clientId)
   const clientIds = new Set(scopedClients.map((c) => c.id))
 
-  const todos = db.todos.filter((t) => !t.clientId || clientIds.has(t.clientId))
+  const matchesClient = (id?: string) => (id ? clientIds.has(id) : !clientId)
+  const todos = db.todos.filter((t) => matchesClient(t.clientId) && (lens !== 'va' || t.ownerUserId === USER.id))
   const doneTodos = todos.filter((t) => t.status === 'Done' && inRange(t.updatedAt ?? t.createdAt, from, to))
   const open = todos.filter((t) => t.status !== 'Done').length
   const overdue = todos.filter((t) => t.status !== 'Done' && t.isOverdue).length
@@ -885,24 +886,28 @@ function buildReport(query: URLSearchParams) {
   const events = db.events.filter((e) => {
     const at = e.startsAt ?? e.startAtUtc ?? e.startAt
     if (!inRange(at, from, to)) return false
-    return !e.clientId || clientIds.has(e.clientId)
+    return matchesClient(e.clientId)
   })
   const meetings = events.filter((e) => e.kind === 'Meeting' || e.categoryName === 'Reunião').length
 
   const decisions = db.decisions.filter((d) => {
     if (!inRange(d.createdAt, from, to)) return false
-    if (d.clientId && !clientIds.has(d.clientId)) return false
+    if (!matchesClient(d.clientId)) return false
     if (lens === 'client' && !d.visibleToClient) return false
     return true
   })
 
   const completedRuns = db.sopRuns.filter((r) => r.status === 'Done' && inRange(r.completedAtUtc, from, to)).length
 
-  const timeEntries = db.timeEntries.filter((t) => {
-    if (!inRange(t.startedAtUtc, from, to)) return false
-    return !t.clientId || clientIds.has(t.clientId)
-  })
+  const scopedTimeEntries = db.timeEntries.filter(
+    (t) => matchesClient(t.clientId) && (lens !== 'va' || t.userId === USER.id),
+  )
+  const timeEntries = scopedTimeEntries.filter((t) => inRange(t.startedAtUtc, from, to))
   const minutes = timeEntries.reduce((n, t) => n + t.minutes, 0)
+  const month = reportRange('month')
+  const retainerMinutes = scopedTimeEntries
+    .filter((t) => t.clientId && t.billable && inRange(t.startedAtUtc, month.from, month.to))
+    .reduce((n, t) => n + t.minutes, 0)
   const retainerHours = clientId
     ? (findById(db.clients, clientId)?.retainerHoursPerMonth ?? 0)
     : scopedClients.reduce((n, c) => n + (c.retainerHoursPerMonth ?? 0), 0)
@@ -910,7 +915,7 @@ function buildReport(query: URLSearchParams) {
   const payments = db.payments.filter((p) => {
     const at = p.paidAt ?? p.dueDate ?? p.createdAt
     if (!inRange(at, from, to)) return false
-    return !p.clientId || clientIds.has(p.clientId)
+    return matchesClient(p.clientId)
   })
   const agency = moneySlice(payments, 'Agency')
   const clientAr = moneySlice(payments, 'ClientAr')
@@ -920,7 +925,7 @@ function buildReport(query: URLSearchParams) {
     lens === 'client'
       ? { agency, clientAr, clientAp }
       : lens === 'va'
-        ? { agency, payout }
+        ? { payout: { paid: 0, pending: 0 } } // A demo não possui repasses atribuídos a USER.
         : { agency, clientAr, clientAp, payout, marginPaid: agency.paid - payout.paid }
 
   const byClient = scopedClients
@@ -947,7 +952,7 @@ function buildReport(query: URLSearchParams) {
       minutes,
       hours: Math.round((minutes / 60) * 100) / 100,
       retainerHours,
-      retainerUsedHours: Math.round((minutes / 60) * 100) / 100,
+      retainerUsedHours: Math.round((retainerMinutes / 60) * 100) / 100,
     },
     money,
     byClient,
@@ -1240,6 +1245,7 @@ const routes: Route[] = [
         note: body.note ? String(body.note) : undefined,
         startedAtUtc: iso(),
         userId: USER.id,
+        billable: body.billable !== false,
       }
       db.timeEntries.push(row as (typeof db.timeEntries)[0])
       return { ...row, clientName: clientName(row.clientId) }

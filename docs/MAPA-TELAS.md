@@ -4,6 +4,8 @@ Inventário fiel ao código atual. Serve para não perder nada ao evoluir para *
 
 Última atualização: 2026-08-10.
 
+> Este mapa é histórico. Para a revisão de 19/09/2026, maturidade das integrações e prioridades atuais, consulte [ROADMAP-PRODUTO.md](./ROADMAP-PRODUTO.md). “OK” neste documento não certifica prontidão de produção.
+
 ---
 
 ## Como ler

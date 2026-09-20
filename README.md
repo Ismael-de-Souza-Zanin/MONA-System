@@ -2,6 +2,10 @@
 
 Monorepo do sistema FattoVirtual: React (Vite) + ASP.NET Core API + PostgreSQL.
 
+## Estado do produto e próximas entregas
+
+Veja o [diagnóstico e roadmap de produto](docs/ROADMAP-PRODUTO.md): inventário do que existe, lacunas, prioridades e melhorias iniciadas a partir do comparativo de plataformas para VAs.
+
 ## Estrutura
 
 ```text

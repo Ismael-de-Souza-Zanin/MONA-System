@@ -8,6 +8,7 @@ import {
   type ReactNode,
 } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
+import { createId } from '../shared/id'
 
 export type TabMode = 'docked' | 'floating'
 
@@ -217,7 +218,7 @@ export function WorkspaceTabsProvider({ children }: { children: ReactNode }) {
           return nextTitle === t.title ? t : { ...t, title: nextTitle }
         })
       }
-      const tab: WorkspaceTab = { id: crypto.randomUUID(), path, title, mode: 'docked' }
+      const tab: WorkspaceTab = { id: createId(), path, title, mode: 'docked' }
       nextActive = tab.id
       return [...prev, tab]
     })
