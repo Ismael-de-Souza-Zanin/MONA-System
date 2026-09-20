@@ -12,10 +12,17 @@ import {
   EmptyState,
   Input,
   LoadingSpinner,
+  MobileHero,
+  MobileRow,
+  MobileSection,
+  MobileStat,
+  MobileTip,
   Modal,
   PageHeader,
   Select,
+  formatMoneyBr,
 } from '../../shared/ui'
+import { ArrowDownRight, ArrowUpRight, CalendarDays, CreditCard, Wallet } from 'lucide-react'
 import { SettlePaymentModal } from './SettlePaymentModal'
 import {
   EntityLinksField,
@@ -253,8 +260,64 @@ export function FinancePage() {
 
   if (isLoading) return <LoadingSpinner />
 
+  const income = totals.agencyPaid + totals.arPaid
+  const expense = totals.apPaid + totals.payoutPaid
+  const profit = income - expense
+  const incoming = totals.agencyPending + totals.arPending
+  const nextPay = payments
+    .filter((p) => p.status === 'Pending')
+    .sort((a, b) => +new Date(a.dueDate || 0) - +new Date(b.dueDate || 0))[0]
+  const recent = [...payments]
+    .sort((a, b) => +new Date(b.paidAt || b.dueDate || 0) - +new Date(a.paidAt || a.dueDate || 0))
+    .slice(0, 5)
+
   return (
     <div>
+      <div className="mona-mobile-only mona-m-stack">
+        <MobileHero
+          kicker={`${new Date().getHours() < 12 ? 'Bom dia' : new Date().getHours() < 18 ? 'Boa tarde' : 'Boa noite'}, ${user?.name?.split(' ')[0] || 'por aqui'}!`}
+          title="Seu financeiro em dia, sempre"
+          lead="Acompanhe receitas, despesas e o que o negócio ainda precisa receber."
+          cta={canManageAll ? { to: '/relatorios', label: 'Ver relatório' } : undefined}
+          note="Mais controle para ir longe"
+        />
+        <div className="mona-m-stats" style={{ gridTemplateColumns: '1fr 1fr' }}>
+          <MobileStat icon={ArrowUpRight} label="Receitas" value={formatMoneyBr(income)} hint="baixado" tone="mint" />
+          <MobileStat icon={ArrowDownRight} label="Despesas" value={formatMoneyBr(expense)} hint="baixado" tone="rose" />
+          <MobileStat icon={Wallet} label="Lucro" value={formatMoneyBr(profit)} hint="no recorte" tone="purple" />
+          <MobileStat icon={CreditCard} label="A receber" value={formatMoneyBr(incoming)} hint="pendente" tone="orange" />
+        </div>
+        {nextPay && (
+          <MobileRow
+            to="/financeiro"
+            icon={<span className="mona-m-icon"><CalendarDays size={16} /></span>}
+            title={nextPay.description || 'Próximo pagamento'}
+            meta={nextPay.dueDate ? new Date(nextPay.dueDate).toLocaleDateString('pt-BR') : 'Sem vencimento'}
+            trailing={<span className="mona-m-badge">{formatMoneyBr(nextPay.amount)}</span>}
+          />
+        )}
+        <MobileSection title="Últimas movimentações" action={{ to: '/financeiro', label: 'Ver todas' }}>
+          <div className="mona-m-list">
+            {recent.map((p) => (
+              <MobileRow
+                key={p.id}
+                title={p.description || ledgerLabel(p.ledger)}
+                meta={p.clientName || p.category || ledgerLabel(p.ledger)}
+                trailing={
+                  <strong style={{ color: p.ledger === 'ClientAp' || p.ledger === 'AssistantPayout' ? 'var(--mona-color-pink)' : 'var(--mona-color-purple)' }}>
+                    {p.ledger === 'ClientAp' || p.ledger === 'AssistantPayout' ? '-' : ''}
+                    {formatMoneyBr(p.amount)}
+                  </strong>
+                }
+              />
+            ))}
+            {recent.length === 0 && <EmptyState title="Nenhuma movimentação" />}
+          </div>
+        </MobileSection>
+        <MobileTip to="/relatorios">Separe o que já entrou do que ainda está pendente antes de decidir o mês.</MobileTip>
+      </div>
+
+      <div className="mona-desktop-only">
       <PageHeader
         title={canManageAll ? 'Financeiro' : 'Meu financeiro'}
         subtitle="Gavetas separadas: negócio do cliente, mensalidade da Fatto e repasse da VA."
@@ -415,6 +478,7 @@ export function FinancePage() {
         </div>
       )}
 
+      </div>
       <AddPaymentModal open={showAdd} onClose={() => setShowAdd(false)} />
       <SettlePaymentModal
         open={!!settleId}

@@ -32,6 +32,7 @@ import { ShareLinksPage } from '../features/share/ShareLinksPage'
 import { FaqsPage } from '../features/faqs/FaqsPage'
 import { ContractorPortalPage } from '../features/portal/ContractorPortalPage'
 import { ReportsPage } from '../features/reports/ReportsPage'
+import { MorePage } from '../features/more/MorePage'
 import { Permissions } from '../shared/permissions/constants'
 
 export function AppRouter() {
@@ -127,6 +128,7 @@ export function AppRouter() {
             </Route>
 
             <Route path="faqs" element={<FaqsPage />} />
+            <Route path="mais" element={<MorePage />} />
           </Route>
         </Route>
 

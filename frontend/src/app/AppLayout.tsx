@@ -28,6 +28,7 @@ import {
   CalendarDays,
   CheckSquare,
   SquareStack,
+  LayoutGrid,
 } from 'lucide-react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { api } from '../shared/api/client'
@@ -36,19 +37,26 @@ import { useAuth } from '../shared/auth/AuthContext'
 import { useTheme } from '../shared/theme/ThemeContext'
 import { iconForPath } from '../shared/theme/tabIcon'
 import { usePermissions } from '../shared/permissions/hooks'
-import { Permissions } from '../shared/permissions/constants'
-import { NAV_DEFINITIONS, groupedNav, navGroupIdForPath, resolveMenu, type NavDefinition } from '../shared/nav/navConfig'
+import {
+  NAV_DEFINITIONS,
+  groupedNav,
+  mobileMoreSections,
+  mobileTabs,
+  navGroupIdForPath,
+  resolveMenu,
+  type NavDefinition,
+} from '../shared/nav/navConfig'
 import { useNotifications, useUserPreferences } from '../shared/hooks/useWorkspaceData'
 import { WorkspaceTabsProvider, useWorkspaceTabs } from './WorkspaceTabsContext'
 import { FloatingTabsLayer } from './FloatingTabsLayer'
 import { ChatWidget } from '../features/chat/ChatWidget'
 import type { LucideIcon } from 'lucide-react'
-import { BrandLogo } from '../shared/ui'
+import { BrandLogo, MonaFolder } from '../shared/ui'
 
 const WHATSAPP_URL = 'https://wa.me/5511999999999'
 const SIDEBAR_KEY = 'fatto_sidebar_collapsed'
 const NAV_GROUPS_KEY = 'mona_nav_groups_v1'
-const FAN_COLORS = ['#ff5b7a', '#c641ff', '#7b5cff', '#ff9a2e', '#ff4fd8']
+const FAN_COLORS = ['#F54D7D', '#582B86', '#8B4BB8', '#FF7A33', '#C45BA8']
 
 function hintOffset(index: number, count: number, upward = false) {
   if (count <= 1) return { x: 0, y: 0 }
@@ -61,7 +69,7 @@ function hintOffset(index: number, count: number, upward = false) {
 
 function fanOffset(index: number, count: number, radius = 128, upward = false) {
   if (count <= 1) return upward ? { x: 0, y: -radius } : { x: radius, y: 0 }
-  const span = Math.min(Math.PI * 0.58, 0.38 * Math.max(count, 2))
+  const span = Math.min(Math.PI * (count > 6 ? 0.92 : 0.58), 0.4 * Math.max(count, 2))
   const mid = upward ? -Math.PI / 2 : 0
   const start = mid - span / 2
   const end = mid + span / 2
@@ -79,21 +87,25 @@ function SidebarLink({
   icon: Icon,
   compact,
   end,
+  caption,
+  forceActive,
 }: {
   to: string
   label: string
   icon: LucideIcon
   compact?: boolean
   end?: boolean
+  caption?: boolean
+  forceActive?: boolean
 }) {
   return (
     <div className={compact ? 'group relative' : undefined}>
       <NavLink
         to={to}
         end={end}
-        aria-label={compact ? label : undefined}
+        aria-label={compact && !caption ? label : undefined}
         className={({ isActive }) =>
-          `mona-sidebar__link ${compact ? 'is-compact' : ''} ${isActive ? 'is-active' : ''}`
+          `mona-sidebar__link ${compact ? 'is-compact' : ''} ${caption ? 'is-labeled' : ''} ${isActive || forceActive ? 'is-active' : ''}`
         }
       >
         {({ isActive }) => (
@@ -105,11 +117,12 @@ function SidebarLink({
                 strokeWidth={1.8}
               />
             </span>
-            {!compact && <span className="mona-sidebar__link-label">{label}</span>}
+            {caption && <span className="mona-sidebar__link-caption">{label}</span>}
+            {!compact && !caption && <span className="mona-sidebar__link-label">{label}</span>}
           </>
         )}
       </NavLink>
-      {compact && (
+      {compact && !caption && (
         <span
           className="pointer-events-none absolute left-[calc(100%+10px)] top-1/2 z-[90] -translate-y-1/2 whitespace-nowrap rounded-lg bg-ink-900 px-2.5 py-1.5 text-xs font-medium text-white opacity-0 shadow-lg transition duration-150 group-hover:opacity-100"
           role="tooltip"
@@ -129,6 +142,7 @@ function CompactGroupFan({
   onToggle,
   onNavigate,
   upward = false,
+  caption = false,
 }: {
   label: string
   icon: LucideIcon
@@ -137,6 +151,7 @@ function CompactGroupFan({
   onToggle: () => void
   onNavigate: () => void
   upward?: boolean
+  caption?: boolean
 }) {
   const location = useLocation()
   const triggerRef = useRef<HTMLButtonElement>(null)
@@ -151,12 +166,15 @@ function CompactGroupFan({
     if (!node) return
     const place = () => {
       const rect = node.getBoundingClientRect()
-      const nextOrigin = upward
-        ? { top: rect.top, left: rect.left + rect.width / 2 }
-        : { top: rect.top + rect.height / 2, left: rect.right }
-      setOrigin(nextOrigin)
       const inner = node.querySelector('.mona-sidebar__link-inner')
       const innerRect = inner?.getBoundingClientRect()
+      const nextOrigin = upward
+        ? {
+            top: Math.round((innerRect ?? rect).top),
+            left: Math.round((innerRect ?? rect).left + (innerRect ?? rect).width / 2),
+          }
+        : { top: rect.top + rect.height / 2, left: rect.right }
+      setOrigin(nextOrigin)
       if (!innerRect) return
       const cx = upward ? innerRect.left + innerRect.width / 2 : innerRect.right + 2 - 8
       const cy = upward ? innerRect.top + 2 : innerRect.bottom - 1 - 8
@@ -189,7 +207,7 @@ function CompactGroupFan({
       <button
         ref={triggerRef}
         type="button"
-        className={`mona-sidebar__link is-compact ${childActive || open ? 'is-active' : ''}`}
+        className={`mona-sidebar__link is-compact ${caption ? 'is-labeled' : ''} ${childActive || open ? 'is-active' : ''}`}
         aria-expanded={open}
         aria-label={`${label}, grupo com ${items.length} itens`}
         onClick={onToggle}
@@ -197,23 +215,36 @@ function CompactGroupFan({
         <span className="mona-sidebar__link-inner">
           <Icon key={childActive || open ? `${label}-on` : `${label}-off`} size={18} strokeWidth={1.8} />
         </span>
+        {caption && <span className="mona-sidebar__link-caption">{label}</span>}
       </button>
+      {!caption && (
       <span
         className="pointer-events-none absolute left-[calc(100%+10px)] top-1/2 z-[90] -translate-y-1/2 whitespace-nowrap rounded-lg bg-ink-900 px-2.5 py-1.5 text-xs font-medium text-white opacity-0 shadow-lg transition duration-150 group-hover:opacity-100"
         role="tooltip"
       >
         {label}
       </span>
+      )}
       {createPortal(
         <div
-          className={`mona-fan__list ${open ? 'is-open' : ''}`}
+          className={`mona-fan__list ${open ? 'is-open' : ''} ${upward ? 'is-up' : ''}`}
           style={{ top: origin.top, left: origin.left }}
           aria-hidden={!open}
         >
           {items.map((item, index) => {
             const ItemIcon = item.icon
-            const pos = fanOffset(index, items.length, upward ? 110 : 128, upward)
-            const start = from[index] ?? { x: -12, y: 10 }
+            let pos = fanOffset(index, items.length, upward ? (items.length > 6 ? 126 : 104) : 128, upward)
+            if (upward) {
+              const absX = origin.left + pos.x
+              const absY = origin.top + pos.y
+              const xMin = 30
+              const xMax = window.innerWidth - 30
+              const yMin = 72
+              if (absX < xMin) pos = { ...pos, x: pos.x + (xMin - absX) }
+              if (absX > xMax) pos = { ...pos, x: pos.x - (absX - xMax) }
+              if (absY < yMin) pos = { ...pos, y: pos.y + (yMin - absY) }
+            }
+            const start = from[index] ?? (upward ? { x: 0, y: 8 } : { x: -12, y: 10 })
             const itemActive =
               item.to === '/'
                 ? location.pathname === '/'
@@ -252,6 +283,94 @@ function CompactGroupFan({
   )
 }
 
+function pathMatches(pathname: string, to: string) {
+  if (to === '/') return pathname === '/'
+  return pathname === to || pathname.startsWith(`${to}/`)
+}
+
+function MobileMoreSheet({
+  sections,
+  openGroups,
+  onToggleGroup,
+  onClose,
+}: {
+  sections: ReturnType<typeof mobileMoreSections>
+  openGroups: string[]
+  onToggleGroup: (id: string) => void
+  onClose: () => void
+}) {
+  const location = useLocation()
+  return createPortal(
+    <>
+      <button type="button" className="mona-more-backdrop" aria-label="Fechar menu" onClick={onClose} />
+      <nav className="mona-more-sheet" aria-label="Menu">
+        <header className="mona-more-sheet__head">
+          <p>Menu</p>
+          <button type="button" className="mona-more-sheet__close" aria-label="Fechar" onClick={onClose}>
+            <X size={16} />
+          </button>
+        </header>
+        {sections.map((section) => {
+          const open = !section.collapsible || openGroups.includes(section.id)
+          const GroupIcon = section.icon
+          return (
+            <div key={section.id} className="mona-sidebar__group">
+              {section.collapsible ? (
+                <button
+                  type="button"
+                  className="mona-sidebar__group-toggle"
+                  aria-expanded={open}
+                  onClick={() => onToggleGroup(section.id)}
+                >
+                  <span className="flex min-w-0 items-center gap-2">
+                    <GroupIcon size={14} strokeWidth={2} />
+                    {section.label}
+                  </span>
+                  <span className="mona-sidebar__group-meta">
+                    <span className="mona-sidebar__group-count">{section.items.length}</span>
+                    <ChevronDown size={14} className={open ? 'rotate-180' : ''} />
+                  </span>
+                </button>
+              ) : (
+                <p className="mona-sidebar__group-label">
+                  <span className="flex min-w-0 items-center gap-2">
+                    <GroupIcon size={14} strokeWidth={2} />
+                    {section.label}
+                  </span>
+                </p>
+              )}
+              <div className={`mona-sidebar__group-panel ${open ? 'is-open' : ''}`}>
+                <ul>
+                  {section.items.map((item) => {
+                    const ItemIcon = item.icon
+                    const active = pathMatches(location.pathname, item.to)
+                    return (
+                      <li key={item.key}>
+                        <NavLink
+                          to={item.to}
+                          end={item.to === '/'}
+                          className={`mona-more-sheet__link ${active ? 'is-active' : ''}`}
+                          onClick={onClose}
+                        >
+                          <span className="mona-more-sheet__icon">
+                            <ItemIcon size={16} strokeWidth={1.8} />
+                          </span>
+                          {item.label}
+                        </NavLink>
+                      </li>
+                    )
+                  })}
+                </ul>
+              </div>
+            </div>
+          )
+        })}
+      </nav>
+    </>,
+    document.body,
+  )
+}
+
 function notchPath(depth: number, size: number, scoop: number) {
   const w = depth
   const s = scoop
@@ -274,21 +393,21 @@ function notchPath(depth: number, size: number, scoop: number) {
 }
 
 function notchPathUp(depth: number, size: number, scoop: number) {
-  const d = depth
+  const w = depth
   const s = scoop
-  const r = Math.min(size / 2, d)
-  const left = s
-  const right = s + size
-  const total = right + s
+  const r = Math.min(size / 2, w)
+  const top = s
+  const bot = s + size
+  const h = bot + s
   const k = s * 0.55
   return [
     `M 0 0`,
-    `C ${k} 0 ${left} ${s - k} ${left} ${s}`,
-    `L ${left} ${Math.max(s, d - r)}`,
-    `A ${r} ${r} 0 0 1 ${left + r} ${d}`,
-    `A ${r} ${r} 0 0 1 ${right} ${Math.max(s, d - r)}`,
-    `L ${right} ${s}`,
-    `C ${right} ${s - k} ${total - k} 0 ${total} 0`,
+    `C ${k} 0 ${top} ${s - k} ${top} ${s}`,
+    `L ${top} ${w - r}`,
+    `A ${r} ${r} 0 0 0 ${top + r} ${w}`,
+    `A ${r} ${r} 0 0 0 ${bot} ${w - r}`,
+    `L ${bot} ${s}`,
+    `C ${bot} ${s - k} ${h - k} 0 ${h} 0`,
     `L 0 0`,
     'Z',
   ].join(' ')
@@ -300,8 +419,15 @@ function notchForLayout(
   depth: number,
   scoop: number,
   orientation: 'vertical' | 'horizontal' = 'vertical',
+  circle = 39,
 ) {
-  if (layout === 'compact' || orientation === 'horizontal') return { size, depth, scoop }
+  if (orientation === 'horizontal') {
+    const nextSize = Math.max(40, Math.round(circle + 4))
+    const nextScoop = Math.max(12, Math.round(scoop * 0.64))
+    const nextDepth = Math.round(nextSize / 2 + nextScoop)
+    return { size: nextSize, depth: nextDepth, scoop: nextScoop }
+  }
+  if (layout === 'compact') return { size, depth, scoop }
   return {
     size: Math.max(36, Math.round(size * 0.44)),
     depth: Math.max(26, Math.round(depth * 0.46)),
@@ -325,7 +451,8 @@ function SidebarIndicator({
   const notchSize = appearance.chrome.notchSize ?? 64
   const notchDepth = appearance.chrome.notchDepth ?? 59
   const notchScoop = appearance.chrome.notchScoop ?? 19
-  const metrics = notchForLayout(layout, notchSize, notchDepth, notchScoop, orientation)
+  const notchCircle = appearance.chrome.notchCircle ?? 39
+  const metrics = notchForLayout(layout, notchSize, notchDepth, notchScoop, orientation, notchCircle)
   const [pos, setPos] = useState({ x: 0, y: 0, visible: false, ready: false })
 
   useEffect(() => {
@@ -338,6 +465,8 @@ function SidebarIndicator({
     }
 
     const resolveTarget = () => {
+      const more = host.querySelector<HTMLElement>('.mona-sidebar__more.is-open')
+      if (more) return more
       const fan = host.querySelector<HTMLElement>('.mona-fan.is-open > .mona-sidebar__link')
       if (fan) return fan
       const actives = [...host.querySelectorAll<HTMLElement>('.mona-sidebar__link.is-active')].filter(
@@ -372,7 +501,12 @@ function SidebarIndicator({
       const itemRect = bubble.getBoundingClientRect()
       const scoop = metrics.scoop
       const y = Math.max(0, Math.round(itemRect.top - hostRect.top + (itemRect.height - metrics.size) / 2 - scoop))
-      const x = Math.round(itemRect.left - hostRect.left + (itemRect.width - metrics.size) / 2 - scoop)
+      const rawX = Math.round(itemRect.left - hostRect.left + (itemRect.width - metrics.size) / 2 - scoop)
+      const maskAlong = metrics.size + scoop * 2
+      const x =
+        orientation === 'horizontal'
+          ? Math.max(4, Math.min(rawX, Math.round(hostRect.width - maskAlong - 4)))
+          : rawX
       setPos((prev) =>
         prev.x === x && prev.y === y && prev.visible ? prev : { x, y, visible: true, ready: prev.ready },
       )
@@ -411,9 +545,10 @@ function SidebarIndicator({
     const host = document.querySelector<HTMLElement>('.mona-sidebar')
     if (!host) return
     const pad = 3
+    const stroke = orientation === 'horizontal' ? 2 : 3
     const svgW = (orientation === 'horizontal' ? maskAlong : maskAcross) + pad * 2
     const svgH = (orientation === 'horizontal' ? maskAcross : maskAlong) + pad * 2
-    const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${-pad} ${-pad} ${svgW} ${svgH}" width="${svgW}" height="${svgH}"><path fill="black" stroke="black" stroke-width="3" stroke-linejoin="round" d="${path}"/></svg>`
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${-pad} ${-pad} ${svgW} ${svgH}" width="${svgW}" height="${svgH}"><path fill="black" stroke="black" stroke-width="${stroke}" stroke-linejoin="round" d="${path}"/></svg>`
     host.style.setProperty('--mona-notch-shape', `url("data:image/svg+xml,${encodeURIComponent(svg)}")`)
     host.style.setProperty('--mona-notch-mask-size', `${svgW}px ${svgH}px`)
     if (orientation === 'horizontal') {
@@ -491,7 +626,7 @@ function WorkspaceTabBar({ variant = 'bar', compact = false }: { variant?: 'bar'
 
   useEffect(() => {
     if (!listOpen) return
-    const onDown = (event: MouseEvent) => {
+    const onDown = (event: Event) => {
       const target = event.target as Node
       if (listRef.current?.contains(target) || listBtnRef.current?.contains(target)) return
       setListOpen(false)
@@ -500,9 +635,11 @@ function WorkspaceTabBar({ variant = 'bar', compact = false }: { variant?: 'bar'
       if (event.key === 'Escape') setListOpen(false)
     }
     document.addEventListener('mousedown', onDown)
+    document.addEventListener('touchstart', onDown)
     document.addEventListener('keydown', onKey)
     return () => {
       document.removeEventListener('mousedown', onDown)
+      document.removeEventListener('touchstart', onDown)
       document.removeEventListener('keydown', onKey)
     }
   }, [listOpen])
@@ -644,7 +781,7 @@ function WorkspaceTabBar({ variant = 'bar', compact = false }: { variant?: 'bar'
     )
 
   if (variant === 'stack') {
-    return (
+  return (
       <>
         {stackedDocked.map((tab, index) => {
           const isFront = index === stackedDocked.length - 1
@@ -738,17 +875,17 @@ function WorkspaceTabBar({ variant = 'bar', compact = false }: { variant?: 'bar'
   }
 
   const allTabs = [...docked, ...floating]
-  const activeTab = allTabs.find((tab) => tab.id === activeId) || allTabs[0]
   const tabList =
     listOpen &&
     createPortal(
     <div
       ref={listRef}
-      className="mona-tablist"
+      className={`mona-tablist${compact ? ' is-compact' : ''}`}
       role="listbox"
       aria-label="Abas abertas"
       style={{ top: listPos.top, left: listPos.left }}
     >
+      {compact && <p className="mona-tablist__title">Abas abertas</p>}
       {allTabs.map((tab) => {
         const TabIcon = iconForPath(tab.path)
         return (
@@ -792,13 +929,37 @@ function WorkspaceTabBar({ variant = 'bar', compact = false }: { variant?: 'bar'
       document.body,
     )
 
+  if (compact) {
+    return (
+      <div className="mona-tabbar is-compact">
+        <button
+          ref={listBtnRef}
+          type="button"
+          className={`mona-tabbar__folder${listOpen ? ' is-open' : ''}`}
+          aria-expanded={listOpen}
+          aria-haspopup="listbox"
+          aria-label="Abas abertas"
+          title="Abas abertas"
+          onClick={() => setListOpen((open) => !open)}
+        >
+          <MonaFolder className="h-5 w-6" tone="purple" />
+          {allTabs.length > 0 && <span>{allTabs.length}</span>}
+        </button>
+        {tabList}
+        {menuPortal}
+      </div>
+    )
+  }
+
   return (
-    <div className={`mona-tabbar ${compact ? 'is-compact' : ''}`}>
+    <div className="mona-tabbar">
       <div
         ref={scrollerRef}
         className="mona-tabbar__strip"
       >
-        {docked.map((tab, index) => (
+        {docked.map((tab, index) => {
+          const TabIcon = iconForPath(tab.path)
+          return (
           <div
             key={tab.id}
             data-tab-id={tab.id}
@@ -814,19 +975,14 @@ function WorkspaceTabBar({ variant = 'bar', compact = false }: { variant?: 'bar'
             onDoubleClick={() => {
               if (window.matchMedia('(min-width: 768px)').matches) floatTab(tab.id)
             }}
-            className={`mona-tab flex shrink-0 items-center gap-0.5 rounded-full px-2 py-1.5 font-medium sm:gap-1 sm:px-2.5 ${
-              activeId === tab.id ? 'is-active shadow-sm' : 'hover:bg-white/70'
-            }`}
+            className={`mona-tab ${activeId === tab.id ? 'is-active' : ''}`}
             title="Clique direito para gerenciar · arraste · duplo clique flutua"
           >
             <GripVertical size={12} className="hidden shrink-0 text-ink-300 sm:block" />
-            {showTabIcons && (() => {
-              const TabIcon = iconForPath(tab.path)
-              return <TabIcon size={13} className="shrink-0" strokeWidth={1.9} />
-            })()}
+            {showTabIcons && <TabIcon size={13} className="shrink-0" strokeWidth={1.9} />}
             <button
               type="button"
-              className="max-w-[100px] truncate sm:max-w-[140px]"
+              className="max-w-[72px] truncate sm:max-w-[140px]"
               onClick={() => activateTab(tab.id)}
               onContextMenu={(e) => openMenu(e, tab.id, 'docked', index)}
             >
@@ -852,21 +1008,21 @@ function WorkspaceTabBar({ variant = 'bar', compact = false }: { variant?: 'bar'
               <X size={14} />
             </button>
           </div>
-        ))}
-        {floating.map((tab) => (
+          )
+        })}
+        {floating.map((tab) => {
+          const TabIcon = iconForPath(tab.path)
+          return (
           <div
             key={tab.id}
             data-tab-id={tab.id}
             onContextMenu={(e) => openMenu(e, tab.id, 'floating', -1)}
-            className={`mona-tab flex shrink-0 items-center gap-0.5 rounded-lg border border-dashed border-brand-800/30 bg-brand-50/80 px-1.5 py-1.5 font-medium sm:gap-1 sm:px-2 ${
-              activeId === tab.id ? 'is-active' : ''
-            }`}
+            className={`mona-tab is-float ${activeId === tab.id ? 'is-active' : ''}`}
             title="Clique direito para gerenciar janela flutuante"
           >
-            {showTabIcons ? (() => {
-              const TabIcon = iconForPath(tab.path)
-              return <TabIcon size={13} className="shrink-0 text-brand-800" strokeWidth={1.9} />
-            })() : (
+            {showTabIcons ? (
+              <TabIcon size={13} className="shrink-0 text-brand-800" strokeWidth={1.9} />
+            ) : (
               <LayoutPanelTop size={12} className="shrink-0 text-brand-800" />
             )}
             <button
@@ -894,7 +1050,8 @@ function WorkspaceTabBar({ variant = 'bar', compact = false }: { variant?: 'bar'
               <X size={14} />
             </button>
           </div>
-        ))}
+          )
+        })}
       </div>
 
       {!compact && floating.length > 0 && (
@@ -951,15 +1108,6 @@ function WorkspaceTabBar({ variant = 'bar', compact = false }: { variant?: 'bar'
       )}
 
       <div className="relative flex shrink-0 items-center gap-1">
-        {compact && activeTab && (
-          <button
-            type="button"
-            className="mona-tabbar__current"
-            onClick={() => setListOpen((open) => !open)}
-          >
-            <span className="truncate">{activeTab.title}</span>
-          </button>
-        )}
         <button
           ref={listBtnRef}
           type="button"
@@ -1112,7 +1260,7 @@ function DockDayPanel() {
           <button
             type="button"
             className="mona-pin__action"
-            onClick={() =>
+              onClick={() =>
               void saveTravel({
                 detectedTimeZoneId: browserTimeZone,
                 travelModeEnabled: true,
@@ -1185,6 +1333,7 @@ function UserMenu({
     setOpen(false)
     navigate(to)
   }
+  const { theme, toggleTheme } = useTheme()
 
   return (
     <div className="relative" ref={ref}>
@@ -1219,6 +1368,15 @@ function UserMenu({
             <p className="text-xs text-ink-500">{role}</p>
           </div>
           <div className="my-1 h-px bg-ink-100" />
+          <button
+            type="button"
+            role="menuitem"
+            className="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm text-ink-800 hover:bg-brand-50 hover:text-brand-900"
+            onClick={() => toggleTheme()}
+          >
+            {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
+            {theme === 'dark' ? 'Tema claro' : 'Tema escuro'}
+          </button>
           <button
             type="button"
             role="menuitem"
@@ -1275,8 +1433,8 @@ function UserMenu({
             <LogOut size={16} />
             Sair
           </button>
-        </div>,
-        document.body,
+          </div>,
+          document.body,
         )}
     </div>
   )
@@ -1307,6 +1465,14 @@ function TabMenuItem({
     >
       {label}
     </button>
+  )
+}
+
+function MobilePathBar() {
+  return (
+    <div className="mona-pathbar">
+      <WorkspaceTabBar compact />
+    </div>
   )
 }
 
@@ -1341,6 +1507,8 @@ function AppShell() {
     return []
   })
   const [fanGroupId, setFanGroupId] = useState<string | null>(null)
+  const [moreOpen, setMoreOpen] = useState(false)
+  const [sheetGroups, setSheetGroups] = useState<string[]>([])
   const sidebarRef = useRef<HTMLElement>(null)
 
   useEffect(() => {
@@ -1373,6 +1541,13 @@ function AppShell() {
   )
 
   const sections = useMemo(() => groupedNav(visibleNav), [visibleNav])
+  const dockTabs = useMemo(() => mobileTabs(visibleNav), [visibleNav])
+  const moreSections = useMemo(() => mobileMoreSections(visibleNav), [visibleNav])
+  const moreActive =
+    location.pathname === '/mais' ||
+    moreSections.some((section) =>
+      section.items.some((item) => pathMatches(location.pathname, item.to)),
+    )
   const activeGroupId = navGroupIdForPath(location.pathname)
 
   useEffect(() => {
@@ -1384,6 +1559,17 @@ function AppShell() {
       return next
     })
   }, [activeGroupId])
+
+  useEffect(() => {
+    if (!isMobile) return
+    const frame = window.requestAnimationFrame(() => {
+      document
+        .querySelector('.mona-sidebar.is-mobile-dock .is-notch-item')
+        ?.closest('.group, .mona-fan')
+        ?.scrollIntoView({ inline: 'center', block: 'nearest', behavior: 'smooth' })
+    })
+    return () => window.cancelAnimationFrame(frame)
+  }, [isMobile, location.pathname])
 
   const isGroupOpen = (groupId: string, collapsible: boolean) => {
     if (!collapsible) return true
@@ -1400,17 +1586,27 @@ function AppShell() {
 
   useEffect(() => {
     setFanGroupId(null)
+    setMoreOpen(false)
   }, [location.pathname, collapsed])
 
   useEffect(() => {
-    if (!fanGroupId) return
+    if (!fanGroupId && !moreOpen) return
     const onDoc = (event: MouseEvent) => {
       const target = event.target as Node
-      if (target instanceof Element && target.closest('.mona-fan, .mona-fan__list')) return
+      if (
+        target instanceof Element &&
+        target.closest('.mona-fan, .mona-fan__list, .mona-more-sheet, .mona-sidebar__more')
+      ) {
+        return
+      }
       setFanGroupId(null)
+      setMoreOpen(false)
     }
     const onKey = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') setFanGroupId(null)
+      if (event.key === 'Escape') {
+        setFanGroupId(null)
+        setMoreOpen(false)
+      }
     }
     document.addEventListener('mousedown', onDoc)
     document.addEventListener('keydown', onKey)
@@ -1418,7 +1614,7 @@ function AppShell() {
       document.removeEventListener('mousedown', onDoc)
       document.removeEventListener('keydown', onKey)
     }
-  }, [fanGroupId])
+  }, [fanGroupId, moreOpen])
 
   const handleLogout = async () => {
     await logout()
@@ -1441,30 +1637,32 @@ function AppShell() {
     )
   }
 
-  const railW = isMobile ? 56 : collapsed ? 80 : 248
-  const contentMargin = isMobile ? 12 : 12 + railW + 12
+  const railW = isMobile ? 0 : collapsed ? 80 : 248
+  const contentMargin = isMobile ? 0 : 12 + railW + 12
   const compactRail = isMobile || collapsed
-  const brandH = isMobile ? 56 : compactRail ? 80 : 72
+  const brandH = isMobile ? 0 : compactRail ? 80 : 72
   const menuTop = 12 + brandH + 10
-  const mobileDockH = 80
+  const mobileDockH = 72
 
   return (
     <div className={`mona-shell ${isMobile ? 'is-mobile' : ''}`}>
+      {!isMobile && (
       <NavLink
         to="/"
         end
         className={`mona-brand ${compactRail ? 'is-compact' : 'is-wide'}`}
-        style={{ width: isMobile ? 56 : railW, height: brandH }}
+        style={{ width: railW, height: brandH }}
         aria-label="MONA"
         title="MONA"
       >
         <BrandMark compact={compactRail} />
         {import.meta.env.VITE_FAKE_API === '1' && !compactRail && (
           <span className="rounded-full bg-white/70 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-ink-700">
-            Fake
-          </span>
-        )}
+              Fake
+            </span>
+          )}
       </NavLink>
+      )}
       <aside
         ref={sidebarRef}
         className={`mona-sidebar fixed z-30 flex overflow-visible ${
@@ -1480,101 +1678,105 @@ function AppShell() {
           enabled
           layout={compactRail ? 'compact' : 'full'}
           orientation={isMobile ? 'horizontal' : 'vertical'}
-          tick={`${openGroups.join(',')}|${fanGroupId ?? ''}|${isMobile ? 'm' : 'd'}`}
+          tick={`${openGroups.join(',')}|${fanGroupId ?? ''}|${isMobile ? 'm' : 'd'}|${moreOpen ? 'more' : ''}`}
         />
         {!isMobile && (
           <div className={`relative z-[3] flex shrink-0 items-center ${compactRail ? 'justify-center pt-3' : 'justify-end px-3 pt-3'}`}>
             {compactRail ? (
-              <button
-                type="button"
+            <button
+              type="button"
                 className="rounded-full p-2 text-ink-700 hover:bg-white/40"
-                title="Expandir menu"
-                aria-label="Expandir menu"
-                onClick={() => setCollapsed(false)}
-              >
-                <PanelLeftOpen size={16} />
-              </button>
-            ) : (
-              <button
-                type="button"
+              title="Expandir menu"
+              aria-label="Expandir menu"
+              onClick={() => setCollapsed(false)}
+            >
+              <PanelLeftOpen size={16} />
+            </button>
+          ) : (
+            <button
+              type="button"
                 className="rounded-full p-1.5 text-ink-500 hover:bg-white/40"
-                title="Recolher menu"
-                onClick={() => setCollapsed(true)}
-              >
-                <PanelLeftClose size={16} />
-              </button>
-            )}
-          </div>
+              title="Recolher menu"
+              onClick={() => setCollapsed(true)}
+            >
+              <PanelLeftClose size={16} />
+            </button>
+          )}
+        </div>
         )}
         {!isMobile && (
           <div className={`relative z-[3] shrink-0 ${compactRail ? 'px-2 pb-2 pt-3' : 'px-3 pb-2 pt-3'}`}>
-            <button
-              type="button"
+              <button
+                type="button"
               className={`mona-sidebar__cta ${compactRail ? 'px-0' : ''}`}
               onClick={() => navigate('/todos')}
               title="Nova tarefa"
-            >
+              >
               <Plus size={16} strokeWidth={2.4} />
               {!compactRail && 'Nova tarefa'}
-            </button>
+              </button>
           </div>
         )}
 
         <nav className="mona-sidebar__nav min-h-0 flex-1">
           {compactRail ? (
             <div className="mona-sidebar__compact">
-              {isMobile && (
-                <div className="mona-sidebar__cta-slot">
-                  <button
-                    type="button"
-                    className="mona-sidebar__link is-compact"
-                    onClick={() => navigate('/todos')}
-                    title="Nova tarefa"
-                    aria-label="Nova tarefa"
-                  >
-                    <span className="mona-sidebar__link-inner">
-                      <Plus size={18} strokeWidth={1.8} />
-                    </span>
-                  </button>
-                </div>
+              {isMobile ? (
+                <>
+                  {dockTabs.map((tab) => (
+                    <div key={tab.id} className="group" onClick={() => setMoreOpen(false)}>
+                      <SidebarLink
+                        to={tab.to}
+                        end={tab.end}
+                        icon={tab.icon}
+                        label={tab.label}
+                        compact
+                        caption
+                      />
+                    </div>
+                  ))}
+                  {moreSections.length > 0 && (
+                    <div className={`group ${moreActive ? 'is-more-active' : ''}`}>
+                      <SidebarLink
+                        to="/mais"
+                        icon={LayoutGrid}
+                        label="Mais"
+                        compact
+                        caption
+                        forceActive={moreActive}
+                      />
+                    </div>
+                  )}
+                </>
+              ) : (
+                sections.map((section) =>
+                  section.collapsible ? (
+                    <CompactGroupFan
+                      key={section.id}
+                      label={section.label}
+                      icon={section.icon}
+                      items={section.items}
+                      open={fanGroupId === section.id}
+                      onToggle={() => setFanGroupId((id) => (id === section.id ? null : section.id))}
+                      onNavigate={() => setFanGroupId(null)}
+                    />
+                  ) : (
+                    <ul key={section.id}>
+                      {section.items.map((item) => (
+                        <li key={item.key}>
+                          <SidebarLink
+                            to={item.to}
+                            end={item.to === '/'}
+                            icon={item.icon}
+                            label={item.label}
+                            compact
+                          />
+                        </li>
+                      ))}
+                    </ul>
+                  ),
+                )
               )}
-              {sections.map((section) =>
-                section.collapsible || isMobile ? (
-                  <CompactGroupFan
-                    key={section.id}
-                    label={section.label}
-                    icon={section.icon}
-                    items={section.items}
-                    open={fanGroupId === section.id}
-                    onToggle={() => setFanGroupId((id) => (id === section.id ? null : section.id))}
-                    onNavigate={() => setFanGroupId(null)}
-                  />
-                ) : (
-                  <ul key={section.id}>
-                    {section.items.map((item) => (
-                      <li key={item.key}>
-                        <SidebarLink
-                          to={item.to}
-                          end={item.to === '/'}
-                          icon={item.icon}
-                          label={item.label}
-                          compact
-                        />
-                      </li>
-                    ))}
-                  </ul>
-                ),
-              )}
-              {hasPermission(Permissions.Settings) && (
-                <div data-sidebar-dock>
-                  <SidebarLink
-                    to="/configuracoes"
-                    icon={Settings}
-                    label="Configurações"
-                    compact
-                  />
-          </div>
-        )}
             </div>
           ) : (
             <>
@@ -1594,7 +1796,7 @@ function AppShell() {
                         <span className="flex min-w-0 items-center gap-2">
                           <GroupIcon size={14} strokeWidth={2} />
                           {section.label}
-                        </span>
+                      </span>
                         <span className="mona-sidebar__group-meta">
                           <span className="mona-sidebar__group-count">{section.items.length}</span>
                           <ChevronDown size={14} className={open ? 'rotate-180' : ''} />
@@ -1625,61 +1827,54 @@ function AppShell() {
                 </div>
                 )
               })}
-              {hasPermission(Permissions.Settings) && (
-                <div data-sidebar-dock className="relative z-[3] px-2 pb-3 pt-1">
-                  <SidebarLink
-                    to="/configuracoes"
-                    icon={Settings}
-                    label="Configurações"
-                  />
-            </div>
-              )}
             </>
-          )}
+            )}
         </nav>
       </aside>
+      {isMobile && moreOpen && (
+        <MobileMoreSheet
+          sections={moreSections}
+          openGroups={sheetGroups}
+          onToggleGroup={(id) =>
+            setSheetGroups((prev) => (prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]))
+          }
+          onClose={() => setMoreOpen(false)}
+        />
+      )}
 
       <div
         className={`mona-canvas min-w-0 flex-1 transition-[margin] ${isMobile ? '' : 'my-3 mr-3'}`}
         style={{
           marginLeft: contentMargin,
-          marginRight: isMobile ? 12 : undefined,
-          marginTop: isMobile ? 12 : undefined,
+          marginRight: isMobile ? 0 : undefined,
+          marginTop: isMobile ? 0 : undefined,
         }}
       >
         <section className="mona-workspace">
           <header className="mona-topbar">
-            <div className="flex min-w-0 items-center gap-2 px-3 py-2 sm:px-4">
-              <div className={`min-w-0 ${isMobile ? 'shrink-0' : 'flex-1'}`}>
-                <WorkspaceTabBar compact={isMobile} />
-              </div>
-              <div className="mona-topbar__search">
-                <Search className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-ink-500" size={15} />
-                <input
-                  type="search"
-                  placeholder="Buscar..."
-                  className="mona-search"
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') {
-                      const q = (e.target as HTMLInputElement).value.trim()
-                      if (q) navigate(`/clientes?q=${encodeURIComponent(q)}`)
-                    }
-                  }}
-                />
-              </div>
-              {isMobile && (
-                <div className="mona-panel mona-panel--tools relative shrink-0">
-                  <button
-                    type="button"
-                    className="mona-icon-btn"
-                    aria-label={theme === 'dark' ? 'Tema claro' : 'Tema escuro'}
-                    title={theme === 'dark' ? 'Tema claro' : 'Tema escuro'}
-                    onClick={() => toggleTheme()}
-                  >
-                    {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
-                  </button>
-                  <button
-                    type="button"
+            {isMobile ? (
+              <>
+                <div className="mona-topbar__row">
+                  <NavLink to="/" end className="mona-topbar__logo" aria-label="MONA">
+                    <BrandLogo size={26} showWordmark wordAsText title="MONA" />
+                  </NavLink>
+                  <div className="mona-topbar__search">
+                    <Search className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-ink-500" size={15} />
+                    <input
+                      type="search"
+                      placeholder="Buscar..."
+                      className="mona-search"
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          const q = (e.target as HTMLInputElement).value.trim()
+                          if (q) navigate(`/clientes?q=${encodeURIComponent(q)}`)
+                        }
+                      }}
+                    />
+            </div>
+                  <MobilePathBar />
+              <button
+                type="button"
                     className="mona-icon-btn relative"
                     aria-label="Notificações"
                     onClick={() => setNotifOpen((v) => !v)}
@@ -1688,26 +1883,26 @@ function AppShell() {
                     {unread > 0 && (
                       <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white">
                         {unread}
-                      </span>
+              </span>
                     )}
                   </button>
                   {notifOpen &&
                     createPortal(
-                    <div className="fixed right-3 top-20 z-[220] w-[min(24rem,calc(100vw-1.5rem))] rounded-3xl border border-ink-100 bg-white p-3 shadow-xl">
+                    <div className="fixed right-3 top-16 z-[220] w-[min(24rem,calc(100vw-1.5rem))] rounded-3xl border border-ink-100 bg-white p-3 shadow-xl">
                       <div className="mb-2 flex items-center justify-between">
                         <p className="text-sm font-semibold text-ink-900">Alertas</p>
                         <button type="button" className="text-xs text-brand-800" onClick={() => markAll()}>
                           Marcar vistas
                         </button>
-                      </div>
+        </div>
                       <ul className="max-h-80 space-y-2 overflow-y-auto">
                         {notifications.length === 0 && (
                           <li className="py-6 text-center text-sm text-ink-500">Nenhuma notificação</li>
                         )}
                         {notifications.slice(0, 8).map((n) => (
                           <li key={n.id}>
-                            <button
-                              type="button"
+              <button
+                type="button"
                               className={`w-full rounded-2xl px-3 py-2 text-left text-sm ${n.isRead ? 'bg-ink-50/50' : 'bg-brand-50'}`}
                               onClick={() => {
                                 markRead(n.id)
@@ -1717,7 +1912,7 @@ function AppShell() {
                             >
                               <p className="font-medium text-ink-900">{n.title}</p>
                               <p className="text-xs text-ink-600">{n.body}</p>
-                            </button>
+              </button>
                           </li>
                         ))}
                       </ul>
@@ -1732,11 +1927,31 @@ function AppShell() {
                     onLogout={() => void handleLogout()}
                   />
                 </div>
-              )}
+              </>
+            ) : (
+            <div className="flex min-w-0 items-center gap-2 px-3 py-2 sm:px-4">
+              <div className="min-w-0 flex-1">
+                <WorkspaceTabBar />
+              </div>
+              <div className="mona-topbar__search">
+                <Search className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-ink-500" size={15} />
+              <input
+                type="search"
+                placeholder="Buscar..."
+                  className="mona-search"
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    const q = (e.target as HTMLInputElement).value.trim()
+                    if (q) navigate(`/clientes?q=${encodeURIComponent(q)}`)
+                  }
+                }}
+              />
             </div>
+            </div>
+            )}
           </header>
 
-          <main className="mona-canvas__main px-3 pb-6 pt-3 sm:px-6 sm:pt-4 lg:px-8">
+          <main className={`mona-canvas__main ${isMobile ? 'px-[0.85rem] pb-20 pt-1.5' : 'px-3 pb-6 pt-3 sm:px-6 sm:pt-4 lg:px-8'}`}>
             <Outlet />
           </main>
         </section>
@@ -1744,75 +1959,75 @@ function AppShell() {
         {!isMobile && (
         <aside className="mona-dock">
           <div className="mona-panel mona-panel--tools">
-            <button
-              type="button"
+              <button
+                type="button"
               className="mona-icon-btn"
-              aria-label={theme === 'dark' ? 'Tema claro' : 'Tema escuro'}
-              title={theme === 'dark' ? 'Tema claro' : 'Tema escuro'}
-              onClick={() => toggleTheme()}
-            >
-              {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
-            </button>
-            <button
-              type="button"
+                aria-label={theme === 'dark' ? 'Tema claro' : 'Tema escuro'}
+                title={theme === 'dark' ? 'Tema claro' : 'Tema escuro'}
+                onClick={() => toggleTheme()}
+              >
+                {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
+              </button>
+              <button
+                type="button"
               className="mona-icon-btn relative"
-              aria-label="Notificações"
-              onClick={() => setNotifOpen((v) => !v)}
-            >
-              <Bell size={18} />
-              {unread > 0 && (
-                <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white">
-                  {unread}
-                </span>
-              )}
-            </button>
-            {notifOpen && (
+                aria-label="Notificações"
+                onClick={() => setNotifOpen((v) => !v)}
+              >
+                <Bell size={18} />
+                {unread > 0 && (
+                  <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white">
+                    {unread}
+                  </span>
+                )}
+              </button>
+              {notifOpen && (
               <div className="absolute right-0 top-[calc(100%+10px)] z-40 w-[min(24rem,calc(100vw-1.5rem))] rounded-3xl border border-ink-100 bg-white p-3 shadow-xl">
-                <div className="mb-2 flex items-center justify-between">
-                  <p className="text-sm font-semibold text-ink-900">Alertas</p>
-                  <div className="flex gap-2">
-                    <button type="button" className="text-xs text-brand-800" onClick={() => markAll()}>
-                      Marcar vistas
-                    </button>
-                    <button
-                      type="button"
-                      className="text-xs text-ink-500"
-                      onClick={() => {
-                        setNotifOpen(false)
-                        navigate('/notificacoes')
-                      }}
-                    >
-                      Gerenciar
-                    </button>
-                  </div>
-                </div>
-                <ul className="max-h-80 space-y-2 overflow-y-auto">
-                  {notifications.length === 0 && (
-                    <li className="py-6 text-center text-sm text-ink-500">Nenhuma notificação</li>
-                  )}
-                  {notifications.slice(0, 8).map((n) => (
-                    <li key={n.id}>
+                  <div className="mb-2 flex items-center justify-between">
+                    <p className="text-sm font-semibold text-ink-900">Alertas</p>
+                    <div className="flex gap-2">
+                      <button type="button" className="text-xs text-brand-800" onClick={() => markAll()}>
+                        Marcar vistas
+                      </button>
                       <button
                         type="button"
-                        className={`w-full rounded-2xl px-3 py-2 text-left text-sm ${n.isRead ? 'bg-ink-50/50' : 'bg-brand-50'}`}
+                        className="text-xs text-ink-500"
                         onClick={() => {
-                          markRead(n.id)
-                          if (n.link) navigate(n.link)
                           setNotifOpen(false)
+                          navigate('/notificacoes')
                         }}
                       >
-                        <p className="font-medium text-ink-900">{n.title}</p>
-                        <p className="text-xs text-ink-600">{n.body}</p>
-                        <p className="mt-1 text-[11px] text-ink-500">
-                          {new Date(n.occursAtLocal).toLocaleString('pt-BR')}
-                          {n.resolutionStatus ? ` · ${n.resolutionStatus}` : ''}
-                        </p>
+                        Gerenciar
                       </button>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
+                    </div>
+                  </div>
+                  <ul className="max-h-80 space-y-2 overflow-y-auto">
+                    {notifications.length === 0 && (
+                      <li className="py-6 text-center text-sm text-ink-500">Nenhuma notificação</li>
+                    )}
+                    {notifications.slice(0, 8).map((n) => (
+                      <li key={n.id}>
+                        <button
+                          type="button"
+                        className={`w-full rounded-2xl px-3 py-2 text-left text-sm ${n.isRead ? 'bg-ink-50/50' : 'bg-brand-50'}`}
+                          onClick={() => {
+                            markRead(n.id)
+                            if (n.link) navigate(n.link)
+                            setNotifOpen(false)
+                          }}
+                        >
+                          <p className="font-medium text-ink-900">{n.title}</p>
+                          <p className="text-xs text-ink-600">{n.body}</p>
+                          <p className="mt-1 text-[11px] text-ink-500">
+                            {new Date(n.occursAtLocal).toLocaleString('pt-BR')}
+                            {n.resolutionStatus ? ` · ${n.resolutionStatus}` : ''}
+                          </p>
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
             <UserMenu
               name={user?.name}
               role={user?.isOwner ? 'Conta principal' : 'Usuário compartilhado'}
@@ -1820,7 +2035,7 @@ function AppShell() {
               unread={unread}
               onLogout={() => void handleLogout()}
             />
-          </div>
+                </div>
           <DockDayPanel />
         </aside>
         )}

@@ -766,6 +766,10 @@
     display: block;
   }
 
+  .mona-fan__list.is-open.is-up .mona-fan__title {
+    display: block;
+  }
+
   .mona-sidebar__group {
     padding: 0.15rem 0.35rem 0.35rem;
   }
@@ -795,6 +799,7 @@
 
     svg {
       flex-shrink: 0;
+      color: var(--mona-color-purple);
       transition: transform 0.28s cubic-bezier(0.22, 1, 0.36, 1);
     }
 
@@ -909,7 +914,7 @@
     transform: translateX(var(--mona-notch-pop, 11px));
     transition-delay: 0.2s;
     background: var(--mona-color-surface);
-    color: var(--mona-color-ink);
+    color: var(--mona-color-purple);
     box-shadow: 0 var(--mona-notch-shadow, 12px 12px 0 rgb(0 0 0 / 0.25));
   }
 
@@ -918,8 +923,8 @@
     align-items: flex-end;
     justify-content: space-between;
     width: auto;
-    padding: 0 12px 8px;
-    border-radius: 28px 28px 0 0;
+    padding: 0 8px 6px;
+    border-radius: 20px 20px 0 0;
     overflow: visible;
     box-shadow: 0 -8px 24px color-mix(in srgb, var(--mona-color-coral) 12%, transparent);
     transition: --mona-notch-x 0.3s ease-out;
@@ -937,9 +942,16 @@
       display: block;
       min-width: 0;
       flex: 1;
-      height: calc(100% + 36px);
-      margin-top: -36px;
-      overflow: visible;
+      height: calc(100% + 28px);
+      margin-top: -28px;
+      overflow-x: hidden;
+      overflow-y: hidden;
+      scrollbar-width: none;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .mona-sidebar__nav::-webkit-scrollbar {
+      display: none;
     }
 
     .mona-sidebar__compact {
@@ -950,7 +962,8 @@
       width: 100%;
       min-width: 0;
       height: 100%;
-      padding: 36px 0 0;
+      padding: 28px 4px 0;
+      gap: 0;
     }
 
     .mona-sidebar__compact > ul {
@@ -959,6 +972,7 @@
 
     .mona-sidebar__compact > ul > li,
     .mona-sidebar__compact > .mona-fan,
+    .mona-sidebar__compact > .group,
     .mona-sidebar__compact > [data-sidebar-dock],
     .mona-sidebar__cta-slot {
       display: flex;
@@ -969,33 +983,125 @@
       min-width: 0;
       max-width: none;
       min-height: 0;
-      height: 80px;
-      padding: 0;
-    }
-
-    .mona-sidebar__cta {
-      width: var(--mona-notch-circle, 39px);
-      height: var(--mona-notch-circle, 39px);
-      margin: 0;
+      height: 72px;
       padding: 0;
     }
 
     .mona-sidebar__link.is-compact {
       width: 100%;
-      height: 80px;
+      height: 72px;
+      flex-direction: column;
+      justify-content: flex-end;
+      gap: 0.15rem;
+      padding: 0 0 8px;
     }
 
     .mona-sidebar__link.is-compact.is-notch-item .mona-sidebar__link-inner {
-      transform: translateY(calc(var(--mona-notch-pop, 11px) * -2.2));
+      transform: translateY(-14px);
       box-shadow: 0 5px 5px rgb(0 0 0 / 0.25);
     }
 
-    .group > [role="tooltip"] {
-      left: 50%;
-      top: auto;
-      bottom: calc(100% + 8px);
-      transform: translateX(-50%);
+    .mona-sidebar__link-caption {
+      position: relative;
+      z-index: 2;
+      max-width: 100%;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      font-size: 0.625rem;
+      font-weight: 600;
+      letter-spacing: -0.01em;
+      line-height: 1;
+      color: color-mix(in srgb, var(--mona-color-purple) 72%, var(--mona-color-muted));
     }
+
+    .mona-sidebar__link.is-active .mona-sidebar__link-caption,
+    .mona-sidebar__link.is-notch-item .mona-sidebar__link-caption {
+      color: var(--mona-color-purple);
+      font-weight: 700;
+    }
+
+    .group > [role="tooltip"] {
+      display: none;
+    }
+  }
+
+  .mona-more-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 110;
+    border: 0;
+    background: rgb(15 10 26 / 0.28);
+  }
+
+  .mona-more-sheet {
+    position: fixed;
+    left: 10px;
+    right: 10px;
+    bottom: calc(80px + env(safe-area-inset-bottom, 0px));
+    z-index: 120;
+    max-height: min(68dvh, 560px);
+    overflow: auto;
+    padding: 4px 2px 10px;
+    border-radius: 22px;
+    background: var(--mona-chrome-sidebar-bg, #fff);
+    color: var(--mona-chrome-sidebar-ink);
+    box-shadow: 0 18px 40px rgb(15 10 26 / 0.2);
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .mona-more-sheet__head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.75rem 0.95rem 0.4rem;
+    font-size: 0.8125rem;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+
+  .mona-more-sheet__close {
+    display: flex;
+    width: 32px;
+    height: 32px;
+    align-items: center;
+    justify-content: center;
+    border: 0;
+    border-radius: 999px;
+    background: color-mix(in srgb, #fff 42%, transparent);
+    color: inherit;
+    cursor: pointer;
+  }
+
+  .mona-more-sheet__link {
+    display: flex;
+    align-items: center;
+    gap: 0.55rem;
+    min-height: 44px;
+    margin: 0 0.35rem 0.15rem;
+    padding: 0 0.7rem;
+    border-radius: 14px;
+    color: inherit;
+    text-decoration: none;
+    font-size: 0.9rem;
+  }
+
+  .mona-more-sheet__link.is-active {
+    background: color-mix(in srgb, #fff 58%, transparent);
+    font-weight: 700;
+  }
+
+  .mona-more-sheet__icon {
+    display: flex;
+    width: 28px;
+    height: 28px;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--mona-color-purple) 10%, #fff);
+    color: var(--mona-color-purple);
   }
 
   .mona-shell.is-mobile {
@@ -1007,12 +1113,12 @@
   .mona-shell.is-mobile .mona-canvas {
     display: flex;
     flex-direction: column;
-    width: auto;
-    max-width: calc(100vw - 24px);
-    height: calc(100dvh - 12px - 80px);
-    max-height: calc(100dvh - 12px - 80px);
+    width: 100%;
+    max-width: 100vw;
+    height: calc(100dvh - 72px);
+    max-height: calc(100dvh - 72px);
     overflow: hidden;
-    gap: 8px;
+    gap: 0;
   }
 
   .mona-shell.is-mobile .mona-workspace {
@@ -1020,20 +1126,39 @@
     min-height: 0;
     width: 100%;
     max-width: 100%;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+    overflow: hidden;
   }
 
   .mona-shell.is-mobile .mona-topbar {
     overflow: visible;
+    background: transparent;
   }
 
-  .mona-shell.is-mobile .mona-topbar > div {
-    padding-left: 4.25rem;
-    overflow: visible;
+  .mona-shell.is-mobile .mona-topbar__row {
+    display: flex;
+    min-width: 0;
+    align-items: center;
+    gap: 0.45rem;
+    padding: 0.55rem 0.85rem 0.2rem;
   }
 
-  .mona-shell.is-mobile .mona-topbar .mona-panel--tools {
-    margin-left: 0;
-    flex: 0 0 auto;
+  .mona-shell.is-mobile .mona-topbar__logo {
+    display: flex;
+    flex-shrink: 0;
+    align-items: center;
+    gap: 0.4rem;
+    text-decoration: none;
+  }
+
+  .mona-wordmark-text {
+    color: var(--mona-color-ink);
+    font-size: 1.02rem;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+    line-height: 1;
   }
 
   .mona-shell.is-mobile .mona-topbar__search {
@@ -1042,19 +1167,497 @@
     flex: 1 1 0;
   }
 
-  .mona-shell.is-mobile .mona-tabbar {
+  .mona-shell.is-mobile .mona-topbar .mona-search {
+    padding: 0.48rem 0.8rem 0.48rem 2.1rem;
+    background: color-mix(in srgb, #fff 72%, transparent);
+  }
+
+  .mona-shell.is-mobile .mona-topbar .mona-icon-btn {
+    width: 36px;
+    height: 36px;
+    border: 0;
+    background: transparent;
+    flex-shrink: 0;
+  }
+
+  .mona-shell.is-mobile .mona-pathbar {
+    display: flex;
+    flex: 0 0 auto;
+    min-width: 0;
+    align-items: center;
+    padding: 0;
+  }
+
+  .mona-pathbar {
+    display: flex;
+    min-width: 0;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.1rem 0.85rem 0.45rem 0.95rem;
+  }
+
+  .mona-crumbs {
+    display: flex;
+    min-width: 0;
+    flex: 1;
+    align-items: center;
+    overflow: hidden;
+    color: var(--mona-color-muted);
+    font-size: 0.72rem;
+    font-weight: 500;
+  }
+
+  .mona-crumbs__item {
+    display: inline-flex;
+    min-width: 0;
+    align-items: center;
+  }
+
+  .mona-crumbs__item:last-child {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .mona-crumbs__sep {
+    flex-shrink: 0;
+    margin: 0 0.15rem;
+    opacity: 0.55;
+  }
+
+  .mona-crumbs__link {
+    border: 0;
     background: transparent;
     padding: 0;
+    color: inherit;
+    font: inherit;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+
+  .mona-crumbs__current {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: var(--mona-color-ink);
+    font-weight: 600;
+  }
+
+  .mona-shell.is-mobile .mona-tabbar {
     flex: 0 0 auto;
+    min-width: 0;
+    background: transparent;
+    padding: 0;
+    align-items: center;
+  }
+
+  .mona-tabbar__folder {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    padding: 0;
+    border: 0;
+    border-radius: 999px;
+    background: transparent;
+    color: var(--mona-color-purple);
+    cursor: pointer;
+
+    span {
+      position: absolute;
+      right: 1px;
+      top: 2px;
+      min-width: 0.95rem;
+      height: 0.95rem;
+      padding: 0 0.22rem;
+      border-radius: 999px;
+      background: var(--mona-color-pink, #F54D7D);
+      color: #fff;
+      font-size: 0.58rem;
+      font-weight: 800;
+      line-height: 0.95rem;
+    }
+
+    &.is-open,
+    &:hover {
+      background: color-mix(in srgb, #fff 78%, transparent);
+    }
   }
 
   .mona-shell.is-mobile .mona-chat-fab,
   .mona-shell.is-mobile .mona-chat-panel {
-    bottom: 96px;
+    display: none;
   }
 
   .mona-shell.is-mobile .mona-canvas__main {
+    flex: 1 1 auto;
+    min-width: 0;
+    min-height: 0;
     overflow-x: hidden;
+    overflow-y: auto;
+    padding: 0.35rem 0.85rem 4.75rem;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+  }
+
+  .mona-shell.is-mobile .mona-page__header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+  }
+
+  .mona-shell.is-mobile .mona-page__title {
+    font-size: 1.45rem;
+    line-height: 1.2;
+    overflow-wrap: break-word;
+  }
+
+  .mona-shell.is-mobile .mona-page__subtitle {
+    font-size: 0.8rem;
+  }
+
+  .mona-shell.is-mobile .mona-page__actions,
+  .mona-shell.is-mobile .mona-page__actions > div {
+    display: flex;
+    width: 100%;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .mona-shell.is-mobile .mona-page__actions .mona-btn {
+    flex: 1 1 auto;
+    justify-content: center;
+  }
+
+  .mona-shell.is-mobile .mona-card {
+    padding: 0.95rem 1rem;
+  }
+
+  .mona-shell.is-mobile .mona-hero .mona-blob,
+  .mona-shell.is-mobile .mona-hero__arrow,
+  .mona-shell.is-mobile .mona-hero__card,
+  .mona-shell.is-mobile .mona-home__desktop {
+    display: none;
+  }
+
+  .mona-shell.is-mobile .mona-home {
+    padding-bottom: 2.75rem;
+  }
+
+  .mona-shell.is-mobile .mona-home__mobile {
+    display: grid;
+    gap: 0.75rem;
+  }
+
+  .mona-shell.is-mobile .mona-hero--stage {
+    display: none;
+  }
+
+  .mona-shell.is-mobile .mona-hero--stage .mona-hero__art {
+    top: 0.85rem;
+    right: 0.35rem;
+    width: 108px;
+    height: 92px;
+    transform: none;
+    opacity: 1;
+  }
+
+  .mona-shell.is-mobile .mona-hero__wave {
+    top: -0.4rem;
+    right: -1.2rem;
+    bottom: auto;
+    width: 180px;
+    opacity: 0.5;
+  }
+
+  .mona-shell.is-mobile .mona-hero__title {
+    padding-right: 6.4rem;
+    font-size: 1.55rem;
+    line-height: 1.15;
+  }
+
+  .mona-shell.is-mobile .mona-hero__cta {
+    display: inline-flex;
+  }
+
+  .mona-shell.is-mobile .mona-hero__note {
+    display: block;
+    position: absolute;
+    right: 0.35rem;
+    bottom: 1.15rem;
+    z-index: 2;
+    width: 6.6rem;
+    margin: 0;
+    color: var(--mona-color-purple);
+    font-family: "Segoe Script", "Bradley Hand", cursive;
+    font-size: 0.78rem;
+    line-height: 1.15;
+    text-align: right;
+    transform: rotate(-8deg);
+  }
+
+  .mona-home__today,
+  .mona-home__row,
+  .mona-home__tip,
+  .mona-home__stat {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.95rem 1rem;
+    border-radius: 22px;
+    background: var(--mona-color-surface);
+    color: inherit;
+    text-decoration: none;
+    box-shadow: 0 10px 24px color-mix(in srgb, var(--mona-color-purple) 6%, transparent);
+  }
+
+  .mona-home__today {
+    justify-content: space-between;
+
+    p {
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
+      margin: 0;
+      color: var(--mona-color-muted);
+      font-size: 0.68rem;
+      font-weight: 800;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+    }
+
+    strong {
+      display: block;
+      margin-top: 0.2rem;
+      font-size: 0.95rem;
+      font-weight: 700;
+      text-transform: capitalize;
+    }
+
+    > span {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.25rem;
+      color: var(--mona-color-purple);
+      font-size: 0.78rem;
+      font-weight: 700;
+    }
+  }
+
+  .mona-home__stats {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.75rem;
+  }
+
+  .mona-home__stat {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.35rem;
+
+    p {
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
+      margin: 0;
+      color: var(--mona-color-muted);
+      font-size: 0.72rem;
+      font-weight: 600;
+    }
+
+    strong {
+      font-size: 1.7rem;
+      line-height: 1;
+    }
+
+    span {
+      color: var(--mona-color-muted);
+      font-size: 0.7rem;
+    }
+
+    svg {
+      color: var(--mona-color-purple);
+    }
+
+    &.is-warm svg {
+      color: var(--mona-color-orange);
+    }
+  }
+
+  .mona-home__row-icon {
+    display: flex;
+    width: 36px;
+    height: 36px;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    border-radius: 12px;
+    background: color-mix(in srgb, var(--mona-color-purple) 10%, #fff);
+    color: var(--mona-color-purple);
+  }
+
+  .mona-home__row,
+  .mona-home__tip {
+    strong {
+      display: block;
+      font-size: 0.92rem;
+    }
+
+    p {
+      margin: 0.15rem 0 0;
+      color: var(--mona-color-muted);
+      font-size: 0.75rem;
+      line-height: 1.35;
+    }
+
+    > svg:last-child {
+      margin-left: auto;
+      color: var(--mona-color-purple);
+    }
+  }
+
+  .mona-home__tip {
+    background: color-mix(in srgb, var(--mona-color-purple) 6%, #fff);
+  }
+
+  .mona-home__quick {
+    padding: 0.15rem 0.15rem 0.2rem;
+
+    > p {
+      margin: 0 0 0.7rem;
+      color: var(--mona-color-muted);
+      font-size: 0.68rem;
+      font-weight: 800;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+    }
+
+    > div {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 0.45rem;
+    }
+
+    a {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.4rem;
+      color: var(--mona-color-ink);
+      font-size: 0.62rem;
+      font-weight: 700;
+      line-height: 1.2;
+      text-align: center;
+      text-decoration: none;
+    }
+
+    span {
+      display: flex;
+      width: 46px;
+      height: 46px;
+      align-items: center;
+      justify-content: center;
+      border-radius: 999px;
+      background: var(--mona-color-surface);
+      color: var(--mona-color-purple);
+      box-shadow: 0 8px 18px color-mix(in srgb, var(--mona-color-purple) 8%, transparent);
+    }
+  }
+
+  .mona-home__charts {
+    display: none;
+  }
+
+  .mona-shell.is-mobile .mona-home__charts {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.75rem;
+  }
+
+  .mona-shell.is-mobile .mona-home__charts .mona-card {
+    padding: 0.85rem 0.8rem 0.7rem;
+  }
+
+  .mona-shell.is-mobile .mona-home__charts .mona-kpi__icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 12px;
+  }
+
+  .mona-shell.is-mobile .mona-home__charts .text-3xl {
+    font-size: 1.45rem;
+  }
+
+  .mona-shell.is-mobile .mona-field {
+    flex: 1 1 100%;
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .mona-shell.is-mobile .mona-field__control[class*="min-w-"],
+  .mona-shell.is-mobile .mona-field__control[class*="max-w-"] {
+    min-width: 0 !important;
+    max-width: 100% !important;
+  }
+
+  .mona-shell.is-mobile :is(.overflow-hidden, [class*="overflow-hidden"]):has(> table),
+  .mona-shell.is-mobile div:has(> table) {
+    max-width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .mona-shell.is-mobile table {
+    min-width: 36rem;
+  }
+
+  .mona-shell.is-mobile .mona-board {
+    display: flex !important;
+    grid-template-columns: none !important;
+    flex-direction: column;
+  }
+
+  .mona-shell.is-mobile .mona-modal {
+    align-items: flex-end;
+    padding: 0;
+  }
+
+  .mona-shell.is-mobile .mona-modal__dialog {
+    max-width: 100%;
+    max-height: calc(100dvh - 76px);
+    display: flex;
+    flex-direction: column;
+    border-radius: 22px 22px 0 0;
+  }
+
+  .mona-shell.is-mobile .mona-modal__body {
+    overflow-y: auto;
+    padding: 1rem 1rem calc(1rem + env(safe-area-inset-bottom, 0px));
+  }
+
+  .mona-shell.is-mobile .mona-chat-panel {
+    left: 0.75rem;
+    right: 0.75rem;
+    width: auto;
+    height: min(70dvh, calc(100dvh - 160px));
+  }
+
+  .mona-shell.is-mobile .mona-btn {
+    min-height: 40px;
+  }
+
+  .mona-shell.is-mobile table th,
+  .mona-shell.is-mobile table td {
+    white-space: nowrap;
+  }
+
+  .mona-shell.is-mobile .mona-canvas__main a,
+  .mona-shell.is-mobile .mona-canvas__main p,
+  .mona-shell.is-mobile .mona-canvas__main h1,
+  .mona-shell.is-mobile .mona-canvas__main h2 {
+    overflow-wrap: break-word;
   }
 
   .mona-sidebar:not(.is-compact) .mona-sidebar__link:not(.is-compact) .mona-sidebar__link-label {
@@ -1071,6 +1674,7 @@
     align-items: center;
     justify-content: center;
     border-radius: 50%;
+    color: var(--mona-color-purple);
     transform: translateX(0);
     transition:
       transform 0.2s ease-out,
@@ -1087,7 +1691,7 @@
     transform: translateX(var(--mona-notch-pop-full, 8px));
     transition-delay: 0.2s;
     background: var(--mona-color-surface);
-    color: var(--mona-color-ink);
+    color: var(--mona-color-purple);
     box-shadow: 0 var(--mona-notch-shadow, 5px 5px 0 rgb(0 0 0 / 0.25));
   }
 
@@ -1205,7 +1809,7 @@
     overflow: hidden;
     border-radius: var(--mona-radius-xl);
     background: var(--mona-color-surface);
-    box-shadow: 0 18px 48px color-mix(in srgb, var(--mona-color-coral) 14%, transparent);
+    box-shadow: 0 18px 48px color-mix(in srgb, var(--mona-color-purple) 10%, transparent);
   }
 
   .mona-dock {
@@ -1487,6 +2091,7 @@
     position: relative;
     z-index: 20;
     flex-shrink: 0;
+    overflow: visible;
     background: color-mix(in srgb, var(--mona-color-surface) 88%, transparent);
   }
 
@@ -1586,11 +2191,10 @@
     padding: var(--mona-space-6);
     border-radius: var(--mona-radius-xl);
     background:
-      radial-gradient(420px 180px at 92% 12%, color-mix(in srgb, var(--mona-color-orange) 28%, transparent), transparent 70%),
-      radial-gradient(380px 200px at 70% 0%, color-mix(in srgb, var(--mona-color-coral) 22%, transparent), transparent 68%),
-      radial-gradient(360px 180px at 8% 100%, color-mix(in srgb, var(--mona-color-pink) 18%, transparent), transparent 70%),
-      radial-gradient(320px 160px at 0% 0%, color-mix(in srgb, var(--mona-color-purple) 16%, transparent), transparent 70%),
-      linear-gradient(180deg, color-mix(in srgb, var(--mona-color-coral) 8%, var(--mona-color-surface)), var(--mona-color-surface));
+      radial-gradient(420px 180px at 92% 12%, color-mix(in srgb, var(--mona-color-orange) 14%, transparent), transparent 70%),
+      radial-gradient(380px 200px at 70% 0%, color-mix(in srgb, var(--mona-color-pink) 12%, transparent), transparent 68%),
+      radial-gradient(360px 180px at 8% 100%, color-mix(in srgb, var(--mona-color-purple) 14%, transparent), transparent 70%),
+      linear-gradient(180deg, color-mix(in srgb, var(--mona-color-purple) 5%, var(--mona-color-surface)), var(--mona-color-surface));
   }
 
   .mona-hero--stage {
@@ -1602,14 +2206,43 @@
 
   .mona-hero--stage .mona-hero__art {
     position: absolute;
-    top: 1.2rem;
-    right: 19.5rem;
+    top: 1.15rem;
+    right: 8.8rem;
     bottom: auto;
     left: auto;
-    width: 120px;
-    height: 120px;
+    display: flex;
+    width: 228px;
+    height: 196px;
+    transform: none;
     pointer-events: none;
-    opacity: 0.55;
+    opacity: 1;
+    z-index: 1;
+  }
+
+  .mona-hero__mark {
+    width: 100% !important;
+    height: 100% !important;
+    max-width: none;
+    filter: drop-shadow(0 18px 28px color-mix(in srgb, var(--mona-color-pink) 28%, transparent));
+  }
+
+  .mona-hero__wave {
+    position: absolute;
+    top: 0;
+    right: 2%;
+    z-index: 0;
+    width: min(52%, 360px);
+    pointer-events: none;
+  }
+
+  .mona-hero__arrow {
+    position: absolute;
+    right: 5.4rem;
+    top: 44%;
+    z-index: 2;
+    width: 48px;
+    height: 48px;
+    pointer-events: none;
   }
 
   .mona-hero__card {
@@ -1619,9 +2252,18 @@
     z-index: 3;
     width: min(280px, calc(100% - 2rem));
     padding: 1rem 1.15rem;
-    border-radius: 28px;
+    border-radius: 24px;
     background: var(--mona-color-surface);
     box-shadow: 0 22px 44px color-mix(in srgb, var(--mona-color-coral) 18%, transparent);
+  }
+
+  .mona-hero__kicker {
+    margin: 0;
+    font-size: 0.75rem;
+    font-weight: 800;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--mona-color-purple);
   }
 
   .mona-hero__title {
@@ -1631,6 +2273,31 @@
     font-weight: 700;
     letter-spacing: -0.03em;
     color: var(--mona-color-ink);
+  }
+
+  .mona-hero__cta {
+    display: none;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    width: fit-content;
+    margin-top: 1rem;
+    padding: 0.7rem 1.05rem;
+    border-radius: 999px;
+    background: var(--mona-gradient-cta);
+    color: #fff;
+    font-size: 0.8125rem;
+    font-weight: 700;
+    text-decoration: none;
+    box-shadow: 0 10px 22px color-mix(in srgb, var(--mona-color-purple) 18%, transparent);
+  }
+
+  .mona-hero__note {
+    display: none;
+  }
+
+  .mona-home__mobile {
+    display: none;
   }
 
   .mona-hero__art {
@@ -1644,6 +2311,86 @@
     position: absolute;
     border-radius: 40% 60% 55% 45%;
     filter: blur(0.2px);
+  }
+
+  .mona-folder {
+    position: relative;
+    margin-top: 14px;
+  }
+
+  .mona-folder::before {
+    content: "";
+    position: absolute;
+    top: -13px;
+    left: 18px;
+    z-index: 1;
+    width: 72px;
+    height: 16px;
+    background: color-mix(in srgb, var(--mona-color-purple) 12%, var(--mona-color-surface));
+    border-radius: 11px 14px 0 0;
+  }
+
+  .mona-hero__card.mona-folder::before,
+  .mona-folder.bg-brand-50::before {
+    background: color-mix(in srgb, var(--mona-color-purple) 16%, var(--mona-color-surface));
+  }
+
+  .mona-folder.mona-tint-orange::before {
+    background: color-mix(in srgb, var(--mona-color-orange) 22%, var(--mona-color-surface));
+  }
+
+  .mona-folder--ink::before {
+    background-color: #0f0a1a;
+  }
+
+  .mona-loader {
+    position: relative;
+    width: 64px;
+    height: 54px;
+  }
+
+  .mona-loader__folder {
+    position: absolute;
+    inset: 0;
+    animation: mona-load-folder 1.7s ease infinite;
+  }
+
+  .mona-loader__mark {
+    position: absolute;
+    left: 50%;
+    top: 56%;
+    opacity: 0;
+    animation: mona-load-mark 1.7s ease infinite;
+  }
+
+  @keyframes mona-load-folder {
+    0%,
+    32% {
+      opacity: 1;
+      transform: scale(1);
+    }
+    58%,
+    100% {
+      opacity: 0.18;
+      transform: scale(0.88);
+    }
+  }
+
+  @keyframes mona-load-mark {
+    0%,
+    28% {
+      opacity: 0;
+      transform: translate(-50%, -50%) scale(0.62);
+    }
+    58%,
+    78% {
+      opacity: 1;
+      transform: translate(-50%, -50%) scale(1);
+    }
+    100% {
+      opacity: 0;
+      transform: translate(-50%, -50%) scale(1.05);
+    }
   }
 
   .mona-kpi__icon {
@@ -1687,21 +2434,23 @@
   .mona-tabbar {
     display: flex;
     min-width: 0;
-    align-items: center;
-    gap: 0.4rem;
-    background: color-mix(in srgb, var(--fv-ink-50) 80%, transparent);
-    border-color: var(--mona-color-border);
-    padding: 0.3rem 0.15rem;
+    align-items: flex-end;
+    gap: 0.45rem;
+    background: transparent;
+    border-color: transparent;
+    padding: 0.2rem 0.1rem 0;
   }
 
   .mona-tabbar__strip {
     display: flex;
     min-width: 0;
     flex: 1;
-    gap: 0.25rem;
+    align-items: flex-end;
+    gap: 0.28rem;
     overflow-x: auto;
     overscroll-behavior-x: contain;
     scrollbar-width: thin;
+    padding-top: 12px;
   }
 
   .mona-tabbar.is-compact .mona-tabbar__strip {
@@ -1762,6 +2511,22 @@
     border-radius: 1rem;
     background: var(--mona-color-surface);
     box-shadow: 0 16px 36px rgb(0 0 0 / 0.16);
+  }
+
+  .mona-tablist.is-compact {
+    width: min(20rem, calc(100vw - 1.5rem));
+    border-radius: 1.15rem;
+    padding: 0.45rem;
+  }
+
+  .mona-tablist__title {
+    margin: 0 0 0.15rem;
+    padding: 0.35rem 0.6rem 0.45rem;
+    color: var(--mona-color-muted);
+    font-size: 0.68rem;
+    font-weight: 800;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
   }
 
   .mona-tablist__row {
@@ -1828,13 +2593,67 @@
   }
 
   .mona-tab {
+    position: relative;
+    isolation: isolate;
+    display: flex;
+    flex-shrink: 0;
+    align-items: center;
+    gap: 0.3rem;
+    min-height: 2rem;
+    padding: 0.38rem 0.55rem 0.36rem 0.65rem;
+    border: 0;
+    border-radius: 0 14px 10px 10px;
+    background: color-mix(in srgb, var(--mona-color-purple) 9%, var(--mona-color-surface));
     color: var(--mona-chrome-tab-ink);
     font-size: calc(var(--mona-type-tab) * var(--mona-type-scale));
-    border-radius: var(--mona-radius-pill);
+    font-weight: 600;
+    cursor: default;
+
+    &::before {
+      content: "";
+      position: absolute;
+      top: -9px;
+      left: 0;
+      width: 42%;
+      max-width: 46px;
+      height: 10px;
+      background: inherit;
+      border-radius: 9px 11px 0 0;
+    }
+
+    &:nth-child(3n + 2) {
+      background: color-mix(in srgb, var(--mona-color-pink) 10%, var(--mona-color-surface));
+    }
+
+    &:nth-child(3n + 3) {
+      background: color-mix(in srgb, var(--mona-color-orange) 12%, var(--mona-color-surface));
+    }
+
+    &:hover {
+      filter: brightness(0.98);
+    }
 
     &.is-active {
-      background: var(--mona-chrome-tab-active-bg);
-      color: var(--mona-chrome-tab-active-ink);
+      z-index: 2;
+      background: var(--mona-color-surface);
+      color: var(--mona-color-purple);
+      box-shadow: 0 8px 18px color-mix(in srgb, var(--mona-color-purple) 12%, transparent);
+    }
+
+    &.is-active::before {
+      background: color-mix(in srgb, var(--mona-color-purple) 16%, var(--mona-color-surface));
+    }
+
+    &.is-float {
+      outline: 1px dashed color-mix(in srgb, var(--mona-color-purple) 35%, transparent);
+      outline-offset: -1px;
+    }
+
+    button {
+      border: 0;
+      background: transparent;
+      color: inherit;
+      cursor: pointer;
     }
   }
 
@@ -1852,18 +2671,14 @@
   }
 }
 
-html[data-tab-style="underline"] .mona-tab.is-active {
-  background: transparent;
-  border-radius: 0;
-  box-shadow: inset 0 -2px 0 var(--mona-chrome-tab-active-ink);
+html[data-tab-style="underline"] .mona-tabbar .mona-tab.is-active,
+html[data-tab-style="chip"] .mona-tabbar .mona-tab {
+  border-radius: 0 14px 10px 10px;
+  box-shadow: 0 8px 18px color-mix(in srgb, var(--mona-color-purple) 12%, transparent);
 }
 
-html[data-tab-style="chip"] .mona-tab {
-  border-radius: var(--mona-radius-pill);
-}
-
-html[data-tab-style="chip"] .mona-tab.is-active {
-  box-shadow: none;
+html[data-tab-style="underline"] .mona-tabbar .mona-tab.is-active {
+  background: var(--mona-color-surface);
 }
 
 html.dark .mona-sidebar__promo {
@@ -1968,4 +2783,766 @@ html.dark .mona-sidebar__promo {
       -14px 8px 0 0 #4f29f0,
       -14px -8px 0 0 #4f29f0;
   }
+}
+
+.mona-mobile-only {
+  display: none;
+}
+
+.mona-shell.is-mobile .mona-mobile-only {
+  display: block;
+}
+
+.mona-shell.is-mobile .mona-desktop-only {
+  display: none !important;
+}
+
+.mona-shell.is-mobile .mona-m-stack {
+  display: grid;
+  gap: 0.85rem;
+}
+
+.mona-m-hero {
+  position: relative;
+  overflow: hidden;
+  min-height: 188px;
+  padding: 1.15rem 1.1rem 1.2rem;
+  border-radius: 28px;
+  background:
+    radial-gradient(circle at 108% -10%, color-mix(in srgb, var(--mona-color-orange) 28%, transparent), transparent 34%),
+    radial-gradient(circle at 86% 120%, color-mix(in srgb, var(--mona-color-pink) 20%, transparent), transparent 36%),
+    linear-gradient(180deg, #fff 0%, color-mix(in srgb, var(--mona-color-bg) 78%, #fff) 100%);
+}
+
+.mona-m-hero__wave {
+  position: absolute;
+  top: -0.4rem;
+  right: -1rem;
+  width: 190px;
+  opacity: 0.46;
+  pointer-events: none;
+}
+
+.mona-m-hero__copy {
+  position: relative;
+  z-index: 2;
+  max-width: 16rem;
+}
+
+.mona-m-kicker {
+  margin: 0 0 0.35rem;
+  color: var(--mona-color-purple);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.mona-m-title {
+  margin: 0;
+  color: var(--mona-color-ink);
+  font-family: var(--mona-font-display, inherit);
+  font-size: 1.55rem;
+  font-weight: 700;
+  line-height: 1.12;
+}
+
+.mona-m-lead {
+  margin: 0.45rem 0 0;
+  color: var(--mona-color-muted);
+  font-size: 0.8rem;
+  line-height: 1.45;
+}
+
+.mona-m-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-top: 0.85rem;
+  padding: 0.62rem 0.95rem;
+  border-radius: 999px;
+  background: var(--mona-gradient-cta);
+  color: #fff;
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-decoration: none;
+  box-shadow: 0 10px 22px color-mix(in srgb, var(--mona-color-purple) 18%, transparent);
+}
+
+.mona-m-hero__art {
+  position: absolute;
+  top: 0.55rem;
+  right: 0.35rem;
+  z-index: 1;
+  width: 108px;
+  pointer-events: none;
+}
+
+.mona-m-note {
+  position: absolute;
+  right: 0.45rem;
+  bottom: 0.85rem;
+  z-index: 2;
+  width: 6.6rem;
+  margin: 0;
+  color: var(--mona-color-purple);
+  font-family: "Segoe Script", "Bradley Hand", cursive;
+  font-size: 0.74rem;
+  line-height: 1.15;
+  text-align: right;
+  transform: rotate(-8deg);
+}
+
+.mona-m-stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.55rem;
+}
+
+.mona-m-stat {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 0.28rem;
+  padding: 0.8rem 0.7rem 0.75rem;
+  border-radius: 20px;
+  background: var(--mona-color-surface);
+  color: inherit;
+  text-decoration: none;
+  box-shadow: 0 10px 24px color-mix(in srgb, var(--mona-color-purple) 6%, transparent);
+}
+
+.mona-m-stat p {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.28rem;
+  margin: 0;
+  color: var(--mona-color-muted);
+  font-size: 0.62rem;
+  font-weight: 600;
+}
+
+.mona-m-stat strong {
+  color: var(--mona-color-ink);
+  font-size: 1.25rem;
+  line-height: 1;
+}
+
+.mona-m-stat span {
+  color: var(--mona-color-muted);
+  font-size: 0.62rem;
+  line-height: 1.3;
+}
+
+.mona-m-stat.is-purple p { color: var(--mona-color-purple); }
+.mona-m-stat.is-rose p { color: var(--mona-color-pink); }
+.mona-m-stat.is-orange p { color: var(--mona-color-orange); }
+.mona-m-stat.is-mint p { color: #2f9d7a; }
+
+.mona-m-bar {
+  display: block;
+  height: 5px;
+  margin-top: 0.2rem;
+  overflow: hidden;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--mona-color-border) 70%, #fff);
+}
+
+.mona-m-bar i {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--mona-gradient-cta);
+}
+
+.mona-m-section {
+  min-width: 0;
+}
+
+.mona-m-section__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.55rem;
+}
+
+.mona-m-section__head h2 {
+  margin: 0;
+  color: var(--mona-color-ink);
+  font-size: 0.92rem;
+}
+
+.mona-m-section__head a {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+  color: var(--mona-color-purple);
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.mona-m-quick {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.45rem;
+}
+
+.mona-m-quick a {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.4rem;
+  color: var(--mona-color-ink);
+  font-size: 0.64rem;
+  font-weight: 600;
+  text-align: center;
+  text-decoration: none;
+}
+
+.mona-m-quick span {
+  display: grid;
+  width: 2.7rem;
+  height: 2.7rem;
+  place-items: center;
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--mona-color-purple) 9%, #fff);
+  color: var(--mona-color-purple);
+}
+
+.mona-m-quick a:nth-child(2) span {
+  background: color-mix(in srgb, var(--mona-color-orange) 12%, #fff);
+  color: var(--mona-color-orange);
+}
+
+.mona-m-quick a:nth-child(4) span {
+  background: color-mix(in srgb, var(--mona-color-pink) 12%, #fff);
+  color: var(--mona-color-pink);
+}
+
+.mona-m-list {
+  display: grid;
+  gap: 0.55rem;
+}
+
+.mona-m-row,
+.mona-m-tip {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.9rem 0.95rem;
+  border-radius: 20px;
+  background: var(--mona-color-surface);
+  color: inherit;
+  text-decoration: none;
+  box-shadow: 0 10px 24px color-mix(in srgb, var(--mona-color-purple) 6%, transparent);
+}
+
+.mona-m-row__body {
+  min-width: 0;
+  flex: 1;
+}
+
+.mona-m-row strong,
+.mona-m-tip strong {
+  display: block;
+  color: var(--mona-color-ink);
+  font-size: 0.86rem;
+}
+
+.mona-m-row p,
+.mona-m-tip p {
+  margin: 0.15rem 0 0;
+  color: var(--mona-color-muted);
+  font-size: 0.72rem;
+}
+
+.mona-m-icon {
+  display: grid;
+  width: 2.1rem;
+  height: 2.1rem;
+  flex-shrink: 0;
+  place-items: center;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--mona-color-purple) 10%, #fff);
+  color: var(--mona-color-purple);
+}
+
+.mona-m-tip {
+  background: color-mix(in srgb, var(--mona-color-purple) 7%, #fff);
+}
+
+.mona-m-chips {
+  display: flex;
+  gap: 0.45rem;
+  overflow-x: auto;
+  padding-bottom: 0.1rem;
+  scrollbar-width: none;
+}
+
+.mona-m-chips::-webkit-scrollbar {
+  display: none;
+}
+
+.mona-m-chip {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.42rem 0.75rem;
+  border: 0;
+  border-radius: 999px;
+  background: color-mix(in srgb, #fff 80%, transparent);
+  color: var(--mona-color-muted);
+  font-size: 0.74rem;
+  font-weight: 600;
+}
+
+.mona-m-chip.is-active {
+  background: var(--mona-gradient-cta);
+  color: #fff;
+}
+
+.mona-m-chip::before {
+  content: "";
+  width: 0.42rem;
+  height: 0.42rem;
+  border-radius: 999px;
+  background: currentColor;
+  opacity: 0.7;
+}
+
+.mona-m-search {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.7rem 0.9rem;
+  border-radius: 18px;
+  background: var(--mona-color-surface);
+  box-shadow: 0 10px 24px color-mix(in srgb, var(--mona-color-purple) 6%, transparent);
+}
+
+.mona-m-search input {
+  width: 100%;
+  border: 0;
+  background: transparent;
+  color: var(--mona-color-ink);
+  font: inherit;
+  font-size: 0.84rem;
+  outline: none;
+}
+
+.mona-m-avatar {
+  display: grid;
+  width: 2.6rem;
+  height: 2.6rem;
+  flex-shrink: 0;
+  place-items: center;
+  overflow: hidden;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--mona-color-purple) 12%, #fff);
+  color: var(--mona-color-purple);
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.mona-m-avatar img,
+img.mona-m-avatar {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.mona-m-actions {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.45rem;
+}
+
+.mona-m-actions a,
+.mona-m-actions button {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.7rem 0.2rem;
+  border: 0;
+  border-radius: 18px;
+  background: var(--mona-color-surface);
+  color: var(--mona-color-ink);
+  font-size: 0.62rem;
+  font-weight: 600;
+  text-decoration: none;
+  box-shadow: 0 8px 18px color-mix(in srgb, var(--mona-color-purple) 6%, transparent);
+}
+
+.mona-m-actions span {
+  display: grid;
+  width: 2.15rem;
+  height: 2.15rem;
+  place-items: center;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--mona-color-purple) 10%, #fff);
+  color: var(--mona-color-purple);
+}
+
+.mona-m-calhead {
+  display: grid;
+  gap: 0.15rem;
+}
+
+.mona-m-calhead__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+}
+
+.mona-m-calhead__month {
+  margin: 0;
+  color: var(--mona-color-ink);
+  font-family: var(--mona-font-display, inherit);
+  font-size: 1.45rem;
+  font-weight: 700;
+  line-height: 1.1;
+}
+
+.mona-m-calhead__nav {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.15rem;
+}
+
+.mona-m-calhead__nav button {
+  display: grid;
+  width: 1.85rem;
+  height: 1.85rem;
+  place-items: center;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--mona-color-ink);
+}
+
+.mona-m-calhead__nav button.is-today {
+  width: auto;
+  padding: 0 0.45rem;
+  color: var(--mona-color-purple);
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.mona-m-week {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 0.12rem;
+}
+
+.mona-m-week button {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.28rem;
+  padding: 0.15rem 0;
+  border: 0;
+  border-radius: 16px;
+  background: transparent;
+  color: var(--mona-color-muted);
+  font-size: 0.58rem;
+  font-weight: 700;
+  text-transform: lowercase;
+}
+
+.mona-m-week button strong {
+  display: grid;
+  width: 2rem;
+  height: 2rem;
+  place-items: center;
+  border-radius: 999px;
+  font-size: 0.86rem;
+  font-weight: 700;
+}
+
+.mona-m-week button.is-active {
+  color: var(--mona-color-purple);
+}
+
+.mona-m-week button.is-active strong {
+  background: var(--mona-color-purple);
+  color: #fff;
+}
+
+.mona-m-next {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 0.75rem;
+  align-items: center;
+  padding: 0.95rem 1rem;
+  border-radius: 24px;
+  background:
+    radial-gradient(circle at 100% 0%, color-mix(in srgb, var(--mona-color-orange) 16%, transparent), transparent 42%),
+    radial-gradient(circle at 0% 120%, color-mix(in srgb, var(--mona-color-pink) 12%, transparent), transparent 46%),
+    #fff;
+  box-shadow: 0 10px 24px color-mix(in srgb, var(--mona-color-purple) 6%, transparent);
+}
+
+.mona-m-next__icon {
+  display: grid;
+  width: 2.1rem;
+  height: 2.1rem;
+  place-items: center;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--mona-color-purple) 10%, #fff);
+  color: var(--mona-color-purple);
+}
+
+.mona-m-next strong {
+  display: block;
+  font-size: 1rem;
+  line-height: 1.2;
+}
+
+.mona-m-next p {
+  margin: 0.2rem 0 0;
+  color: var(--mona-color-muted);
+  font-size: 0.72rem;
+}
+
+.mona-m-next em {
+  padding: 0.35rem 0.6rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--mona-color-purple) 8%, #fff);
+  color: var(--mona-color-purple);
+  font-size: 0.68rem;
+  font-style: normal;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.mona-m-dayhead {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.6rem;
+}
+
+.mona-m-dayhead h2 {
+  margin: 0;
+  color: var(--mona-color-muted);
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+}
+
+.mona-m-dayhead span {
+  color: var(--mona-color-muted);
+  font-size: 0.68rem;
+  font-weight: 600;
+}
+
+.mona-m-event {
+  display: grid;
+  grid-template-columns: 3.2rem 1fr auto;
+  gap: 0.7rem;
+  align-items: start;
+  padding: 0.85rem 0.9rem;
+  border-radius: 20px;
+  background: var(--mona-color-surface);
+  color: inherit;
+  text-decoration: none;
+  box-shadow: 0 10px 24px color-mix(in srgb, var(--mona-color-purple) 6%, transparent);
+}
+
+.mona-m-event time {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  color: var(--mona-color-purple);
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.mona-m-event time i {
+  color: var(--mona-color-muted);
+  font-style: normal;
+  font-weight: 600;
+}
+
+.mona-m-event strong {
+  display: block;
+  font-size: 0.86rem;
+}
+
+.mona-m-event p {
+  margin: 0.15rem 0 0;
+  color: var(--mona-color-muted);
+  font-size: 0.7rem;
+}
+
+.mona-m-event__tags {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.25rem;
+}
+
+.mona-m-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.18rem 0.5rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--mona-color-purple) 10%, #fff);
+  color: var(--mona-color-purple);
+  font-size: 0.62rem;
+  font-weight: 700;
+}
+
+.mona-m-fab {
+  position: sticky;
+  bottom: 1rem;
+  display: grid;
+  width: 3.4rem;
+  height: 3.4rem;
+  margin-left: auto;
+  place-items: center;
+  border: 0;
+  border-radius: 999px;
+  background: var(--mona-gradient-cta);
+  color: #fff;
+  box-shadow: 0 12px 24px color-mix(in srgb, var(--mona-color-purple) 24%, transparent);
+}
+
+.mona-m-check {
+  display: grid;
+  width: 1.25rem;
+  height: 1.25rem;
+  flex-shrink: 0;
+  place-items: center;
+  border-radius: 999px;
+  border: 1.5px solid var(--mona-color-border);
+  background: #fff;
+  color: transparent;
+}
+
+.mona-m-check.is-on {
+  border-color: var(--mona-color-purple);
+  background: var(--mona-color-purple);
+  color: #fff;
+}
+
+.mona-m-apps,
+.mona-m-folders {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.55rem;
+}
+
+.mona-m-apps.is-2 {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.mona-m-apps.is-4 {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.mona-m-app {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.35rem;
+  padding: 0.85rem 0.65rem 0.8rem;
+  border-radius: 18px;
+  background: var(--mona-color-surface);
+  color: inherit;
+  text-decoration: none;
+  box-shadow: 0 10px 24px color-mix(in srgb, var(--mona-color-purple) 6%, transparent);
+}
+
+.mona-m-app strong {
+  font-size: 0.74rem;
+  line-height: 1.2;
+}
+
+.mona-m-app p {
+  margin: 0;
+  color: var(--mona-color-muted);
+  font-size: 0.6rem;
+  line-height: 1.35;
+}
+
+.mona-m-folder {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  padding: 0.85rem 0.7rem;
+  border-radius: 18px;
+  background: var(--mona-color-surface);
+  color: inherit;
+  text-decoration: none;
+  box-shadow: 0 10px 24px color-mix(in srgb, var(--mona-color-purple) 6%, transparent);
+}
+
+.mona-m-folder strong {
+  font-size: 0.78rem;
+}
+
+.mona-m-folder p {
+  margin: 0;
+  color: var(--mona-color-muted);
+  font-size: 0.64rem;
+}
+
+.mona-m-profile {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  padding: 1rem 1.05rem;
+  border-radius: 28px;
+  background:
+    radial-gradient(circle at 92% 18%, color-mix(in srgb, var(--mona-color-pink) 18%, transparent), transparent 30%),
+    #fff;
+}
+
+.mona-m-profile .mona-m-avatar {
+  width: 3.6rem;
+  height: 3.6rem;
+  font-size: 1rem;
+}
+
+.mona-m-profile strong {
+  display: block;
+  font-size: 1.15rem;
+}
+
+.mona-m-profile p {
+  margin: 0.15rem 0 0;
+  color: var(--mona-color-muted);
+  font-size: 0.76rem;
+}
+
+.mona-m-logout {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  padding: 0.9rem;
+  border: 0;
+  border-radius: 18px;
+  background: color-mix(in srgb, var(--mona-color-pink) 10%, #fff);
+  color: var(--mona-color-pink);
+  font-size: 0.84rem;
+  font-weight: 700;
+}
+
+.mona-shell.is-mobile .mona-m-hero + .mona-m-stats,
+.mona-shell.is-mobile .mona-m-hero + .mona-m-search {
+  margin-top: 0.15rem;
+}
+
+.mona-shell.is-mobile .mona-topbar__logo img {
+  max-width: none;
 }

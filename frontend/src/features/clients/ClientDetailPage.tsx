@@ -11,7 +11,11 @@ import {
   FileText,
   KeyRound,
   Link2,
+  Mail,
+  MessageCircle,
+  MoreHorizontal,
   Pencil,
+  Phone,
   Plus,
   Trash2,
   Wallet,
@@ -37,6 +41,10 @@ import {
   Modal,
   PageHeader,
   Select,
+  MobileAvatar,
+  MobileProgress,
+  MobileRow,
+  MobileTip,
   StatusBadge,
   Textarea,
 } from '../../shared/ui'
@@ -499,9 +507,111 @@ export function ClientDetailPage() {
   if (isLoading) return <LoadingSpinner />
   if (!client) return <EmptyState title="Cliente não encontrado" />
 
+  const openTodos = (client.todos || client.openTodos || []).filter((t) => t.status !== 'Done').slice(0, 3)
+  const nextMeetings = (client.agenda || []).slice(0, 2)
+  const docs = (client.contracts || []).slice(0, 3)
+  const relation = client.onboardingCompleted ? 80 : client.status === 'Active' ? 72 : 45
+
   return (
     <div>
-      <div className="mb-4 text-sm text-ink-500">
+      <div className="mona-mobile-only mona-m-stack">
+        <Link to="/clientes" className="text-sm font-semibold text-ink-600">← Clientes</Link>
+        <div className="mona-m-profile">
+          <MobileAvatar name={client.name} />
+          <div>
+            <strong>{client.name}</strong>
+            <p>{client.companyName || client.segment || 'Cliente MONA'}</p>
+            <p className="mt-1"><StatusBadge status={client.status} /></p>
+          </div>
+        </div>
+        {client.additionalNotes ? (
+          <p className="text-sm italic text-ink-500">“{client.additionalNotes}”</p>
+        ) : null}
+        <div className="mona-m-actions">
+          {client.phone ? (
+            <a href={`tel:${client.phone}`}>
+              <span><Phone size={16} /></span>
+              Ligar
+            </a>
+          ) : (
+            <span>
+              <span><Phone size={16} /></span>
+              Ligar
+            </span>
+          )}
+          {client.email ? (
+            <a href={`mailto:${client.email}`}>
+              <span><Mail size={16} /></span>
+              E-mail
+            </a>
+          ) : (
+            <span>
+              <span><Mail size={16} /></span>
+              E-mail
+            </span>
+          )}
+          {client.phone ? (
+            <a href={`https://wa.me/${client.phone.replace(/\D/g, '')}`} target="_blank" rel="noreferrer">
+              <span><MessageCircle size={16} /></span>
+              WhatsApp
+            </a>
+          ) : (
+            <span>
+              <span><MessageCircle size={16} /></span>
+              WhatsApp
+            </span>
+          )}
+          <button type="button" onClick={() => setShowEdit(true)}>
+            <span><MoreHorizontal size={16} /></span>
+            Mais
+          </button>
+        </div>
+        <div className="mona-m-row">
+          <div className="mona-m-row__body">
+            <strong>Relacionamento</strong>
+            <p>Cliente {client.status === 'Active' ? 'ativo' : 'em acompanhamento'}</p>
+            <MobileProgress value={relation} />
+          </div>
+          <span className="mona-m-badge">{relation}%</span>
+        </div>
+        <div className="grid grid-cols-2 gap-2">
+          <div className="mona-m-stat is-purple">
+            <p><CheckSquare size={14} /> Tarefas em aberto</p>
+            <strong>{openTodos.length}</strong>
+            <span>pendentes</span>
+          </div>
+          <div className="mona-m-stat is-orange">
+            <p><CalendarDays size={14} /> Próximas reuniões</p>
+            <strong>{nextMeetings.length}</strong>
+            <span>na agenda</span>
+          </div>
+        </div>
+        <div className="mona-m-list">
+          {openTodos.map((todo) => (
+            <MobileRow key={todo.id} to="/todos" title={todo.title} meta="Tarefa" />
+          ))}
+          {nextMeetings.map((event) => (
+            <MobileRow
+              key={event.id}
+              to="/agenda"
+              title={event.title}
+              meta={new Date(event.startAt).toLocaleString('pt-BR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
+            />
+          ))}
+          {docs.map((doc) => (
+            <MobileRow
+              key={doc.id}
+              to="/contratos"
+              icon={<span className="mona-m-icon"><FileText size={15} /></span>}
+              title={doc.name}
+              meta={doc.status}
+            />
+          ))}
+        </div>
+        <MobileTip>Anote o que o cliente prefere e volte no próximo contato com contexto.</MobileTip>
+      </div>
+
+      <div className="mona-desktop-only mb-4 hidden text-sm text-ink-500 md:block">
         <Link to="/" className="hover:text-brand-800">Dashboard</Link>
         <span className="mx-1.5">›</span>
         <Link to="/clientes" className="hover:text-brand-800">Clientes</Link>
@@ -509,6 +619,7 @@ export function ClientDetailPage() {
         <span className="text-ink-900">{client.name}</span>
       </div>
 
+      <div className="mona-desktop-only">
       <PageHeader
         title={client.companyName ? `${client.name} – ${client.companyName}` : client.name}
         subtitle="Central do cliente: dados, acessos, financeiro e operações"
@@ -523,8 +634,9 @@ export function ClientDetailPage() {
           </div>
         }
       />
+      </div>
 
-      <Card className="mb-5">
+      <Card className="mb-5 mona-desktop-only">
         <div className="flex flex-wrap items-start gap-4">
           <div className="flex h-14 w-14 items-center justify-center rounded-full bg-brand-100 text-lg font-bold text-brand-900">
             {initials(client.name)}
@@ -583,7 +695,7 @@ export function ClientDetailPage() {
         </div>
       </Card>
 
-      <div className="mb-5 flex gap-1 overflow-x-auto rounded-2xl border border-ink-100 bg-white p-1">
+      <div className="mb-5 flex gap-1 overflow-x-auto rounded-2xl border border-ink-100 bg-white p-1 pr-16">
         {TABS.map((t) => (
           <button
             key={t.id}

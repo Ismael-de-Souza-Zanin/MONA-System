@@ -1,12 +1,12 @@
 import type { AppearanceChrome, AppearanceColors, AppearancePrefs, AppearanceType } from './types'
 
 const monaLightColors: AppearanceColors = {
-  accent: '#7b5cff',
-  bg: '#f6ebe6',
+  accent: '#582B86',
+  bg: '#FFF7F1',
   surface: '#ffffff',
-  ink: '#0f0a1a',
-  muted: '#7a6170',
-  border: '#f0ddd4',
+  ink: '#1A1028',
+  muted: '#7A6688',
+  border: '#E8D9F0',
 }
 
 const monaLightType: AppearanceType = {
@@ -32,13 +32,13 @@ export const defaultNotchChrome = {
 
 const monaLightChrome: AppearanceChrome = {
   sidebarBg: '#ffffff',
-  sidebarInk: '#0f0a1a',
-  sidebarActiveBg: '#ff4fd8',
+  sidebarInk: '#1A1028',
+  sidebarActiveBg: '#582B86',
   sidebarActiveInk: '#ffffff',
   tabStyle: 'pill',
   tabIcons: true,
   tabActiveBg: '#ffffff',
-  tabActiveInk: '#7b5cff',
+  tabActiveInk: '#582B86',
   windowRadius: 'lg',
   windowShadow: 'soft',
   ...defaultNotchChrome,
@@ -50,8 +50,8 @@ export const PRESET_META: {
   blurb: string
   mode: AppearancePrefs['mode']
 }[] = [
-  { id: 'fatto-light', name: 'MONA claro', blurb: 'Sunset da marca: violeta, magenta, coral e laranja.', mode: 'light' },
-  { id: 'fatto-dark', name: 'MONA escuro', blurb: 'Base profunda com neon da marca.', mode: 'dark' },
+  { id: 'fatto-light', name: 'MONA claro', blurb: 'Roxo, rosa, laranja e creme da identidade.', mode: 'light' },
+  { id: 'fatto-dark', name: 'MONA escuro', blurb: 'Noite #0F0A1A com o degradê da marca.', mode: 'dark' },
   { id: 'studio-sand', name: 'Studio areia', blurb: 'Quente, editorial, menos clínico.', mode: 'light' },
   { id: 'mona-ink', name: 'MONA tinta', blurb: 'Noite com o gradiente da marca.', mode: 'dark' },
   { id: 'ocean', name: 'Oceano', blurb: 'Ardósia e azul de trabalho longo.', mode: 'light' },
@@ -65,22 +65,22 @@ export function presetPrefs(id: Exclude<AppearancePrefs['preset'], 'custom'>): A
         preset: id,
         mode: 'dark',
         colors: {
-          accent: '#8f74ff',
-          bg: '#0f0a1a',
-          surface: '#1a142c',
-          ink: '#f6f1ff',
-          muted: '#9b90b8',
-          border: '#2e2448',
+          accent: '#9B6BDB',
+          bg: '#0F0A1A',
+          surface: '#1A1228',
+          ink: '#FFF7F1',
+          muted: '#A896B8',
+          border: '#3A2A52',
         },
         type: { ...monaLightType },
         chrome: {
           ...monaLightChrome,
-          sidebarBg: '#1a142c',
-          sidebarInk: '#d8cff0',
-          sidebarActiveBg: '#ff4fd8',
+          sidebarBg: '#1A1228',
+          sidebarInk: '#E8D9F0',
+          sidebarActiveBg: '#F54D7D',
           sidebarActiveInk: '#ffffff',
-          tabActiveBg: '#1a142c',
-          tabActiveInk: '#c4b5ff',
+          tabActiveBg: '#1A1228',
+          tabActiveInk: '#F54D7D',
           windowShadow: 'strong',
         },
       }
@@ -113,22 +113,22 @@ export function presetPrefs(id: Exclude<AppearancePrefs['preset'], 'custom'>): A
         preset: id,
         mode: 'dark',
         colors: {
-          accent: '#ff4fd8',
-          bg: '#0f0a1a',
+          accent: '#F54D7D',
+          bg: '#0F0A1A',
           surface: '#161022',
-          ink: '#f6f1ff',
-          muted: '#9b90b8',
-          border: '#2a2240',
+          ink: '#FFF7F1',
+          muted: '#A896B8',
+          border: '#3A2A52',
         },
         type: { ...monaLightType, uiFont: 'outfit', displayFont: 'outfit' },
         chrome: {
           ...monaLightChrome,
           sidebarBg: '#161022',
-          sidebarInk: '#d8cff0',
-          sidebarActiveBg: '#ff4fd8',
+          sidebarInk: '#E8D9F0',
+          sidebarActiveBg: '#F54D7D',
           sidebarActiveInk: '#ffffff',
           tabActiveBg: '#161022',
-          tabActiveInk: '#ff9a2e',
+          tabActiveInk: '#FF7A33',
           windowShadow: 'strong',
         },
       }
@@ -192,6 +192,8 @@ export function presetPrefs(id: Exclude<AppearancePrefs['preset'], 'custom'>): A
   }
 }
 
+const OLD_NEON = new Set(['#7b5cff', '#8f74ff', '#ff4fd8', '#ff5b7a', '#ff9a2e', '#c4b5ff', '#f6ebe6'])
+
 export function hydrateAppearance(prefs: AppearancePrefs): AppearancePrefs {
   const chrome = { ...monaLightChrome, ...prefs.chrome }
   const factoryNotch =
@@ -202,11 +204,38 @@ export function hydrateAppearance(prefs: AppearancePrefs): AppearancePrefs {
   if (factoryNotch) Object.assign(chrome, defaultNotchChrome)
   if (chrome.sidebarBg === '#d9c6ff' || chrome.sidebarBg === '#f3e7ff') {
     chrome.sidebarBg = '#ffffff'
-    if (chrome.sidebarInk === '#3d2740') chrome.sidebarInk = '#0f0a1a'
+    if (chrome.sidebarInk === '#3d2740' || chrome.sidebarInk === '#0f0a1a') chrome.sidebarInk = '#1A1028'
   }
   if (chrome.tabStyle === 'underline' || chrome.tabStyle === 'chip') {
     if (prefs.preset !== 'custom') chrome.tabStyle = 'pill'
   }
+
+  const branded = prefs.preset === 'fatto-light' || prefs.preset === 'fatto-dark' || prefs.preset === 'mona-ink'
+  if (branded) {
+    const fresh = presetPrefs(prefs.preset)
+    const oldFactory =
+      OLD_NEON.has((prefs.colors?.accent || '').toLowerCase()) ||
+      OLD_NEON.has((prefs.colors?.bg || '').toLowerCase()) ||
+      OLD_NEON.has((chrome.sidebarActiveBg || '').toLowerCase()) ||
+      OLD_NEON.has((chrome.tabActiveInk || '').toLowerCase())
+    if (oldFactory) {
+      Object.assign(chrome, {
+        sidebarBg: fresh.chrome.sidebarBg,
+        sidebarInk: fresh.chrome.sidebarInk,
+        sidebarActiveBg: fresh.chrome.sidebarActiveBg,
+        sidebarActiveInk: fresh.chrome.sidebarActiveInk,
+        tabActiveBg: fresh.chrome.tabActiveBg,
+        tabActiveInk: fresh.chrome.tabActiveInk,
+      })
+      return {
+        ...prefs,
+        colors: fresh.colors,
+        type: { ...monaLightType, ...prefs.type },
+        chrome,
+      }
+    }
+  }
+
   return {
     ...prefs,
     colors: { ...monaLightColors, ...prefs.colors },

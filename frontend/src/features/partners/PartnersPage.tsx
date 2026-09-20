@@ -5,11 +5,18 @@ import { api } from '../../shared/api/client'
 import type { Client, Partner } from '../../shared/types'
 import { Permissions } from '../../shared/permissions/constants'
 import { usePermissions } from '../../shared/permissions/hooks'
+import { Plus, Target, Users } from 'lucide-react'
 import {
   Button,
   EmptyState,
   Input,
   LoadingSpinner,
+  MobileAvatar,
+  MobileHero,
+  MobileRow,
+  MobileSection,
+  MobileStat,
+  MobileTip,
   Modal,
   PageHeader,
   Select,
@@ -136,6 +143,45 @@ export function PartnersPage() {
 
   return (
     <div>
+      <div className="mona-mobile-only mona-m-stack">
+        <MobileHero
+          kicker="Parceiras"
+          title="Juntos vamos mais longe"
+          lead="Conecte negócios, gere oportunidades e crie soluções para o sucesso da operação."
+          cta={canWrite ? { to: '/parceiras', label: 'Conhecer nossas parceiras' } : undefined}
+          note="Parcerias que geram grandes resultados"
+        />
+        <div className="mona-m-stats" style={{ gridTemplateColumns: '1fr 1fr' }}>
+          <MobileStat icon={Users} label="Parceiras" value={partners.length} hint="no catálogo" tone="purple" />
+          <MobileStat icon={Target} label="Com cliente" value={partners.filter((p) => (p.clients?.length || 0) > 0).length} hint="vinculadas" tone="orange" />
+        </div>
+        <MobileSection title="Nossas parceiras">
+          <div className="mona-m-list">
+            {partners.map((p) => (
+              <MobileRow
+                key={p.id}
+                icon={<MobileAvatar name={p.name} />}
+                title={p.name}
+                meta={p.service || p.responsibleName || 'Parceira'}
+                trailing={<span className="mona-m-badge">{p.clients?.length ? 'Ativa' : 'Livre'}</span>}
+              />
+            ))}
+            {partners.length === 0 && <EmptyState title="Nenhuma parceira cadastrada" />}
+            {canWrite && (
+              <button type="button" className="mona-m-row" onClick={() => setShowAdd(true)}>
+                <span className="mona-m-icon"><Plus size={16} /></span>
+                <div className="mona-m-row__body">
+                  <strong>Nova parceria</strong>
+                  <p>Indique uma empresa ou cadastre uma nova parceira</p>
+                </div>
+              </button>
+            )}
+          </div>
+        </MobileSection>
+        <MobileTip>Uma parceira certa no cliente certo acelera a entrega.</MobileTip>
+      </div>
+
+      <div className="mona-desktop-only">
       <PageHeader
         title="Empresas parceiras"
         subtitle="Catálogo da organização — vincule aos clientes quando fizer sentido"
@@ -196,6 +242,7 @@ export function PartnersPage() {
           ))}
         </div>
       )}
+      </div>
 
       <PartnerFormModal open={showAdd} onClose={() => setShowAdd(false)} />
       <PartnerFormModal

@@ -3,7 +3,7 @@ import { useState, type FormEvent } from 'react'
 import { Navigate, useLocation, useNavigate } from 'react-router-dom'
 import { ArrowRight, Eye, EyeOff, Headphones, Lock, Mail, ShieldCheck } from 'lucide-react'
 import { useAuth } from '../../shared/auth/AuthContext'
-import { BrandLogo, Button, ErrorAlert, Input, LoadingSpinner } from '../../shared/ui'
+import { BrandLogo, Button, ErrorAlert, Input, LoadingSpinner, MonaArrow, MonaWave } from '../../shared/ui'
 
 export function LoginPage() {
   const { login, isAuthenticated, isLoading } = useAuth()
@@ -33,19 +33,22 @@ export function LoginPage() {
   }
 
   return (
-    <div className="relative min-h-screen overflow-hidden px-4 py-8 lg:px-10">
+    <div className="relative min-h-screen overflow-x-hidden px-4 py-6 sm:py-8 lg:px-10">
       <div className="pointer-events-none absolute -left-16 top-10 h-56 w-56 mona-orb mona-orb--purple" />
       <div className="pointer-events-none absolute right-0 top-24 h-64 w-64 mona-orb mona-orb--pink" />
       <div className="pointer-events-none absolute bottom-0 left-1/3 h-48 w-48 mona-orb mona-orb--orange" />
+      <MonaWave className="pointer-events-none absolute -right-8 top-36 w-[280px] opacity-70" />
+      <MonaArrow className="pointer-events-none absolute bottom-10 right-8 w-16 opacity-80" />
 
       <div className="relative mx-auto flex max-w-6xl items-center gap-3">
         <BrandLogo size={48} showWordmark title="MONA" subtitle="Organiza. Opera. Avança." />
       </div>
 
       <div className="relative mx-auto mt-10 grid max-w-6xl items-stretch gap-8 lg:grid-cols-[1.05fr_0.95fr]">
-        <section className="flex flex-col justify-between overflow-hidden rounded-[32px] bg-[#0F0A1A] p-8 text-white shadow-[0_24px_60px_rgba(15,10,26,0.28)] md:p-10">
+        <section className="mona-folder mona-folder--ink relative flex flex-col justify-between overflow-x-hidden rounded-[28px] bg-[#0F0A1A] p-5 text-white shadow-[0_24px_60px_rgba(15,10,26,0.28)] sm:p-8 md:p-10">
+          <MonaArrow className="pointer-events-none absolute right-6 top-8 hidden h-14 w-14 opacity-90 sm:block" />
           <div>
-            <BrandLogo variant="wordmark" size={86} className="max-w-[min(100%,420px)]" />
+            <BrandLogo variant="wordmark" size={64} className="max-w-[min(100%,280px)]" />
             <p className="mt-6 text-sm font-semibold uppercase tracking-[0.22em] text-white/70">
               Organiza. Opera. Avança.
             </p>
@@ -71,7 +74,7 @@ export function LoginPage() {
           </div>
         </section>
 
-        <section className="mona-card flex flex-col justify-center rounded-[32px] p-6 md:p-8">
+        <section className="mona-folder mona-card flex flex-col justify-center rounded-[28px] p-5 sm:p-6 md:p-8">
           <span className="fv-pill bg-brand-50 text-brand-900">Plataforma para assistentes executivas</span>
           <h2 className="mt-4 text-2xl font-semibold text-ink-900 app-font">Bem-vinda de volta</h2>
           <p className="mt-1 text-sm text-ink-500">Faça login para acessar sua conta</p>
@@ -119,7 +122,7 @@ export function LoginPage() {
               </button>
             </div>
 
-            <div className="flex items-center justify-between text-sm">
+            <div className="flex flex-wrap items-center justify-between gap-2 text-sm">
               <label className="inline-flex items-center gap-2 text-ink-700">
                 <input type="checkbox" className="rounded border-ink-300 text-brand-800" />
                 Lembrar de mim

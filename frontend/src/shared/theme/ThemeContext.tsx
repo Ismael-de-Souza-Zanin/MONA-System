@@ -36,10 +36,21 @@ function readStored(): AppearancePrefs {
         if (
           parsed.preset === 'fatto-light' &&
           (parsed.colors.bg === '#f4eefb' ||
+            parsed.colors.bg === '#f6ebe6' ||
+            parsed.colors.accent === '#7b5cff' ||
             parsed.chrome.sidebarBg === '#f3e7ff' ||
-            parsed.chrome.sidebarBg === '#d9c6ff')
+            parsed.chrome.sidebarBg === '#d9c6ff' ||
+            parsed.chrome.sidebarActiveBg === '#ff4fd8')
         ) {
           return presetPrefs('fatto-light')
+        }
+        if (
+          (parsed.preset === 'fatto-dark' &&
+            (parsed.colors.accent === '#8f74ff' || parsed.chrome.sidebarActiveBg === '#ff4fd8')) ||
+          (parsed.preset === 'mona-ink' &&
+            (parsed.colors.accent === '#ff4fd8' || parsed.chrome.sidebarActiveBg === '#ff4fd8'))
+        ) {
+          return presetPrefs(parsed.preset)
         }
         return hydrateAppearance(parsed)
       }

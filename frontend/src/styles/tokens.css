@@ -6,7 +6,7 @@
   3. Semântica MONA (--mona-color-*) — o que componentes novos devem ler
 
   Paleta oficial:
-  M #7B5CFF · O #FF4FD8 · N #FF5B7A · A #FF9A2E · Base #0F0A1A
+  Roxo #582B86 · Rosa #F54D7D · Laranja #FF7A33 · Creme #FFF7F1 · Tinta #1A1028
 */
 
 :root {
@@ -66,49 +66,48 @@
   --mona-shadow-sm: var(--fv-shadow);
   --mona-ring-accent: 0 0 0 4px color-mix(in srgb, var(--mona-color-accent) 16%, transparent);
 
-  --mona-color-purple: #7b5cff;
-  --mona-color-pink: #ff4fd8;
-  --mona-color-coral: #ff5b7a;
-  --mona-color-orange: #ff9a2e;
-  --mona-gradient-brand: linear-gradient(90deg, #7b5cff, #ff4fd8, #ff5b7a, #ff9a2e);
-  --mona-gradient-cta: linear-gradient(90deg, #7b5cff 0%, #ff4fd8 38%, #ff5b7a 68%, #ff9a2e 100%);
-  --mona-gradient-sunset: linear-gradient(180deg, #d9c6ff 0%, #ffb4ea 36%, #ffb6ae 66%, #ffd19a 100%);
+  --mona-color-purple: #582B86;
+  --mona-color-pink: #F54D7D;
+  --mona-color-coral: #F54D7D;
+  --mona-color-orange: #FF7A33;
+  --mona-gradient-brand: linear-gradient(90deg, #582B86, #8B4BB8, #F54D7D, #FF7A33);
+  --mona-gradient-cta: linear-gradient(90deg, #582B86 0%, #8B4BB8 28%, #F54D7D 62%, #FF7A33 100%);
+  --mona-gradient-sunset: linear-gradient(180deg, #EDE4F2 0%, #FAD4E0 42%, #FFE0C8 100%);
 }
 
-/* MONA — claro. Sunset da marca: violeta → magenta → coral → laranja. */
+/* MONA — claro. Roxo, rosa, laranja e creme da identidade. */
 :root,
 html[data-theme="light"],
 html[data-tenant="mona"],
 html[data-tenant="fatto"] {
-  --fv-brand-950: #2a1470;
-  --fv-brand-900: #4c2ad4;
-  --fv-brand-800: #7b5cff;
-  --fv-brand-700: #8f74ff;
-  --fv-brand-600: #a78bff;
-  --fv-brand-500: #ff4fd8;
-  --fv-brand-200: #ffd0c2;
-  --fv-brand-100: #ffe4d6;
-  --fv-brand-50: #fff1ea;
-  --fv-ink-900: #0f0a1a;
-  --fv-ink-700: #3d2740;
-  --fv-ink-500: #7a6170;
-  --fv-ink-300: #ecd6d4;
-  --fv-ink-100: #f8ebe6;
-  --fv-ink-50: #fbf4ef;
-  --fv-primary: #7b5cff;
-  --fv-primary-hover: #6546f0;
-  --fv-bg: #f6ebe6;
+  --fv-brand-950: #2A1044;
+  --fv-brand-900: #3F1C62;
+  --fv-brand-800: #582B86;
+  --fv-brand-700: #6B3AA0;
+  --fv-brand-600: #8B4BB8;
+  --fv-brand-500: #F54D7D;
+  --fv-brand-200: #F3D4E0;
+  --fv-brand-100: #FBE8EE;
+  --fv-brand-50: #F3EAF8;
+  --fv-ink-900: #1A1028;
+  --fv-ink-700: #4A3A58;
+  --fv-ink-500: #7A6688;
+  --fv-ink-300: #E8D9F0;
+  --fv-ink-100: #F6EEF4;
+  --fv-ink-50: #FFF7F1;
+  --fv-primary: #582B86;
+  --fv-primary-hover: #3F1C62;
+  --fv-bg: #FFF7F1;
   --fv-surface: #ffffff;
-  --fv-border: #f0ddd4;
-  --fv-text: #0f0a1a;
-  --fv-muted: #7a6170;
+  --fv-border: #E8D9F0;
+  --fv-text: #1A1028;
+  --fv-muted: #7A6688;
   --fv-radius: 20px;
-  --fv-shadow: 0 1px 2px rgba(15, 10, 26, 0.04), 0 12px 32px rgba(255, 91, 122, 0.12);
+  --fv-shadow: 0 1px 2px rgba(26, 16, 40, 0.04), 0 12px 32px rgba(88, 43, 134, 0.1);
   --fv-bg-accent:
-    radial-gradient(900px 420px at 6% -10%, rgba(123, 92, 255, 0.28), transparent 55%),
-    radial-gradient(720px 380px at 100% 0%, rgba(255, 79, 216, 0.22), transparent 50%),
-    radial-gradient(640px 360px at 88% 108%, rgba(255, 91, 122, 0.2), transparent 52%),
-    radial-gradient(560px 320px at 12% 108%, rgba(255, 154, 46, 0.22), transparent 48%);
+    radial-gradient(880px 400px at 8% -8%, rgba(88, 43, 134, 0.1), transparent 58%),
+    radial-gradient(700px 360px at 100% 0%, rgba(245, 77, 125, 0.07), transparent 52%),
+    radial-gradient(520px 280px at 92% 108%, rgba(255, 122, 51, 0.06), transparent 50%);
 
   --tenant-accent: var(--fv-primary);
   --tenant-accent-hover: var(--fv-primary-hover);
@@ -137,74 +136,73 @@ html[data-tenant="fatto"] {
   --mona-color-warning: #d97706;
   --mona-color-warning-soft: #fff7ed;
   --mona-color-warning-ink: #c2410c;
-  --mona-color-info: #7b5cff;
-  --mona-color-info-soft: #f3ecff;
-  --mona-color-info-ink: #4c2ad4;
-  --mona-color-neutral: #7a6170;
-  --mona-color-neutral-soft: #fff1ea;
-  --mona-color-neutral-ink: #3d2740;
+  --mona-color-info: #582B86;
+  --mona-color-info-soft: #EDE4F2;
+  --mona-color-info-ink: #3F1C62;
+  --mona-color-neutral: #7A6688;
+  --mona-color-neutral-soft: #FFF7F1;
+  --mona-color-neutral-ink: #4A3A58;
 
   --mona-status-active: #10b981;
   --mona-status-active-soft: #ecfdf5;
   --mona-status-active-ink: #047857;
   --mona-status-inactive: #94a3b8;
-  --mona-status-inactive-soft: #fff1ea;
-  --mona-status-inactive-ink: #3d2740;
-  --mona-status-notice: #ff5b7a;
-  --mona-status-notice-soft: #ffe8ea;
-  --mona-status-notice-ink: #c2410c;
-  --mona-status-hold: #ff9a2e;
-  --mona-status-hold-soft: #fff4e0;
-  --mona-status-hold-ink: #c2410c;
+  --mona-status-inactive-soft: #FFF7F1;
+  --mona-status-inactive-ink: #4A3A58;
+  --mona-status-notice: #F54D7D;
+  --mona-status-notice-soft: #FBE8EE;
+  --mona-status-notice-ink: #B12E55;
+  --mona-status-hold: #FF7A33;
+  --mona-status-hold-soft: #FFE8D6;
+  --mona-status-hold-ink: #C2410C;
 
-  --mona-dot-color: rgba(255, 91, 122, 0.2);
+  --mona-dot-color: rgba(88, 43, 134, 0.1);
   --mona-chrome-sidebar-gradient: linear-gradient(180deg, var(--mona-color-surface), var(--mona-color-surface));
   --mona-chrome-sidebar-bg: var(--mona-color-surface);
   --mona-chrome-sidebar-ink: var(--mona-color-ink);
   --mona-chrome-sidebar-border: transparent;
-  --mona-chrome-sidebar-active-bg: #ff4fd8;
+  --mona-chrome-sidebar-active-bg: #582B86;
   --mona-chrome-sidebar-active-ink: #ffffff;
   --mona-chrome-sidebar-hover-bg: var(--fv-ink-50);
   --mona-chrome-tab-active-bg: #ffffff;
-  --mona-chrome-tab-active-ink: #7b5cff;
-  --mona-chrome-tab-ink: #7a6170;
+  --mona-chrome-tab-active-ink: #582B86;
+  --mona-chrome-tab-ink: #7A6688;
   --mona-chrome-window-bg: var(--mona-color-surface);
   --mona-chrome-window-title-bg: var(--fv-ink-50);
   --mona-chrome-window-radius: var(--mona-radius-xl);
   --mona-chrome-window-shadow: var(--fv-shadow);
 }
 
-/* MONA — escuro. Base #0F0A1A, neon magenta/roxo. */
+/* MONA — escuro. Base #0F0A1A com o degradê da marca. */
 html.dark,
 html[data-theme="dark"] {
-  --fv-brand-950: #0f0a1a;
-  --fv-brand-900: #1a142c;
-  --fv-brand-800: #8f74ff;
-  --fv-brand-700: #a78bff;
-  --fv-brand-600: #c4b5ff;
-  --fv-brand-500: #ff4fd8;
-  --fv-brand-200: #3a2a63;
-  --fv-brand-100: #2a1e48;
-  --fv-brand-50: #1c1630;
-  --fv-ink-900: #f6f1ff;
-  --fv-ink-700: #d8cff0;
-  --fv-ink-500: #9b90b8;
-  --fv-ink-300: #3d3358;
-  --fv-ink-100: #22183a;
-  --fv-ink-50: #18122c;
-  --fv-primary: #8f74ff;
-  --fv-primary-hover: #a78bff;
-  --fv-bg: #0f0a1a;
-  --fv-surface: #1a142c;
-  --fv-border: #2e2448;
-  --fv-text: #f6f1ff;
-  --fv-muted: #9b90b8;
+  --fv-brand-950: #0F0A1A;
+  --fv-brand-900: #1A1228;
+  --fv-brand-800: #9B6BDB;
+  --fv-brand-700: #B08AE8;
+  --fv-brand-600: #C9A8F0;
+  --fv-brand-500: #F54D7D;
+  --fv-brand-200: #3A2A52;
+  --fv-brand-100: #2A1E40;
+  --fv-brand-50: #1C1630;
+  --fv-ink-900: #FFF7F1;
+  --fv-ink-700: #E8D9F0;
+  --fv-ink-500: #A896B8;
+  --fv-ink-300: #3A2A52;
+  --fv-ink-100: #22183A;
+  --fv-ink-50: #161022;
+  --fv-primary: #9B6BDB;
+  --fv-primary-hover: #B08AE8;
+  --fv-bg: #0F0A1A;
+  --fv-surface: #1A1228;
+  --fv-border: #3A2A52;
+  --fv-text: #FFF7F1;
+  --fv-muted: #A896B8;
   --fv-shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 18px 40px rgba(0, 0, 0, 0.4);
   --fv-bg-accent:
-    radial-gradient(1000px 500px at 12% -12%, rgba(123, 92, 255, 0.38), transparent 55%),
-    radial-gradient(700px 400px at 90% 10%, rgba(255, 79, 216, 0.22), transparent 50%),
-    radial-gradient(640px 360px at 80% 110%, rgba(255, 91, 122, 0.16), transparent 50%),
-    radial-gradient(520px 300px at 10% 100%, rgba(255, 154, 46, 0.14), transparent 48%);
+    radial-gradient(1000px 500px at 12% -12%, rgba(88, 43, 134, 0.5), transparent 55%),
+    radial-gradient(700px 400px at 90% 10%, rgba(245, 77, 125, 0.18), transparent 50%),
+    radial-gradient(520px 300px at 10% 100%, rgba(255, 122, 51, 0.12), transparent 48%);
 
   --tenant-accent: var(--fv-primary);
   --tenant-accent-hover: var(--fv-primary-hover);
@@ -233,10 +231,10 @@ html[data-theme="dark"] {
   --mona-color-warning: #fb923c;
   --mona-color-warning-soft: rgba(251, 146, 60, 0.14);
   --mona-color-warning-ink: #fdba74;
-  --mona-color-info: #a78bff;
-  --mona-color-info-soft: rgba(123, 92, 255, 0.16);
-  --mona-color-info-ink: #c4b5ff;
-  --mona-color-neutral: #9b90b8;
+  --mona-color-info: #9B6BDB;
+  --mona-color-info-soft: rgba(88, 43, 134, 0.28);
+  --mona-color-info-ink: #C9A8F0;
+  --mona-color-neutral: #A896B8;
   --mona-color-neutral-soft: var(--fv-ink-100);
   --mona-color-neutral-ink: var(--fv-ink-700);
 
@@ -246,23 +244,23 @@ html[data-theme="dark"] {
   --mona-status-inactive: #64748b;
   --mona-status-inactive-soft: var(--fv-ink-100);
   --mona-status-inactive-ink: #94a3b8;
-  --mona-status-notice: #a78bff;
-  --mona-status-notice-soft: rgba(123, 92, 255, 0.16);
-  --mona-status-notice-ink: #c4b5ff;
-  --mona-status-hold: #ff9a2e;
-  --mona-status-hold-soft: rgba(255, 154, 46, 0.16);
-  --mona-status-hold-ink: #fdba74;
+  --mona-status-notice: #F54D7D;
+  --mona-status-notice-soft: rgba(245, 77, 125, 0.18);
+  --mona-status-notice-ink: #FF8AA8;
+  --mona-status-hold: #FF7A33;
+  --mona-status-hold-soft: rgba(255, 122, 51, 0.18);
+  --mona-status-hold-ink: #FFB07A;
 
-  --mona-dot-color: rgba(255, 154, 46, 0.2);
+  --mona-dot-color: rgba(155, 107, 219, 0.16);
   --mona-chrome-sidebar-gradient: linear-gradient(180deg, var(--mona-color-surface), var(--mona-color-surface));
   --mona-chrome-sidebar-bg: var(--mona-color-surface);
   --mona-chrome-sidebar-ink: var(--fv-ink-700);
   --mona-chrome-sidebar-border: transparent;
-  --mona-chrome-sidebar-active-bg: #ff4fd8;
+  --mona-chrome-sidebar-active-bg: #F54D7D;
   --mona-chrome-sidebar-active-ink: #ffffff;
   --mona-chrome-sidebar-hover-bg: rgba(255, 255, 255, 0.08);
   --mona-chrome-tab-active-bg: var(--mona-color-surface);
-  --mona-chrome-tab-active-ink: #c4b5ff;
+  --mona-chrome-tab-active-ink: #F54D7D;
   --mona-chrome-tab-ink: var(--fv-ink-500);
   --mona-chrome-window-bg: var(--mona-color-surface);
   --mona-chrome-window-title-bg: var(--fv-ink-50);

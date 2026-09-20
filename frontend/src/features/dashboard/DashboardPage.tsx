@@ -1,18 +1,36 @@
 import { useQuery } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
 import {
-  ArrowUpRight,
+  ArrowRight,
   CalendarDays,
+  CalendarPlus,
   CheckSquare,
+  CirclePlus,
   ListChecks,
+  ListPlus,
+  UserPlus,
   Users,
   Wallet,
 } from 'lucide-react'
 import { useAuth } from '../../shared/auth/AuthContext'
 import { api } from '../../shared/api/client'
+import type { TodoItem } from '../../shared/types'
 import { Permissions } from '../../shared/permissions/constants'
 import { usePermissions } from '../../shared/permissions/hooks'
-import { BrandLogo, Card, LoadingSpinner } from '../../shared/ui'
+import {
+  BrandLogo,
+  Card,
+  LoadingSpinner,
+  MobileHero,
+  MobileQuickActions,
+  MobileRow,
+  MobileSection,
+  MobileStat,
+  MobileTip,
+  MonaArrow,
+  MonaWave,
+  isSameLocalDay,
+} from '../../shared/ui'
 
 interface DashboardStats {
   clients?: number
@@ -33,8 +51,8 @@ interface DashboardStats {
 const KPI_TONES = [
   'var(--mona-color-purple)',
   'var(--mona-color-pink)',
-  'var(--mona-color-coral)',
   'var(--mona-color-orange)',
+  '#8B4BB8',
 ]
 
 function greeting() {
@@ -65,7 +83,7 @@ function KpiCard({
 }) {
   return (
     <Link to={to}>
-      <Card hover className="h-full rounded-[24px]">
+      <Card hover className="mona-folder h-full rounded-[24px]">
         <div className="flex items-start justify-between">
           <div>
             <p className="text-sm text-ink-500">{label}</p>
@@ -97,6 +115,11 @@ export function DashboardPage() {
   const { data: stats, isLoading } = useQuery({
     queryKey: ['dashboard-stats'],
     queryFn: () => api.get<DashboardStats>('/dashboard/stats'),
+  })
+
+  const { data: reminders = [] } = useQuery({
+    queryKey: ['todos'],
+    queryFn: () => api.get<TodoItem[]>('/todos'),
   })
 
   if (isLoading) return <LoadingSpinner />
@@ -152,6 +175,8 @@ export function DashboardPage() {
   ]
 
   const cards = (user?.isOwner ? companyCards : userCards).filter((c) => hasPermission(c.perm))
+  const todos = stats?.myTodos ?? 0
+  const agenda = stats?.agendaToday ?? stats?.myAgenda ?? 0
 
   const quickLinks = [
     { to: '/todos', label: 'Nova tarefa' },
@@ -162,6 +187,13 @@ export function DashboardPage() {
     { to: '/relatorios', label: 'Relatórios do período' },
   ]
 
+  const quickActions = [
+    { to: '/todos', label: 'Nova tarefa', icon: ListPlus },
+    { to: '/agenda', label: 'Novo evento', icon: CalendarPlus },
+    { to: '/clientes', label: 'Novo cliente', icon: UserPlus },
+    { to: '/financeiro', label: 'Nova despesa', icon: CirclePlus },
+  ]
+
   const today = new Date().toLocaleDateString('pt-BR', {
     weekday: 'long',
     day: 'numeric',
@@ -169,66 +201,134 @@ export function DashboardPage() {
   })
 
   return (
-    <div>
+    <div className="mona-home">
       <section className="mona-hero mona-hero--stage">
+        <MonaWave className="mona-hero__wave" />
+        <MonaArrow tone="purple" className="mona-hero__arrow" />
         <div className="relative z-[2] max-w-xl">
-          <p className="text-sm font-semibold text-brand-800">
-            {greeting()}, {firstName(user?.name)}
+          <p className="mona-hero__kicker">
+            {greeting()}, {firstName(user?.name)}!
           </p>
-          <h1 className="mona-hero__title">Confira tarefas e agenda do dia</h1>
+          <h1 className="mona-hero__title">Planeje seu dia com mais leveza</h1>
           <p className="mt-2 text-sm text-ink-500">
             {user?.isOwner
               ? 'Visão rápida da operação. Para o dia a dia com muitos clientes, use o Modo operação.'
               : 'Sua área: o que importa agora, sem ruído.'}{' '}
             Tenha um ótimo dia.
           </p>
+          <Link to="/operacao" className="mona-hero__cta">
+            Entrar no modo operação
+            <ArrowRight size={16} />
+          </Link>
         </div>
+        <p className="mona-hero__note">Mais para o que importa</p>
         <div className="mona-hero__art" aria-hidden>
-          <span className="mona-blob top-2 left-6 h-16 w-20 bg-[color:var(--mona-color-purple)]/40" />
-          <span className="mona-blob right-4 top-0 h-12 w-12 bg-[color:var(--mona-color-pink)]/50" />
-          <span className="mona-blob bottom-2 left-10 h-10 w-14 bg-[color:var(--mona-color-orange)]/45" />
-          <div className="absolute inset-0 flex items-center justify-center">
-            <BrandLogo size={88} />
-          </div>
+          <BrandLogo variant="mark" size={176} title="" className="mona-hero__mark" />
         </div>
-        <div className="mona-hero__card">
+        <div className="mona-hero__card mona-folder">
           <p className="text-xs font-semibold uppercase tracking-[0.16em] text-ink-500">Hoje</p>
           <p className="mt-1 text-sm capitalize text-ink-700">{today}</p>
           <div className="mt-3 space-y-2">
             <Link to="/todos" className="flex items-center justify-between rounded-2xl bg-brand-50 px-3 py-2.5 text-sm">
               <span>Tarefas pendentes</span>
-              <strong>{stats?.myTodos ?? 0}</strong>
+              <strong>{todos}</strong>
             </Link>
             <Link to="/agenda" className="mona-tint-orange flex items-center justify-between rounded-2xl px-3 py-2.5 text-sm">
               <span>Agenda de hoje</span>
-              <strong>{stats?.agendaToday ?? stats?.myAgenda ?? 0}</strong>
+              <strong>{agenda}</strong>
             </Link>
           </div>
         </div>
       </section>
 
-      <div className="mb-5 grid gap-3 md:grid-cols-2">
+      <section className="mona-home__mobile mona-m-stack">
+        <MobileHero
+          kicker={`${greeting()}, ${firstName(user?.name)}!`}
+          title="Planeje seu dia com mais leveza"
+          lead="Organize suas tarefas, acompanhe a agenda e foque no que realmente importa."
+          cta={{ to: '/operacao', label: 'Começar meu dia agora' }}
+          note="Grandes dias começam com organização"
+        />
+
+        <div className="mona-m-stats">
+          <MobileStat
+            to="/todos"
+            icon={CheckSquare}
+            label="Tarefas de hoje"
+            value={todos}
+            hint={`de ${Math.max(todos, reminders.length || todos)} no total`}
+            progress={reminders.length ? Math.round(((reminders.length - todos) / reminders.length) * 100) : todos ? 38 : 100}
+            tone="purple"
+          />
+          <MobileStat
+            to="/agenda"
+            icon={CalendarDays}
+            label="Reuniões de hoje"
+            value={agenda}
+            hint="na sua agenda"
+            progress={agenda ? Math.min(100, 40 + agenda * 12) : 100}
+            tone="orange"
+          />
+          <MobileStat
+            to="/relatorios"
+            icon={ListChecks}
+            label="Seu progresso"
+            value={`${reminders.length ? Math.round((reminders.filter((t) => t.status === 'Done').length / reminders.length) * 100) : 80}%`}
+            hint="das tarefas da semana"
+            progress={reminders.length ? Math.round((reminders.filter((t) => t.status === 'Done').length / reminders.length) * 100) : 80}
+            tone="mint"
+          />
+        </div>
+
+        <MobileSection title="Ações rápidas" action={{ to: '/apps', label: 'Ver todas' }}>
+          <MobileQuickActions items={quickActions} />
+        </MobileSection>
+
+        <MobileSection title="Lembretes de hoje" action={{ to: '/todos', label: 'Ver todas' }}>
+          <div className="mona-m-list">
+            {(reminders.filter((t) => t.status !== 'Done' && (isSameLocalDay(t.dueAtLocal) || isSameLocalDay(t.dueAtUtc))).length
+              ? reminders.filter((t) => t.status !== 'Done' && (isSameLocalDay(t.dueAtLocal) || isSameLocalDay(t.dueAtUtc)))
+              : reminders.filter((t) => t.status !== 'Done')
+            ).slice(0, 4).map((todo) => (
+              <MobileRow
+                key={todo.id}
+                to="/todos"
+                title={todo.title}
+                meta={todo.clientName || (isSameLocalDay(todo.dueAtLocal) ? 'Hoje' : 'Pendente')}
+                trailing={<ArrowRight size={16} />}
+              />
+            ))}
+            {reminders.every((t) => t.status === 'Done') && (
+              <MobileRow title="Nada pendente para hoje" meta="Aproveite para adiantar a semana" />
+            )}
+          </div>
+        </MobileSection>
+
+        <MobileTip>Comece o dia definindo 3 prioridades. Menos tarefas, mais resultado.</MobileTip>
+      </section>
+
+      <div className="mona-home__desktop mb-5 grid gap-3 pt-2 md:grid-cols-2">
         <Link
           to="/relatorios"
-          className="flex items-center justify-between rounded-3xl bg-brand-50 px-4 py-3 text-sm text-brand-950 transition hover:brightness-95"
+          className="mona-folder flex items-center justify-between rounded-3xl bg-brand-50 px-4 py-3 text-sm text-brand-950 transition hover:brightness-95"
         >
           <span>
             <strong>Relatórios</strong> — dia, semana e mês nas lentes cliente, ADM e VA.
           </span>
-          <ArrowUpRight size={16} />
+          <MonaArrow tone="purple" className="h-7 w-7 shrink-0" />
         </Link>
         <Link
           to="/operacao"
-          className="flex items-center justify-between rounded-3xl mona-tint-orange px-4 py-3 text-sm text-ink-900 transition hover:brightness-95"
+          className="mona-folder flex items-center justify-between rounded-3xl mona-tint-orange px-4 py-3 text-sm text-ink-900 transition hover:brightness-95"
         >
           <span>
             <strong>Modo operação</strong> — fila do dia e grupos que a equipe define.
           </span>
-          <ArrowUpRight size={16} />
+          <MonaArrow tone="orange" className="h-7 w-7 shrink-0" />
         </Link>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="mona-home__desktop grid gap-4 pt-2 sm:grid-cols-2 xl:grid-cols-4">
         {cards.slice(0, 4).map((card, index) => (
           <KpiCard
             key={card.label}
@@ -242,11 +342,11 @@ export function DashboardPage() {
         ))}
       </div>
 
-      <div className="mt-6 grid gap-4 lg:grid-cols-[1.4fr_1fr]">
-        <Card className="rounded-[24px]">
+      <div className="mona-home__desktop mt-6 grid gap-4 pt-2 lg:grid-cols-[1.4fr_1fr]">
+        <Card className="mona-folder rounded-[24px]">
           <div className="mb-4 flex items-center justify-between">
             <h2 className="text-base font-semibold text-ink-900">Atalhos do sistema</h2>
-            <ArrowUpRight size={16} className="text-ink-500" />
+            <MonaArrow tone="purple" className="h-5 w-5" />
           </div>
           <div className="grid gap-3 sm:grid-cols-2">
             {cards.map((card) => (
@@ -262,7 +362,7 @@ export function DashboardPage() {
           </div>
         </Card>
 
-        <Card className="rounded-[24px]">
+        <Card className="mona-folder rounded-[24px]">
           <h2 className="mb-4 text-base font-semibold text-ink-900">Ações rápidas</h2>
           <div className="space-y-2">
             {quickLinks.map((item) => (
@@ -272,7 +372,7 @@ export function DashboardPage() {
                 className="flex items-center justify-between rounded-2xl border border-ink-100 px-3 py-2.5 text-sm font-medium text-ink-800 transition hover:bg-ink-50"
               >
                 {item.label}
-                <ArrowUpRight size={14} className="text-brand-800" />
+                <MonaArrow tone="purple" className="h-4 w-4" />
               </Link>
             ))}
           </div>

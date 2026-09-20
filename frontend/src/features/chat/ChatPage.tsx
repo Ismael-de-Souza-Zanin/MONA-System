@@ -248,7 +248,7 @@ export function ChatPage() {
           </ul>
         </Card>
 
-        <Card className="flex h-[560px] flex-col overflow-hidden p-0">
+        <Card className="flex h-[min(520px,calc(100dvh-230px))] flex-col overflow-hidden p-0">
           {!activeId ? (
             <EmptyState title="Selecione ou inicie uma conversa" />
           ) : (
@@ -320,7 +320,7 @@ export function ChatPage() {
                     </Select>
                   )}
                 </div>
-                <div className="flex gap-2">
+                <div className="flex flex-col gap-2 sm:flex-row">
                   <Input
                     value={text}
                     onChange={(e) => setText(e.target.value)}
@@ -329,7 +329,7 @@ export function ChatPage() {
                       if (e.key === 'Enter' && canSend) send.mutate()
                     }}
                   />
-                  <Button disabled={!canSend || send.isPending} onClick={() => send.mutate()}>
+                  <Button className="w-full sm:w-auto" disabled={!canSend || send.isPending} onClick={() => send.mutate()}>
                     Enviar
                   </Button>
                 </div>

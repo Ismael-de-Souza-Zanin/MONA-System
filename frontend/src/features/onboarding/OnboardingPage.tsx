@@ -14,6 +14,12 @@ import {
   Input,
   LoadingSpinner,
   Modal,
+  MobileAvatar,
+  MobileHero,
+  MobileProgress,
+  MobileRow,
+  MobileSection,
+  MobileTip,
   PageHeader,
   Select,
   Textarea,
@@ -342,8 +348,55 @@ export function OnboardingPage() {
 
   if (isLoading) return <LoadingSpinner />
 
+  const featured = clients[0]
+  const featuredPct = featured && featured.totalCount
+    ? Math.round((featured.completedCount / featured.totalCount) * 100)
+    : 0
+
   return (
     <div className="min-w-0">
+      <div className="mona-mobile-only mona-m-stack">
+        <MobileHero
+          kicker="Onboarding"
+          title="Novos começos, grandes resultados"
+          lead="Organize o onboarding de novos clientes e assistentes e garanta uma experiência incrível desde o primeiro contato."
+          note="Pessoas no negócio, sem enrolação"
+        />
+        {canWrite && (
+          <button type="button" className="mona-m-cta" onClick={openGuidedSetup}>
+            Novo onboarding
+          </button>
+        )}
+        {featured && (
+          <div className="mona-m-row">
+            <MobileAvatar name={featured.clientName} />
+            <div className="mona-m-row__body">
+              <strong>{featured.clientName}</strong>
+              <p>
+                {featured.completedCount} de {featured.totalCount} etapas
+              </p>
+              <MobileProgress value={featuredPct} />
+            </div>
+            <span className="mona-m-badge">{featuredPct}%</span>
+          </div>
+        )}
+        <MobileSection title="Etapas do onboarding" action={{ to: '/onboarding', label: 'Ver todas' }}>
+          <div className="mona-m-list">
+            {(featured?.items || []).slice(0, 6).map((item) => (
+              <MobileRow
+                key={item.id}
+                title={item.title}
+                meta={item.isCompleted ? 'Concluída' : 'Pendente'}
+                trailing={<span className="mona-m-badge">{item.isCompleted ? 'Feito' : 'Aberto'}</span>}
+              />
+            ))}
+            {!featured && <EmptyState title="Nenhum onboarding em aberto" />}
+          </div>
+        </MobileSection>
+        <MobileTip>Um onboarding bem feito reduz retrabalho e aumenta a satisfação.</MobileTip>
+      </div>
+
+      <div className="mona-desktop-only">
       <PageHeader
         title="Onboarding"
         subtitle="Setup operacional guiado para tirar uma agência de AVs do zero até uma operação real configurada."
@@ -444,6 +497,7 @@ export function OnboardingPage() {
           ))}
         </div>
       ) : null}
+      </div>
 
       <Modal open={showTemplates} onClose={() => setShowTemplates(false)} title="Checklists padrão" size="lg">
         <div className="space-y-6">

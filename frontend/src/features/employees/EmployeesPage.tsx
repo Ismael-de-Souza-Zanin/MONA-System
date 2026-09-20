@@ -5,11 +5,19 @@ import { api } from '../../shared/api/client'
 import type { Employee } from '../../shared/types'
 import { Permissions } from '../../shared/permissions/constants'
 import { usePermissions } from '../../shared/permissions/hooks'
+import { CalendarDays, MessageCircle, UserPlus, Users } from 'lucide-react'
 import {
   Button,
   EmptyState,
   Input,
   LoadingSpinner,
+  MobileAvatar,
+  MobileChip,
+  MobileChips,
+  MobileHero,
+  MobileRow,
+  MobileStat,
+  MobileTip,
   Modal,
   PageHeader,
 } from '../../shared/ui'
@@ -19,6 +27,7 @@ export function EmployeesPage() {
   const canWrite = hasPermission(Permissions.EmployeesWrite)
   const qc = useQueryClient()
   const [open, setOpen] = useState(false)
+  const [search, setSearch] = useState('')
   const [form, setForm] = useState({ name: '', phone: '', email: '', color: '#0F4C5C' })
 
   const { data: employees = [], isLoading } = useQuery({
@@ -39,8 +48,60 @@ export function EmployeesPage() {
 
   if (isLoading) return <LoadingSpinner />
 
+  const filtered = sorted.filter((emp) =>
+    !search.trim() || `${emp.name} ${emp.email || ''} ${emp.phone || ''}`.toLowerCase().includes(search.toLowerCase()),
+  )
+
   return (
     <div>
+      <div className="mona-mobile-only mona-m-stack">
+        <MobileHero
+          kicker="Prestadores"
+          title="Profissionais que impulsionam seu negócio"
+          lead="Gerencie seus prestadores, acompanhe projetos e mantenha a operação sempre em movimento."
+          note="Grandes resultados em parceria"
+        />
+        <div className="mona-m-stats" style={{ gridTemplateColumns: '1fr 1fr' }}>
+          <MobileStat icon={Users} label="Prestadores" value={employees.length} hint="no time" tone="mint" />
+          <MobileStat icon={UserPlus} label="Em contratação" value={0} hint="em andamento" tone="orange" />
+        </div>
+        <div className="mona-m-search">
+          <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Buscar prestador..." />
+        </div>
+        <MobileChips>
+          <MobileChip active>Todos ({employees.length})</MobileChip>
+        </MobileChips>
+        <div className="mona-m-list">
+          {filtered.map((emp) => (
+            <MobileRow
+              key={emp.id}
+              to={`/prestadores/${emp.id}`}
+              icon={<MobileAvatar name={emp.name} />}
+              title={emp.name}
+              meta={emp.email || emp.phone || 'Prestador'}
+              trailing={
+                <span className="flex items-center gap-2 text-ink-400">
+                  {emp.phone ? <MessageCircle size={16} /> : null}
+                  <CalendarDays size={16} />
+                </span>
+              }
+            />
+          ))}
+          {filtered.length === 0 && <EmptyState title="Nenhum prestador cadastrado" />}
+          {canWrite && (
+            <button type="button" className="mona-m-row" onClick={() => setOpen(true)}>
+              <span className="mona-m-icon"><UserPlus size={16} /></span>
+              <div className="mona-m-row__body">
+                <strong>Novo prestador</strong>
+                <p>Cadastre um novo prestador e fortaleça o time</p>
+              </div>
+            </button>
+          )}
+        </div>
+        <MobileTip>Um prestador bem encaixado reduz retrabalho no cliente.</MobileTip>
+      </div>
+
+      <div className="mona-desktop-only">
       <PageHeader
         title="Prestadores"
         subtitle="Lista de funcionários e prestadores"
@@ -90,6 +151,7 @@ export function EmployeesPage() {
           </table>
         </div>
       )}
+      </div>
 
       <Modal open={open} onClose={() => setOpen(false)} title="Novo prestador">
         <div className="space-y-4">

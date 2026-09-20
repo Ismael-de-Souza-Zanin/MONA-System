@@ -75,6 +75,17 @@ function iso(offsetHours = 0) {
   return new Date(Date.now() + offsetHours * 3600_000).toISOString()
 }
 
+function atHour(hour: number, minute = 0, dayOffset = 0) {
+  const date = new Date()
+  date.setDate(date.getDate() + dayOffset)
+  date.setHours(hour, minute, 0, 0)
+  return date.toISOString()
+}
+
+function inMinutes(mins: number) {
+  return new Date(Date.now() + mins * 60_000).toISOString()
+}
+
 function asJson(body: unknown): Json {
   if (Array.isArray(body)) return { items: body }
   return body && typeof body === 'object' ? (body as Json) : {}
@@ -368,25 +379,98 @@ function seed() {
   const events = [
     {
       id: 'ev-1',
-      title: 'Call com Ana — planejamento',
-      startAt: iso(5),
-      endAt: iso(6),
-      startAtUtc: iso(5),
-      endAtUtc: iso(6),
+      title: 'Reunião de alinhamento',
+      startAt: atHour(9),
+      endAt: atHour(9, 45),
+      startAtUtc: atHour(9),
+      endAtUtc: atHour(9, 45),
       timeZoneId: 'America/Sao_Paulo',
       displayTimeZoneId: 'America/Sao_Paulo',
       remindMinutesBefore: 30,
       categoryId: 'cat-reuniao',
       categoryName: 'Reunião',
-      categoryColor: '#0F4C5C',
+      categoryColor: '#582B86',
+      responsibleUserId: 'u-ju',
+      responsibleUserName: 'Juliana',
+      clientId: 'c-clara',
+      clientName: 'Carla Mendes',
+      kind: 'Meeting',
+      startsAt: atHour(9),
+      description: 'Presencial · Escritório',
+      linkedTodos: [{ id: 'todo-1', title: 'Fechar caixa da Ana', status: 'InProgress' }],
+    },
+    {
+      id: 'ev-2',
+      title: 'Proposta comercial',
+      startAt: atHour(11),
+      endAt: atHour(12),
+      startAtUtc: atHour(11),
+      endAtUtc: atHour(12),
+      timeZoneId: 'America/Sao_Paulo',
+      displayTimeZoneId: 'America/Sao_Paulo',
+      categoryId: 'cat-reuniao',
+      categoryName: 'Comercial',
+      categoryColor: '#FF7A33',
+      responsibleUserId: 'u-ju',
+      responsibleUserName: 'Juliana',
+      clientId: 'c-bruno',
+      clientName: 'Rafael Costa',
+      kind: 'Meeting',
+      description: 'Videocall',
+    },
+    {
+      id: 'ev-3',
+      title: 'Acompanhamento mensal',
+      startAt: atHour(14),
+      endAt: atHour(15),
+      startAtUtc: atHour(14),
+      endAtUtc: atHour(15),
+      timeZoneId: 'America/Sao_Paulo',
+      displayTimeZoneId: 'America/Sao_Paulo',
+      categoryId: 'cat-reuniao',
+      categoryName: 'Acompanhamento',
+      categoryColor: '#F54D7D',
       responsibleUserId: 'u-ju',
       responsibleUserName: 'Juliana',
       clientId: 'c-ana',
       clientName: 'Ana Beatriz Lima',
+      kind: 'Event',
+      description: 'Videocall',
+    },
+    {
+      id: 'ev-4',
+      title: 'Consultoria financeira',
+      startAt: inMinutes(50),
+      endAt: inMinutes(110),
+      startAtUtc: inMinutes(50),
+      endAtUtc: inMinutes(110),
+      timeZoneId: 'America/Sao_Paulo',
+      displayTimeZoneId: 'America/Sao_Paulo',
+      categoryId: 'cat-reuniao',
+      categoryName: 'Consultoria',
+      categoryColor: '#582B86',
+      responsibleUserId: 'u-ju',
+      responsibleUserName: 'Juliana',
+      clientId: 'c-bruno',
+      clientName: 'Bruno Almeida',
       kind: 'Meeting',
-      startsAt: iso(-2),
-      description: 'Revisar agenda da semana e posts.',
-      linkedTodos: [{ id: 'todo-1', title: 'Fechar caixa da Ana', status: 'InProgress' }],
+      description: 'Videocall',
+    },
+    {
+      id: 'ev-5',
+      title: 'Planejamento da próxima semana',
+      startAt: atHour(18),
+      endAt: atHour(18, 30),
+      startAtUtc: atHour(18),
+      endAtUtc: atHour(18, 30),
+      timeZoneId: 'America/Sao_Paulo',
+      displayTimeZoneId: 'America/Sao_Paulo',
+      categoryName: 'Interno',
+      categoryColor: '#8B4BB8',
+      responsibleUserId: 'u-ju',
+      responsibleUserName: 'Juliana',
+      kind: 'Event',
+      description: 'Videocall',
     },
   ]
 

@@ -5,7 +5,18 @@ import { ArrowUpRight, Bolt, CalendarDays, CheckSquare, Bell, Users, Plus } from
 import { api } from '../../shared/api/client'
 import { Permissions } from '../../shared/permissions/constants'
 import { usePermissions } from '../../shared/permissions/hooks'
-import { Button, Card, Input, LoadingSpinner, PageHeader } from '../../shared/ui'
+import {
+  Button,
+  Card,
+  Input,
+  LoadingSpinner,
+  MobileHero,
+  MobileRow,
+  MobileSection,
+  MobileStat,
+  MobileTip,
+  PageHeader,
+} from '../../shared/ui'
 
 type QueueItem = {
   id: string
@@ -115,8 +126,83 @@ export function OperationsPage() {
           clientCount: g.count,
         }))
 
+  const todayLabel = new Date().toLocaleDateString('pt-BR', {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+  })
+  const todoItems = queue.filter((item) => item.kind.startsWith('todo')).slice(0, 4)
+  const agendaItems = queue.filter((item) => item.kind === 'agenda').slice(0, 4)
+  const attention = queue.filter((item) => item.kind === 'client_attention' || item.kind === 'quick_response').slice(0, 3)
+
   return (
     <div className="min-w-0">
+      <div className="mona-mobile-only mona-m-stack">
+        <MobileHero
+          kicker="Foco hoje, resultados sempre"
+          title="Modo operação"
+          lead="Concentre-se no que realmente importa: clientes, tarefas e agenda em um só lugar."
+          cta={{ to: '#fila', label: 'Entrar no modo foco' }}
+          note="Disciplina hoje, mais amanhã"
+        />
+        <div className="mona-m-row">
+          <span className="mona-m-icon">
+            <CalendarDays size={16} />
+          </span>
+          <div className="mona-m-row__body">
+            <strong className="capitalize">{todayLabel}</strong>
+            <p>{summary.total} itens na fila</p>
+          </div>
+        </div>
+        <div className="mona-m-stats">
+          <MobileStat to="/todos" icon={CheckSquare} label="Tarefas" value={summary.todos} hint="na fila" tone="purple" />
+          <MobileStat to="/agenda" icon={CalendarDays} label="Reuniões" value={summary.agenda} hint="nas próximas 24h" tone="orange" />
+          <MobileStat to="/clientes" icon={Users} label="Clientes" value={summary.clientsAttention} hint="precisam de atenção" tone="rose" />
+        </div>
+        <MobileSection title="Tarefas prioritárias" action={{ to: '/todos', label: 'Ver todas' }}>
+          <div className="mona-m-list">
+            {todoItems.map((item) => (
+              <MobileRow
+                key={item.id}
+                to={item.link}
+                title={item.title}
+                meta={item.clientName || KIND_LABEL[item.kind]}
+                trailing={<span className="mona-m-badge">{item.priority === 'Urgent' ? 'Alta' : 'Hoje'}</span>}
+              />
+            ))}
+            {todoItems.length === 0 && <MobileRow title="Fila de tarefas limpa" meta="Bom momento para organizar" />}
+          </div>
+        </MobileSection>
+        <MobileSection title="Próximas reuniões" action={{ to: '/agenda', label: 'Ver todas' }}>
+          <div className="mona-m-list">
+            {agendaItems.map((item) => (
+              <MobileRow
+                key={item.id}
+                to={item.link}
+                title={item.title}
+                meta={item.dueAtUtc ? new Date(item.dueAtUtc).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : item.clientName}
+              />
+            ))}
+            {agendaItems.length === 0 && <MobileRow title="Sem reuniões na fila" meta="Agenda livre nas próximas horas" />}
+          </div>
+        </MobileSection>
+        <MobileSection title="Clientes em atenção" action={{ to: '/clientes', label: 'Ver todos' }}>
+          <div className="mona-m-list">
+            {attention.map((item) => (
+              <MobileRow
+                key={item.id}
+                to={item.link}
+                title={item.clientName || item.title}
+                meta={item.body || item.meta || 'Precisa de retorno'}
+              />
+            ))}
+            {attention.length === 0 && <MobileRow title="Nenhum cliente urgente" meta="Relacionamentos em dia" />}
+          </div>
+        </MobileSection>
+        <MobileTip>Entre no modo foco e feche o que já está na sua frente.</MobileTip>
+      </div>
+
+      <div className="mona-desktop-only">
       <PageHeader
         title="Modo operação"
         subtitle={`${data.organization?.name ?? 'Org'}. Fila do dia para a equipe — organize clientes em grupos que vocês mesmos definem. Fuso ${data.effectiveTimeZoneId ?? '—'}.`}
@@ -258,6 +344,7 @@ export function OperationsPage() {
             </ul>
           )}
         </Card>
+      </div>
       </div>
     </div>
   )

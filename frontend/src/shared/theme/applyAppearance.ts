@@ -105,11 +105,11 @@ function windowShadow(kind: AppearancePrefs['chrome']['windowShadow'], ink: stri
   return `0 1px 2px ${mix(ink, 'transparent', 8)}, 0 10px 28px ${mix(ink, 'transparent', 10)}`
 }
 
-const SUNSET_CTA = 'linear-gradient(90deg, #7b5cff 0%, #ff4fd8 38%, #ff5b7a 68%, #ff9a2e 100%)'
+const SUNSET_CTA = 'linear-gradient(90deg, #582B86 0%, #8B4BB8 28%, #F54D7D 62%, #FF7A33 100%)'
 const SUNSET_BG_LIGHT =
-  'radial-gradient(900px 420px at 6% -10%, rgba(123, 92, 255, 0.28), transparent 55%), radial-gradient(720px 380px at 100% 0%, rgba(255, 79, 216, 0.22), transparent 50%), radial-gradient(640px 360px at 88% 108%, rgba(255, 91, 122, 0.2), transparent 52%), radial-gradient(560px 320px at 12% 108%, rgba(255, 154, 46, 0.22), transparent 48%)'
+  'radial-gradient(880px 400px at 8% -8%, rgba(88, 43, 134, 0.1), transparent 58%), radial-gradient(700px 360px at 100% 0%, rgba(245, 77, 125, 0.07), transparent 52%), radial-gradient(520px 280px at 92% 108%, rgba(255, 122, 51, 0.06), transparent 50%)'
 const SUNSET_BG_DARK =
-  'radial-gradient(1000px 500px at 12% -12%, rgba(123, 92, 255, 0.38), transparent 55%), radial-gradient(700px 400px at 90% 10%, rgba(255, 79, 216, 0.22), transparent 50%), radial-gradient(640px 360px at 80% 110%, rgba(255, 91, 122, 0.16), transparent 50%), radial-gradient(520px 300px at 10% 100%, rgba(255, 154, 46, 0.14), transparent 48%)'
+  'radial-gradient(1000px 500px at 12% -12%, rgba(88, 43, 134, 0.5), transparent 55%), radial-gradient(700px 400px at 90% 10%, rgba(245, 77, 125, 0.18), transparent 50%), radial-gradient(520px 300px at 10% 100%, rgba(255, 122, 51, 0.12), transparent 48%)'
 
 function sidebarGradient(prefs: AppearancePrefs) {
   if (prefs.preset === 'studio-sand') {
@@ -193,7 +193,7 @@ export function applyAppearance(prefs: AppearancePrefs) {
   setVar('--mona-gradient-cta', SUNSET_CTA)
   setVar('--fv-bg-accent', prefs.mode === 'dark' ? SUNSET_BG_DARK : SUNSET_BG_LIGHT)
   setVar('--mona-color-bg-accent', prefs.mode === 'dark' ? SUNSET_BG_DARK : SUNSET_BG_LIGHT)
-  setVar('--mona-dot-color', prefs.mode === 'dark' ? 'rgba(255, 154, 46, 0.2)' : 'rgba(255, 91, 122, 0.2)')
+  setVar('--mona-dot-color', prefs.mode === 'dark' ? 'rgba(155, 107, 219, 0.16)' : 'rgba(88, 43, 134, 0.1)')
   setVar('--mona-chrome-tab-active-bg', chrome.tabActiveBg)
   setVar('--mona-chrome-tab-active-ink', chrome.tabActiveInk)
   setVar('--mona-chrome-tab-ink', colors.muted)

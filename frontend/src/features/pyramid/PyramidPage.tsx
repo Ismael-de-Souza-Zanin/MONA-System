@@ -61,7 +61,7 @@ export function PyramidPage() {
         title="Pirâmide de comando"
         subtitle="Clique em um funcionário para ver o resumo"
       />
-      <div className="overflow-x-auto rounded-xl border border-sand-200 bg-white/80 p-8">
+      <div className="overflow-x-auto rounded-xl border border-sand-200 bg-white/80 p-4 sm:p-8">
         <PyramidBubble
           node={root}
           level={0}

@@ -10,6 +10,11 @@ import {
   EmptyState,
   Input,
   LoadingSpinner,
+  MobileAvatar,
+  MobileChip,
+  MobileChips,
+  MobileHero,
+  MobileTip,
   Modal,
   PageHeader,
   PdfViewer,
@@ -198,8 +203,68 @@ export function ContractsPage() {
 
   if (isLoading) return <LoadingSpinner />
 
+  const clientDocs = contracts.filter((c) => c.type === 'Client')
+  const providerDocs = contracts.filter((c) => c.type === 'Provider')
+
   return (
     <div>
+      <div className="mona-mobile-only mona-m-stack">
+        <MobileHero
+          kicker="Contratos"
+          title="Seus acordos sempre organizados"
+          lead="Centralize seus contratos, acompanhe status e mantenha a operação profissional."
+          note="Parcerias sólidas impulsionam resultados"
+        />
+        {canWrite && (
+          <button type="button" className="mona-m-cta" onClick={() => setShowForm(true)}>
+            Novo contrato
+          </button>
+        )}
+        <div className="mona-m-stats">
+          <div className="mona-m-stat is-mint">
+            <p>Assinados</p>
+            <strong>{contracts.filter((c) => /active|assin/i.test(c.status)).length}</strong>
+          </div>
+          <div className="mona-m-stat is-orange">
+            <p>Pendentes</p>
+            <strong>{contracts.filter((c) => !/active|assin/i.test(c.status)).length}</strong>
+          </div>
+          <div className="mona-m-stat is-purple">
+            <p>Total</p>
+            <strong>{contracts.length}</strong>
+          </div>
+        </div>
+        <div className="mona-m-search">
+          <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Buscar contrato, cliente ou tipo..." />
+        </div>
+        <MobileChips>
+          <MobileChip active={typeFilter === 'all'} onClick={() => setTypeFilter('all')}>
+            Todos ({contracts.length})
+          </MobileChip>
+          <MobileChip active={typeFilter === 'Client'} onClick={() => setTypeFilter('Client')}>
+            Assinados
+          </MobileChip>
+          <MobileChip active={typeFilter === 'Provider'} onClick={() => setTypeFilter('Provider')}>
+            Prestadores
+          </MobileChip>
+        </MobileChips>
+        <div className="mona-m-list">
+          {filtered.slice(0, 8).map((doc) => (
+            <button key={doc.id} type="button" className="mona-m-row" onClick={() => doc.pdfUrl && setPreview(doc)}>
+              <MobileAvatar name={doc.partyName || doc.name} />
+              <div className="mona-m-row__body">
+                <strong>{doc.partyName || doc.name}</strong>
+                <p>{doc.name} · {doc.status}</p>
+              </div>
+              <span className="mona-m-badge">{doc.status}</span>
+            </button>
+          ))}
+          {filtered.length === 0 && <EmptyState title="Nenhum contrato encontrado" />}
+        </div>
+        <MobileTip>Um contrato no lugar certo evita busca na hora da renovação.</MobileTip>
+      </div>
+
+      <div className="mona-desktop-only">
       <PageHeader
         title="Contratos"
         subtitle="Clientes e prestadores — PDF, ficha e vínculo com financeiro"
@@ -314,14 +379,16 @@ export function ContractsPage() {
           </div>
         )}
 
-        {preview?.pdfUrl && (
-          <PdfViewer
-            url={preview.pdfUrl}
-            title={preview.name}
-            onClose={() => setPreview(null)}
-          />
-        )}
       </div>
+      </div>
+
+      {preview?.pdfUrl && (
+        <PdfViewer
+          url={preview.pdfUrl}
+          title={preview.name}
+          onClose={() => setPreview(null)}
+        />
+      )}
 
       <ContractFormModal open={showForm} onClose={() => setShowForm(false)} />
       <ContractFormModal

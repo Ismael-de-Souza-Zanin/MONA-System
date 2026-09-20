@@ -1,5 +1,6 @@
 import type { LucideIcon } from 'lucide-react'
 import {
+  House,
   LayoutDashboard,
   Users,
   UserRound,
@@ -106,7 +107,7 @@ export const NAV_GROUPS: NavGroup[] = [
     label: 'Comunicação',
     collapsible: true,
     icon: MessagesSquare,
-    keys: ['emails', 'whatsapp', 'chat'],
+    keys: ['emails', 'whatsapp'],
   },
   {
     id: 'financeiro',
@@ -120,7 +121,7 @@ export const NAV_GROUPS: NavGroup[] = [
     label: 'Mais',
     collapsible: true,
     icon: LayoutGrid,
-    keys: ['piramide', 'apps', 'faqs', 'compartilhar', 'notificacoes'],
+    keys: ['piramide', 'apps', 'faqs', 'compartilhar'],
   },
 ]
 
@@ -142,6 +143,63 @@ export function resolveMenu(
   }
   for (const rest of byKey.values()) ordered.push(rest)
   return ordered
+}
+
+export type MobileTabDef =
+  | { id: string; label: string; icon: LucideIcon; key: string; to: string; end?: boolean }
+  | { id: string; label: string; icon: LucideIcon; keys: string[] }
+
+export const MOBILE_TAB_DEFS: MobileTabDef[] = [
+  { id: 'inicio', label: 'Início', icon: House, key: 'dashboard', to: '/', end: true },
+  { id: 'tarefas', label: 'Tarefas', icon: CheckSquare, key: 'tarefas', to: '/todos' },
+  { id: 'agenda', label: 'Agenda', icon: CalendarDays, key: 'agenda', to: '/agenda' },
+  { id: 'clientes', label: 'Clientes', icon: Users, key: 'clientes', to: '/clientes' },
+  { id: 'financeiro', label: 'Financeiro', icon: Wallet, key: 'financeiro', to: '/financeiro' },
+]
+
+function usedMobileKeys() {
+  const used = new Set<string>(['chat', 'notificacoes'])
+  for (const tab of MOBILE_TAB_DEFS) {
+    if ('to' in tab) used.add(tab.key)
+    else tab.keys.forEach((key) => used.add(key))
+  }
+  return used
+}
+
+export function mobileTabs(visible: NavDefinition[]) {
+  const byKey = new Map(visible.map((item) => [item.key, item]))
+  return MOBILE_TAB_DEFS.flatMap((tab) => {
+    if ('to' in tab) {
+      if (!byKey.has(tab.key)) return []
+      return [{ id: tab.id, label: tab.label, icon: tab.icon, to: tab.to, end: Boolean(tab.end) }]
+    }
+    const items = tab.keys.map((key) => byKey.get(key)).filter((item): item is NavDefinition => Boolean(item))
+    if (items.length === 0) return []
+    if (items.length === 1) {
+      return [{ id: tab.id, label: tab.label, icon: items[0].icon, to: items[0].to, end: false }]
+    }
+    return []
+  })
+}
+
+export function mobileMoreSections(visible: NavDefinition[]) {
+  const byKey = new Map(visible.map((item) => [item.key, item]))
+  const used = usedMobileKeys()
+  const sections = NAV_GROUPS.map((group) => ({
+    ...group,
+    collapsible: true,
+    items: group.keys
+      .filter((key) => !used.has(key))
+      .map((key) => byKey.get(key))
+      .filter((item): item is NavDefinition => Boolean(item)),
+  }))
+  const principal = sections.find((group) => group.id === 'principal')
+  const operacao = sections.find((group) => group.id === 'operacao-group')
+  if (principal && operacao && principal.items.length) {
+    operacao.items = [...principal.items, ...operacao.items]
+    principal.items = []
+  }
+  return sections.filter((group) => group.items.length > 0)
 }
 
 export function groupedNav(visible: NavDefinition[]) {

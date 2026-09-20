@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { api } from '../../shared/api/client'
 import type { ShareLink } from '../../shared/types'
+import { Briefcase, Clock3, FileText, Folder } from 'lucide-react'
 import {
   Button,
   Card,
@@ -10,6 +11,11 @@ import {
   EmptyState,
   Input,
   LoadingSpinner,
+  MobileHero,
+  MobileRow,
+  MobileSection,
+  MobileStat,
+  MobileTip,
   PageHeader,
   Select,
 } from '../../shared/ui'
@@ -68,8 +74,45 @@ export function ShareLinksPage() {
 
   if (isLoading) return <LoadingSpinner />
 
+  const activeLinks = links.filter((l) => l.isActive !== false && !l.expired)
+
   return (
     <div>
+      <div className="mona-mobile-only mona-m-stack">
+        <MobileHero
+          kicker="Portal contratante"
+          title="Conectando você aos resultados"
+          lead="Área do contratante para acompanhar solicitações, aprovações, documentos e o andamento dos projetos."
+          note="Parceria que gera grandes resultados"
+        />
+        <div className="mona-m-stats">
+          <MobileStat icon={FileText} label="Solicitações" value={links.length} hint="links gerados" tone="purple" />
+          <MobileStat icon={Clock3} label="Pendentes" value={links.filter((l) => l.expired).length} hint="expirados" tone="orange" />
+          <MobileStat icon={Folder} label="Ativos" value={activeLinks.length} hint="prontos para uso" tone="mint" />
+        </div>
+        <MobileSection title="Últimas solicitações" action={{ to: '/compartilhar', label: 'Ver todas' }}>
+          <div className="mona-m-list">
+            {links.slice(0, 6).map((link) => (
+              <MobileRow
+                key={link.id}
+                to={link.clientId ? `/clientes/${link.clientId}` : '/compartilhar'}
+                icon={<span className="mona-m-icon"><Briefcase size={15} /></span>}
+                title={link.clientName || link.scope}
+                meta={link.expiresAt ? new Date(link.expiresAt).toLocaleDateString('pt-BR') : 'Sem validade'}
+                trailing={
+                  <span className="mona-m-badge">
+                    {link.isActive === false ? 'Revogado' : link.expired ? 'Expirado' : 'Ativo'}
+                  </span>
+                }
+              />
+            ))}
+            {links.length === 0 && <EmptyState title="Nenhum link criado" />}
+          </div>
+        </MobileSection>
+        <MobileTip>Gere um link com o escopo certo e o cliente vê só o que precisa.</MobileTip>
+      </div>
+
+      <div className="mona-desktop-only">
       <PageHeader
         title="Portal do contratante"
         subtitle="Controle o que o cliente publica/vê pelo link — sem login. Revogue a qualquer momento."
@@ -251,6 +294,7 @@ export function ShareLinksPage() {
           </table>
         </div>
       )}
+      </div>
     </div>
   )
 }

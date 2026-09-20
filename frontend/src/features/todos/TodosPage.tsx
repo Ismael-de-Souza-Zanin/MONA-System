@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useMemo, useState } from 'react'
-import { ChevronDown, ChevronRight, Clock3, Pencil, Plus, ShieldCheck, Trash2 } from 'lucide-react'
+import { Check, ChevronDown, ChevronRight, Clock3, Pencil, Plus, ShieldCheck, Trash2 } from 'lucide-react'
 import { api } from '../../shared/api/client'
 import type { TodoItem } from '../../shared/types'
 import { Permissions } from '../../shared/permissions/constants'
@@ -12,10 +12,15 @@ import {
   EmptyState,
   Input,
   LoadingSpinner,
+  MobileChip,
+  MobileChips,
+  MobileHero,
+  MobileTip,
   Modal,
   PageHeader,
   Select,
   Textarea,
+  isSameLocalDay,
 } from '../../shared/ui'
 
 type BoardColumn = {
@@ -227,6 +232,7 @@ export function TodosPage() {
   const qc = useQueryClient()
 
   const [ownerFilter, setOwnerFilter] = useState('all')
+  const [mobileScope, setMobileScope] = useState<'today' | 'week' | 'all'>('all')
   const [showAdd, setShowAdd] = useState(false)
   const [showColumns, setShowColumns] = useState(false)
   const [newColName, setNewColName] = useState('')
@@ -395,11 +401,109 @@ export function TodosPage() {
   }, [todos, columns])
 
   const overdueCount = todos.filter((t) => t.isOverdue).length
+  const todayTodos = todos.filter((t) => isSameLocalDay(t.dueAtLocal) || isSameLocalDay(t.dueAtUtc))
+  const weekTodos = todos.filter((t) => {
+    const value = t.dueAtLocal || t.dueAtUtc
+    if (!value) return false
+    const date = new Date(value)
+    const now = new Date()
+    const start = new Date(now)
+    start.setDate(now.getDate() - ((now.getDay() + 6) % 7))
+    start.setHours(0, 0, 0, 0)
+    const end = new Date(start)
+    end.setDate(start.getDate() + 7)
+    return date >= start && date < end
+  })
+  const mobileTodos = mobileScope === 'today' ? todayTodos : mobileScope === 'week' ? weekTodos : todos
+  const featured = mobileTodos.find((t) => t.status !== 'Done') || todos.find((t) => t.status !== 'Done')
 
   if (isLoading || loadingCols) return <LoadingSpinner />
 
   return (
     <div className="min-w-0">
+      <div className="mona-mobile-only mona-m-stack">
+        <MobileHero
+          kicker="Tarefas"
+          title="Organize hoje e um amanhã mais leve"
+          lead="Acompanhe suas tarefas, prazos e o que ainda precisa de você."
+          note="Disciplina também libera"
+        />
+        <MobileChips>
+          <MobileChip active={mobileScope === 'today'} onClick={() => setMobileScope('today')}>
+            Hoje ({todayTodos.length})
+          </MobileChip>
+          <MobileChip active={mobileScope === 'week'} onClick={() => setMobileScope('week')}>
+            Semana ({weekTodos.length})
+          </MobileChip>
+          <MobileChip active={mobileScope === 'all'} onClick={() => setMobileScope('all')}>
+            Todas ({todos.length})
+          </MobileChip>
+        </MobileChips>
+        {featured && (
+          <div className="mona-m-hero">
+            <p className="mona-m-kicker">Tarefa em destaque</p>
+            <h2 className="mona-m-title" style={{ fontSize: '1.2rem' }}>{featured.title}</h2>
+            <p className="mona-m-lead">
+              {featured.clientName || 'Sem cliente'}
+              {featured.dueAtLocal
+                ? ` · ${new Date(featured.dueAtLocal).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })}`
+                : ''}
+            </p>
+            {canWrite && (
+              <button type="button" className="mona-m-cta" onClick={() => setShowAdd(true)}>
+                Continuar tarefa
+              </button>
+            )}
+          </div>
+        )}
+        <div className="mona-m-list">
+          {mobileTodos.map((todo) => {
+            const done = todo.status === 'Done'
+            return (
+              <div key={todo.id} className="mona-m-row">
+                <button
+                  type="button"
+                  className={`mona-m-check${done ? ' is-on' : ''}`}
+                  onClick={() => {
+                    if (!canWrite) return
+                    const completeColumn = columns.find((column) => column.marksComplete)
+                    const openColumn = columns.find((column) => !column.marksComplete)
+                    if (!done) {
+                      if (completeColumn) moveMutation.mutate({ id: todo.id, boardColumnId: completeColumn.id })
+                      else completeMutation.mutate(todo.id)
+                      return
+                    }
+                    if (openColumn) moveMutation.mutate({ id: todo.id, boardColumnId: openColumn.id })
+                    else reopenMutation.mutate(todo.id)
+                  }}
+                >
+                  <Check size={12} />
+                </button>
+                <div className="mona-m-row__body">
+                  <strong>{todo.title}</strong>
+                  <p>{todo.clientName || 'Geral'} · {todo.priority || 'Normal'}</p>
+                </div>
+                <span className="mona-m-badge">
+                  {isSameLocalDay(todo.dueAtLocal)
+                    ? 'Hoje'
+                    : todo.dueAtLocal
+                      ? new Date(todo.dueAtLocal).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })
+                      : 'sem prazo'}
+                </span>
+              </div>
+            )
+          })}
+          {mobileTodos.length === 0 && <EmptyState title="Nenhuma tarefa neste recorte" />}
+        </div>
+        {canWrite && (
+          <button type="button" className="mona-m-fab" onClick={() => setShowAdd(true)} aria-label="Nova tarefa">
+            <Plus size={22} />
+          </button>
+        )}
+        <MobileTip>Menos tarefas abertas, mais conclusão visível no fim do dia.</MobileTip>
+      </div>
+
+      <div className="mona-desktop-only">
       <PageHeader
         title="Tarefas e demandas"
         subtitle="Quadro editável da equipe — prazos geram alertas; vincule cliente e agenda quando fizer sentido."
@@ -440,7 +544,7 @@ export function TodosPage() {
       )}
 
       <div
-        className="grid gap-4"
+        className="mona-board grid gap-4"
         style={{
           gridTemplateColumns: `repeat(${Math.max(columns.length, 1)}, minmax(220px, 1fr))`,
         }}
@@ -483,6 +587,7 @@ export function TodosPage() {
             </div>
           )
         })}
+      </div>
       </div>
 
       <Modal open={showAdd} onClose={() => setShowAdd(false)} title="Nova task">

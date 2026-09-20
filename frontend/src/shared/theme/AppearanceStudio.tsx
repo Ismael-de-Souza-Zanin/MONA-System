@@ -32,10 +32,10 @@ const STAGES: { id: AppearanceStage; label: string; hint: string; icon: typeof P
 ]
 
 const ACCENT_SWATCHES = [
-  '#7b5cff',
-  '#ff4fd8',
-  '#ff5b7a',
-  '#ff9a2e',
+  '#582B86',
+  '#F54D7D',
+  '#FF7A33',
+  '#8B4BB8',
   '#0e7490',
   '#2563eb',
   '#111827',
@@ -216,7 +216,7 @@ function PreviewPanel({ appearance }: { appearance: AppearancePrefs }) {
         </div>
       </div>
 
-      <div className="grid min-h-[360px] grid-cols-[112px_1fr] bg-[var(--mona-color-bg)]">
+      <div className="grid min-h-[280px] grid-cols-1 bg-[var(--mona-color-bg)] sm:min-h-[360px] sm:grid-cols-[112px_1fr]">
         <aside
           className="border-r p-3"
           style={{

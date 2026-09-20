@@ -5,12 +5,18 @@ import { api } from '../../shared/api/client'
 import type { ServiceItem } from '../../shared/types'
 import { Permissions } from '../../shared/permissions/constants'
 import { usePermissions } from '../../shared/permissions/hooks'
+import { Briefcase, Plus } from 'lucide-react'
 import {
   Button,
   Card,
   EmptyState,
   Input,
   LoadingSpinner,
+  MobileChip,
+  MobileChips,
+  MobileHero,
+  MobileRow,
+  MobileTip,
   Modal,
   PageHeader,
   Select,
@@ -30,6 +36,7 @@ export function ServicesPage() {
   const { hasPermission } = usePermissions()
   const canWrite = hasPermission(Permissions.ServicesWrite)
   const [showAdd, setShowAdd] = useState(false)
+  const [svcFilter, setSvcFilter] = useState<'active' | 'all' | 'running'>('active')
   const [assignServiceId, setAssignServiceId] = useState<string | null>(null)
   const [assignClientId, setAssignClientId] = useState('')
   const [form, setForm] = useState({
@@ -96,8 +103,55 @@ export function ServicesPage() {
 
   if (isLoading) return <LoadingSpinner />
 
+  const activeServices = services.filter((s) => s.isActive !== false)
+  const mobileServices =
+    svcFilter === 'active' ? activeServices : svcFilter === 'running' ? services.filter((s) => (s.clients?.length || 0) > 0) : services
+
   return (
     <div className="min-w-0">
+      <div className="mona-mobile-only mona-m-stack">
+        <MobileHero
+          kicker="Serviços MONA"
+          title="Soluções que transformam seu negócio"
+          lead="Organize, padronize e escale seus serviços com mais controle e qualidade."
+          note="Serviços organizados geram grandes resultados"
+        />
+        <MobileChips>
+          <MobileChip active={svcFilter === 'active'} onClick={() => setSvcFilter('active')}>
+            Ativos ({activeServices.length})
+          </MobileChip>
+          <MobileChip active={svcFilter === 'all'} onClick={() => setSvcFilter('all')}>
+            Catálogo ({services.length})
+          </MobileChip>
+          <MobileChip active={svcFilter === 'running'} onClick={() => setSvcFilter('running')}>
+            Em execução
+          </MobileChip>
+        </MobileChips>
+        <div className="mona-m-list">
+          {mobileServices.map((s) => (
+            <MobileRow
+              key={s.id}
+              icon={<span className="mona-m-icon"><Briefcase size={16} /></span>}
+              title={s.title}
+              meta={s.category || s.description || 'Serviço'}
+              trailing={<span className="mona-m-badge">{s.isActive === false ? 'Inativo' : 'Ativo'}</span>}
+            />
+          ))}
+          {mobileServices.length === 0 && <EmptyState title="Nenhum serviço cadastrado" />}
+          {canWrite && (
+            <button type="button" className="mona-m-row" onClick={() => setShowAdd(true)}>
+              <span className="mona-m-icon"><Plus size={16} /></span>
+              <div className="mona-m-row__body">
+                <strong>Explore nosso catálogo</strong>
+                <p>Cadastre um serviço e amplie as oportunidades</p>
+              </div>
+            </button>
+          )}
+        </div>
+        <MobileTip>Um serviço bem descrito vira conversa melhor no chat e no cliente.</MobileTip>
+      </div>
+
+      <div className="mona-desktop-only">
       <PageHeader
         title="Base de serviços"
         subtitle="Cadastre o que a equipe entrega, as especificidades e vincule por cliente — base para chat e comunicação."
@@ -158,6 +212,7 @@ export function ServicesPage() {
           ))}
         </div>
       )}
+      </div>
 
       <Modal open={showAdd} onClose={() => setShowAdd(false)} title="Novo serviço" size="lg">
         <div className="space-y-4">
