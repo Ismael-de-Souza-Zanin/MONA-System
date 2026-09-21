@@ -27,6 +27,7 @@ html.is-landing body {
   height: 100%;
   display: block;
   pointer-events: none;
+  background: transparent;
 }
 
 .mona-land__sky {
@@ -46,6 +47,7 @@ html.is-landing body {
   object-fit: cover;
   object-position: center;
   opacity: 0;
+  transition: opacity 0.35s ease;
   will-change: opacity;
 }
 

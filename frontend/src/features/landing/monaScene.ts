@@ -433,9 +433,14 @@ export function createMonaScene(canvas: HTMLCanvasElement): MonaScene {
   dots.points.visible = false
   root.add(dots.points)
 
+  // Bloom wipe clears alpha to black and hides the CSS backgrounds.
+  // Keep a light bloom only on portal; otherwise render with transparent clear.
   const composer = new EffectComposer(renderer)
-  composer.addPass(new RenderPass(scene, camera))
-  const bloom = new UnrealBloomPass(new THREE.Vector2(1, 1), 0.18, 0.4, 0.86)
+  const renderPass = new RenderPass(scene, camera)
+  renderPass.clearAlpha = 0
+  composer.addPass(renderPass)
+  const bloom = new UnrealBloomPass(new THREE.Vector2(1, 1), 0.14, 0.35, 0.9)
+  bloom.enabled = false
   composer.addPass(bloom)
 
   const loader = new THREE.TextureLoader()
@@ -563,27 +568,14 @@ export function createMonaScene(canvas: HTMLCanvasElement): MonaScene {
 
     const fog = scene.fog as THREE.Fog
     const inPortal = t > 0.3 && t < 0.39
-    fog.near = inPortal ? mix(18, 6, enter * 0.45) : 40
-    fog.far = inPortal ? mix(42, 16, enter * 0.45) : 80
+    fog.near = inPortal ? mix(18, 6, enter * 0.45) : 80
+    fog.far = inPortal ? mix(42, 16, enter * 0.45) : 120
     fog.color.setHex(SKY)
-    renderer.setClearColor(0xfff7f1, 0)
+    renderer.setClearColor(0x000000, 0)
+    renderer.setClearAlpha(0)
 
-    dots.points.visible = t < 0.4 || t > 0.84
-    const pos = dots.positions
-    for (let i = 0; i < dots.seeds.length; i += 1) {
-      const seed = dots.seeds[i]
-      const scatter = mix(0.45, 0.9, explode) * (1 - converge * 0.65) * mix(1, 0.4, live)
-      const ox = Math.sin(seed * 40 + i + t * 2) * mix(3.2, 8.2, scatter)
-      const oy = Math.cos(seed * 32 + i) * mix(1.8, 5.2, scatter)
-      const oz = Math.sin(seed * 18 + t) * mix(2.4, 6, scatter)
-      pos[i * 3] = ox
-      pos[i * 3 + 1] = oy
-      pos[i * 3 + 2] = oz
-    }
-    dots.points.geometry.attributes.position.needsUpdate = true
-    const spark = dots.points.material as THREE.PointsMaterial
-    spark.opacity = mix(0.16, 0.5, explode) * mix(1, 0.22, enter) * mix(0.35, 1, Math.max(architecture, collapse))
-    spark.size = mix(0.06, 0.12, explode)
+    // Image BGs carry the atmosphere — keep 3D particles off.
+    dots.points.visible = false
 
     orbs.forEach((orb) => {
       orb.visible = false
@@ -609,7 +601,8 @@ export function createMonaScene(canvas: HTMLCanvasElement): MonaScene {
       ring.scale.setScalar(0)
     })
 
-    bloom.strength = mix(0.12, 0.48, Math.max(enter * 0.85, architecture * 0.22, collapse * 0.55))
+    bloom.enabled = inPortal && enter > 0.08
+    bloom.strength = inPortal ? mix(0.08, 0.28, enter) : 0
     camera.fov = inPortal ? mix(mobile ? 48 : 42, 56, enter) : mobile ? 48 : 42
     camera.near = inPortal ? mix(0.05, 0.02, enter) : 0.05
     camera.updateProjectionMatrix()
@@ -620,7 +613,13 @@ export function createMonaScene(canvas: HTMLCanvasElement): MonaScene {
     camera.lookAt(look)
     camera.up.set(0, 1, 0)
 
-    composer.render()
+    if (bloom.enabled) {
+      composer.render()
+    } else {
+      renderer.setClearColor(0x000000, 0)
+      renderer.clear()
+      renderer.render(scene, camera)
+    }
     requestAnimationFrame(tick)
   }
 
