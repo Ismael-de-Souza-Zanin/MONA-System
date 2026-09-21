@@ -1,0 +1,1797 @@
+html.is-landing,
+html.is-landing body {
+  background: #fff7f1;
+  color: #2a1540;
+}
+
+html.is-landing body {
+  overflow-x: hidden;
+}
+
+.mona-land .mona-wordmark-text {
+  color: #2a1540;
+}
+
+.mona-land {
+  --land: 0;
+  position: relative;
+  min-height: 100svh;
+  color: #2a1540;
+}
+
+.mona-land__canvas {
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
+  display: block;
+  pointer-events: none;
+}
+
+.mona-land__sky {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+  background: #fff7f1;
+}
+
+.mona-land__bg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  opacity: 0;
+  will-change: opacity;
+}
+
+.mona-land__nav {
+  position: fixed;
+  top: 0;
+  right: 0;
+  left: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1rem 1.25rem;
+}
+
+.mona-land__nav a.mona-land__brand {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  color: inherit;
+  text-decoration: none;
+}
+
+.mona-land__enter {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.62rem 1rem;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #582b86, #c4489a 52%, #ff7a33);
+  color: #fff;
+  font-size: 0.82rem;
+  font-weight: 800;
+  text-decoration: none;
+  box-shadow: 0 12px 32px rgb(245 77 125 / 0.32);
+}
+
+.mona-land__skip {
+  color: rgb(42 21 64 / 0.5);
+  font-size: 0.78rem;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.mona-land__progress {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 21;
+  height: 3px;
+  width: 0%;
+  background: linear-gradient(90deg, #582b86, #f54d7d, #ff7a33);
+}
+
+.mona-land__pin {
+  position: relative;
+  z-index: 2;
+  height: 1400vh;
+}
+
+.mona-land__stage {
+  position: sticky;
+  top: 0;
+  min-height: 100svh;
+  perspective: 1600px;
+}
+
+.mona-pad {
+  --unit: min(52vmin, 28rem);
+  position: absolute;
+  top: 50%;
+  left: 54%;
+  z-index: 1;
+  width: calc(var(--unit) * 1.38);
+  height: var(--unit);
+  margin: 0;
+  border: calc(var(--unit) / 20) solid #141018;
+  border-radius: calc(var(--unit) / 14);
+  background: #111;
+  box-shadow:
+    0 0.5em 2em 0.2em rgb(0 0 0 / 0.33),
+    0 0 0 0.5px #000 inset,
+    0 0 4.5em 0.8em rgb(255 247 241 / 0.55),
+    0 0 8em 1.2em rgb(245 77 125 / 0.16);
+  transform-origin: center center;
+  transform-style: preserve-3d;
+  transform: translate(-50%, -50%) rotateY(-16deg) rotateX(7deg) scale(calc(0.94 + var(--land) * 0.35));
+  opacity: clamp(0, calc(1.02 - var(--land) * 9), 1);
+  pointer-events: none;
+  overflow: visible;
+}
+
+.mona-pad::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 0;
+  z-index: 4;
+  width: calc(var(--unit) / 26);
+  height: calc(var(--unit) / 26);
+  border-radius: 50%;
+  background: radial-gradient(circle at 40% 35%, #5a5460, #1a161c 62%);
+  box-shadow: 0 0 0 1px #0a080c inset;
+  transform: translate(-145%, -50%);
+}
+
+.mona-pad__screen {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  border-radius: calc(var(--unit) / 28);
+  background:
+    radial-gradient(circle at 50% 42%, #fff 0%, #fff7f1 42%, #f4e8ff 100%);
+  transform-style: preserve-3d;
+}
+
+.mona-pad__glow {
+  position: absolute;
+  inset: -18%;
+  z-index: 0;
+  background: radial-gradient(circle at 50% 45%, rgb(255 255 255 / 0.95), rgb(255 247 241 / 0.2) 42%, transparent 68%);
+  animation: mona-pad-glow 3.6s ease-in-out infinite;
+  pointer-events: none;
+}
+
+.mona-pad__ui {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: top center;
+  opacity: 0.88;
+}
+
+.mona-pad__glass {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  background: linear-gradient(135deg, rgb(255 255 255 / 0.28), transparent 36%, rgb(88 43 134 / 0.06) 100%);
+  pointer-events: none;
+}
+
+.mona-land__float {
+  --unit: min(58vmin, 32rem);
+  --ring: clamp(0, (var(--land) - 0.05) * 11, 1);
+  --merge: clamp(0, (var(--land) - 0.18) * 8.5, 1);
+  position: absolute;
+  top: 50%;
+  left: calc(50% + (1 - var(--ring)) * 4%);
+  z-index: 2;
+  width: calc(var(--unit) * 1.55);
+  height: calc(var(--unit) * 1.15);
+  pointer-events: none;
+  transform: translate(-50%, -50%);
+  opacity: clamp(0, calc(1.22 - var(--land) * 3.6), 1);
+}
+
+.mona-land__chip {
+  --spread: calc((1 - var(--ring)) * (1 - var(--merge)));
+  --orbit: calc(var(--ring) * (1 - var(--merge)));
+  position: absolute;
+  top: calc(50% + (var(--hy) * var(--spread) + var(--ry) * var(--orbit)) * 1%);
+  left: calc(50% + (var(--hx) * var(--spread) + var(--rx) * var(--orbit)) * 1%);
+  display: flex;
+  align-items: center;
+  gap: 0.62rem;
+  width: min(15.8rem, 58%);
+  padding: 0.62rem 0.58rem 0.62rem 0.62rem;
+  border: 1px solid rgb(255 255 255 / 0.82);
+  border-radius: 1.15rem;
+  background: rgb(255 255 255 / 0.92);
+  box-shadow: 0 16px 36px rgb(88 43 134 / 0.14);
+  backdrop-filter: blur(14px);
+  transform: translate(-50%, -50%) rotate(calc(var(--arot) * 1deg * var(--spread)))
+    scale(calc(0.96 * var(--spread) + 0.92 * var(--orbit) + 0.12 * var(--merge)));
+}
+
+.mona-land__chip.is-late {
+  opacity: var(--ring);
+}
+
+.mona-land.is-played .mona-land__chip {
+  width: auto;
+  max-width: 11.5rem;
+  gap: 0.5rem;
+  padding: 0.68rem 0.9rem 0.68rem 0.68rem;
+}
+
+.mona-land.is-played .mona-land__chip-copy span,
+.mona-land.is-played .mona-land__chip-go {
+  display: none;
+}
+
+.mona-land.is-played .mona-land__chip-icon {
+  width: 2.35rem;
+  height: 2.35rem;
+  flex-basis: 2.35rem;
+}
+
+.mona-land.is-played .mona-land__chip-copy strong {
+  font-size: 0.86rem;
+}
+
+.mona-land.is-played .mona-land__chip-icon {
+  width: 2.35rem;
+  height: 2.35rem;
+  flex-basis: 2.35rem;
+}
+
+.mona-land__chip-icon {
+  display: grid;
+  flex: 0 0 2.15rem;
+  width: 2.15rem;
+  height: 2.15rem;
+  place-items: center;
+  border-radius: 0.72rem;
+}
+
+.mona-land__chip.is-purple .mona-land__chip-icon {
+  background: rgb(88 43 134 / 0.12);
+  color: #582b86;
+}
+
+.mona-land__chip.is-rose .mona-land__chip-icon {
+  background: rgb(245 77 125 / 0.12);
+  color: #f54d7d;
+}
+
+.mona-land__chip.is-orange .mona-land__chip-icon {
+  background: rgb(255 122 51 / 0.14);
+  color: #ff7a33;
+}
+
+.mona-land__chip.is-lilac .mona-land__chip-icon {
+  background: rgb(139 75 184 / 0.12);
+  color: #8b4bb8;
+}
+
+.mona-land__chip-copy {
+  flex: 1;
+  min-width: 0;
+}
+
+.mona-land__chip-copy strong {
+  display: block;
+  color: #2a1540;
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.mona-land__chip-copy span {
+  display: block;
+  margin-top: 0.08rem;
+  color: rgb(42 21 64 / 0.52);
+  font-size: 0.62rem;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.mona-land__chip-go {
+  display: grid;
+  flex: 0 0 1.5rem;
+  width: 1.5rem;
+  height: 1.5rem;
+  place-items: center;
+  border-radius: 999px;
+  background: rgb(88 43 134 / 0.08);
+  color: #582b86;
+}
+
+@keyframes mona-pad-glow {
+  0%,
+  100% {
+    opacity: 0.7;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.06);
+  }
+}
+
+.mona-land__card {
+  position: absolute;
+  top: 18vh;
+  z-index: 5;
+  width: min(20.5rem, calc(100vw - 2.4rem));
+  padding: 0.85rem 1rem 1rem;
+  border: 1px solid rgb(255 255 255 / 0.7);
+  border-radius: 22px;
+  background: rgb(255 255 255 / 0.62);
+  box-shadow: 0 16px 40px rgb(88 43 134 / 0.08);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transform: translateY(18px);
+  transition: opacity 0.4s ease, transform 0.4s ease, visibility 0.4s ease;
+  backdrop-filter: blur(16px);
+}
+
+.mona-land__card.is-left {
+  left: 1.2rem;
+}
+
+.mona-land__card.is-right {
+  right: 1.2rem;
+  left: auto;
+}
+
+.mona-land__card.is-on {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+  transform: none;
+}
+
+.mona-land__num {
+  margin: 0 0 0.35rem;
+  color: #f54d7d;
+  font-family: var(--mona-font-display);
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+}
+
+.mona-land__kicker {
+  margin: 0 0 0.35rem;
+  color: #582b86;
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.mona-land__title {
+  margin: 0;
+  color: #2a1540;
+  font-family: var(--mona-font-display);
+  font-size: clamp(1.2rem, 3.2vw, 1.7rem);
+  font-weight: 800;
+  line-height: 1.05;
+  letter-spacing: -0.03em;
+}
+
+.mona-land__lead {
+  margin: 0.7rem 0 0;
+  color: rgb(42 21 64 / 0.68);
+  font-size: 0.92rem;
+  line-height: 1.5;
+}
+
+.mona-land__points {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin: 0.85rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.mona-land__points li {
+  padding: 0.28rem 0.55rem;
+  border-radius: 999px;
+  background: rgb(245 77 125 / 0.1);
+  color: #582b86;
+  font-size: 0.68rem;
+  font-weight: 700;
+}
+
+.mona-land__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  margin-top: 1rem;
+}
+
+.mona-land__ghost {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.62rem 1rem;
+  border: 1px solid rgb(88 43 134 / 0.14);
+  border-radius: 999px;
+  background: #fff;
+  color: #582b86;
+  font-size: 0.82rem;
+  font-weight: 700;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.mona-land__hint {
+  position: fixed;
+  right: 1.2rem;
+  bottom: 1.2rem;
+  z-index: 8;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.35rem;
+  color: rgb(88 43 134 / 0.55);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  pointer-events: none;
+}
+
+.mona-land__hint span {
+  width: 1px;
+  height: 2.4rem;
+  background: linear-gradient(180deg, #f54d7d, transparent);
+  transform-origin: top;
+  animation: mona-land-pulse 1.8s ease-in-out infinite;
+}
+
+.mona-land__dots {
+  position: fixed;
+  right: 1.1rem;
+  top: 50%;
+  z-index: 8;
+  display: grid;
+  gap: 0.42rem;
+  transform: translateY(-50%);
+}
+
+.mona-land__dots button {
+  width: 7px;
+  height: 7px;
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  background: rgb(88 43 134 / 0.2);
+  cursor: pointer;
+}
+
+.mona-land__dots button.is-on {
+  height: 18px;
+  background: #f54d7d;
+}
+
+.mona-land.is-played .mona-land__hint {
+  opacity: 0;
+  transition: opacity 0.4s ease;
+}
+
+@keyframes mona-land-pulse {
+  0%,
+  100% {
+    transform: scaleY(0.45);
+    opacity: 0.4;
+  }
+  50% {
+    transform: scaleY(1);
+    opacity: 1;
+  }
+}
+
+.mona-land__stories {
+  display: grid;
+  gap: 0.7rem;
+  margin: 1rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.mona-land__stories li {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.7rem;
+}
+
+.mona-land__stories i {
+  display: grid;
+  flex: 0 0 1.7rem;
+  width: 1.7rem;
+  height: 1.7rem;
+  place-items: center;
+  border-radius: 999px;
+  background: rgb(245 77 125 / 0.12);
+  color: #f54d7d;
+}
+
+.mona-land__stories .is-purple i {
+  background: rgb(88 43 134 / 0.12);
+  color: #582b86;
+}
+
+.mona-land__stories .is-orange i {
+  background: rgb(255 122 51 / 0.14);
+  color: #ff7a33;
+}
+
+.mona-land__stories strong {
+  display: block;
+  font-size: 0.84rem;
+  font-weight: 800;
+}
+
+.mona-land__stories span {
+  display: block;
+  color: rgb(42 21 64 / 0.55);
+  font-size: 0.72rem;
+  line-height: 1.35;
+}
+
+.mona-land__stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.45rem;
+  margin: 1rem 0 0;
+  padding: 0.7rem 0 0;
+  border-top: 1px solid rgb(88 43 134 / 0.08);
+  list-style: none;
+}
+
+.mona-land__stats li {
+  display: grid;
+  justify-items: center;
+  gap: 0.28rem;
+  color: #582b86;
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-align: center;
+}
+
+.mona-scene {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.mona-scene__note {
+  position: absolute;
+  right: 5%;
+  bottom: 6.5%;
+  color: rgb(88 43 134 / 0.62);
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 0.92rem;
+  font-style: italic;
+  transform: rotate(-6deg);
+}
+
+.mona-scene__foot {
+  position: absolute;
+  left: 50%;
+  bottom: 1.1rem;
+  color: rgb(88 43 134 / 0.42);
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  transform: translateX(-50%);
+  white-space: nowrap;
+}
+
+.mona-scene__foot.is-end {
+  letter-spacing: 0.2em;
+}
+
+.mona-tour {
+  --slide: 0;
+  position: absolute;
+  top: 48%;
+  left: 60%;
+  width: min(72vw, 880px);
+  height: min(68vh, 560px);
+  overflow: visible;
+  transform: translate(-50%, -52%);
+}
+
+.mona-tour__track {
+  display: flex;
+  align-items: center;
+  gap: 1.4rem;
+  height: 100%;
+  transform: translateX(calc(var(--slide) * -76%));
+  will-change: transform;
+}
+
+.mona-tour__slide {
+  position: relative;
+  flex: 0 0 74%;
+  height: 82%;
+  transform: scale(0.9) rotateY(12deg);
+  transform-origin: center center;
+  opacity: 0.55;
+  filter: saturate(0.85);
+}
+
+.mona-tour__slide.is-on {
+  transform: scale(1) rotateY(-6deg) rotateX(3deg);
+  opacity: 1;
+  filter: none;
+  z-index: 2;
+}
+
+.mona-tour__slide.is-prev {
+  transform: scale(0.88) rotateY(-18deg);
+}
+
+.mona-tour__slide.is-next {
+  transform: scale(0.9) rotateY(16deg);
+}
+
+.mona-tour__tag {
+  position: absolute;
+  top: -1.7rem;
+  left: 50%;
+  z-index: 4;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.22rem 0.55rem 0.22rem 0.22rem;
+  border-radius: 999px;
+  background: rgb(255 255 255 / 0.88);
+  box-shadow: 0 10px 24px rgb(88 43 134 / 0.12);
+  color: #2a1540;
+  font-size: 0.72rem;
+  font-weight: 800;
+  transform: translateX(-50%);
+  white-space: nowrap;
+}
+
+.mona-tour__tag span {
+  display: grid;
+  width: 1.15rem;
+  height: 1.15rem;
+  place-items: center;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #582b86, #f54d7d);
+  color: #fff;
+  font-size: 0.62rem;
+}
+
+.mona-tour__frame {
+  height: 100%;
+  margin: 0;
+  overflow: hidden;
+  border: 1px solid rgb(255 255 255 / 0.85);
+  border-radius: 26px;
+  background: #fff;
+  box-shadow: 0 28px 70px rgb(88 43 134 / 0.2);
+}
+
+.mona-tour__frame img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: top left;
+}
+
+.mona-scene.is-tour .mona-scene__foot {
+  left: 26%;
+  bottom: 1.05rem;
+  transform: none;
+}
+
+.mona-tour__nav {
+  position: absolute;
+  left: 58%;
+  bottom: 1.1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  transform: translateX(-50%);
+}
+
+.mona-tour__nav button {
+  display: grid;
+  width: 1.7rem;
+  height: 1.7rem;
+  place-items: center;
+  border: 0;
+  border-radius: 999px;
+  background: rgb(255 255 255 / 0.8);
+  color: #582b86;
+  box-shadow: 0 8px 18px rgb(88 43 134 / 0.12);
+}
+
+.mona-tour__nav i {
+  width: 1.35rem;
+  height: 5px;
+  border-radius: 999px;
+  background: rgb(88 43 134 / 0.16);
+}
+
+.mona-tour__nav i.is-on {
+  background: linear-gradient(90deg, #f54d7d, #ff7a33);
+}
+
+.mona-app {
+  display: flex;
+  height: 100%;
+  overflow: hidden;
+  border: 1px solid rgb(255 255 255 / 0.8);
+  border-radius: 26px;
+  background: rgb(255 255 255 / 0.94);
+  box-shadow: 0 24px 60px rgb(88 43 134 / 0.16);
+}
+
+.mona-app.is-slim {
+  display: block;
+  padding: 0.85rem 0.9rem 1rem;
+}
+
+.mona-app__rail {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.85rem;
+  width: 3rem;
+  padding: 0.85rem 0;
+  background: linear-gradient(180deg, #f8efff, #fff7f1);
+  color: rgb(88 43 134 / 0.55);
+}
+
+.mona-app__rail .is-on {
+  display: grid;
+  width: 1.85rem;
+  height: 1.85rem;
+  place-items: center;
+  border-radius: 0.7rem;
+  background: #582b86;
+  color: #fff;
+}
+
+.mona-app__body {
+  flex: 1;
+  min-width: 0;
+  padding: 0.85rem 0.95rem 0.9rem;
+}
+
+.mona-app__top {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+}
+
+.mona-app__hi {
+  margin: 0;
+  font-size: 0.92rem;
+  font-weight: 800;
+}
+
+.mona-app__sub,
+.mona-app__day {
+  margin: 0.15rem 0 0;
+  color: rgb(42 21 64 / 0.5);
+  font-size: 0.68rem;
+}
+
+.mona-app__search {
+  display: inline-flex;
+  flex: 1;
+  align-items: center;
+  gap: 0.35rem;
+  margin-left: auto;
+  padding: 0.32rem 0.55rem;
+  border-radius: 999px;
+  background: rgb(88 43 134 / 0.06);
+  color: rgb(88 43 134 / 0.45);
+  font-size: 0.62rem;
+}
+
+.mona-app__top b {
+  display: grid;
+  width: 1.5rem;
+  height: 1.5rem;
+  place-items: center;
+  border-radius: 999px;
+  background: #f54d7d;
+  color: #fff;
+  font-size: 0.62rem;
+}
+
+.mona-app__card {
+  margin-top: 0.7rem;
+}
+
+.mona-app__card-head {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  margin: 0 0 0.55rem;
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.mona-app__card-head em {
+  color: rgb(42 21 64 / 0.45);
+  font-size: 0.62rem;
+  font-style: normal;
+}
+
+.mona-app__card-head button {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.28rem 0.55rem;
+  border: 0;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #f54d7d, #ff7a33);
+  color: #fff;
+  font-size: 0.62rem;
+  font-weight: 800;
+}
+
+.mona-app__tasks,
+.mona-app__agenda {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.mona-app__tasks li {
+  display: grid;
+  grid-template-columns: 0.9rem 1fr auto auto;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.42rem 0;
+  border-bottom: 1px solid rgb(88 43 134 / 0.06);
+  font-size: 0.72rem;
+}
+
+.mona-app__tasks i {
+  width: 0.78rem;
+  height: 0.78rem;
+  border: 1.5px solid rgb(88 43 134 / 0.28);
+  border-radius: 999px;
+}
+
+.mona-app__tasks .is-done i {
+  background: #22c55e;
+  border-color: #22c55e;
+}
+
+.mona-app__tasks .is-done strong {
+  color: rgb(42 21 64 / 0.4);
+  text-decoration: line-through;
+}
+
+.mona-app__tasks span,
+.mona-app__tasks small {
+  padding: 0.12rem 0.4rem;
+  border-radius: 999px;
+  background: rgb(88 43 134 / 0.08);
+  color: #582b86;
+  font-size: 0.58rem;
+  font-weight: 700;
+}
+
+.mona-app__focus {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  margin-top: 0.7rem;
+  padding: 0.7rem 0.8rem;
+  border-radius: 16px;
+  background: linear-gradient(135deg, rgb(248 220 255 / 0.9), rgb(255 236 244 / 0.95));
+}
+
+.mona-app__focus strong {
+  display: block;
+  font-size: 0.72rem;
+}
+
+.mona-app__focus p {
+  margin: 0.1rem 0 0;
+  color: rgb(42 21 64 / 0.55);
+  font-size: 0.62rem;
+}
+
+.mona-app__agenda li {
+  display: flex;
+  gap: 0.55rem;
+  margin-top: 0.45rem;
+  padding: 0.5rem 0.55rem;
+  border-radius: 12px;
+  background: rgb(255 247 241 / 0.9);
+}
+
+.mona-app__agenda time {
+  width: 2.4rem;
+  color: rgb(42 21 64 / 0.45);
+  font-size: 0.62rem;
+  font-weight: 800;
+}
+
+.mona-app__agenda strong {
+  display: block;
+  font-size: 0.72rem;
+}
+
+.mona-app__agenda p {
+  margin: 0.1rem 0 0;
+  color: rgb(42 21 64 / 0.5);
+  font-size: 0.62rem;
+}
+
+.mona-app__agenda .is-rose { background: rgb(245 77 125 / 0.1); }
+.mona-app__agenda .is-orange { background: rgb(255 122 51 / 0.12); }
+.mona-app__agenda .is-lilac { background: rgb(139 75 184 / 0.1); }
+.mona-app__agenda .is-mint { background: rgb(34 197 94 / 0.1); }
+
+.mona-app__kpis {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.5rem;
+  margin-top: 0.7rem;
+}
+
+.mona-app__kpis div {
+  padding: 0.55rem 0.6rem;
+  border-radius: 14px;
+  background: rgb(255 247 241 / 0.9);
+}
+
+.mona-app__kpis p,
+.mona-app__mini p {
+  margin: 0;
+  color: rgb(42 21 64 / 0.5);
+  font-size: 0.62rem;
+}
+
+.mona-app__kpis strong,
+.mona-app__mini b {
+  display: block;
+  font-size: 0.92rem;
+  font-weight: 800;
+}
+
+.mona-app__kpis em {
+  color: #16a34a;
+  font-size: 0.58rem;
+  font-style: normal;
+  font-weight: 800;
+}
+
+.mona-app__bars {
+  display: flex;
+  align-items: flex-end;
+  gap: 0.28rem;
+  height: 4.2rem;
+  margin: 0.7rem 0;
+}
+
+.mona-app__bars span {
+  flex: 1;
+  border-radius: 6px 6px 2px 2px;
+  background: linear-gradient(180deg, #f54d7d, #ff7a33);
+  opacity: 0.75;
+}
+
+.mona-app__mini {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+}
+
+.mona-orbit {
+  position: absolute;
+  top: 50%;
+  left: 58%;
+  width: min(78vw, 980px);
+  height: min(74vh, 640px);
+  transform: translate(-50%, -50%);
+}
+
+.mona-client {
+  position: absolute;
+  top: 16%;
+  left: 22%;
+  z-index: 4;
+  width: 56%;
+  padding: 1.1rem 1.15rem 1.15rem;
+  border: 1px solid rgb(255 255 255 / 0.86);
+  border-radius: 28px;
+  background: rgb(255 255 255 / 0.96);
+  box-shadow: 0 28px 70px rgb(88 43 134 / 0.18);
+}
+
+.mona-client header {
+  display: flex;
+  gap: 0.75rem;
+  align-items: flex-start;
+}
+
+.mona-client header span {
+  display: grid;
+  width: 3rem;
+  height: 3rem;
+  place-items: center;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #f4e4ff, #ffe0ec);
+  color: #582b86;
+  font-weight: 800;
+}
+
+.mona-client h3 {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  margin: 0;
+  font-size: 1.15rem;
+}
+
+.mona-client h3 em {
+  padding: 0.12rem 0.45rem;
+  border-radius: 999px;
+  background: rgb(34 197 94 / 0.12);
+  color: #15803d;
+  font-size: 0.62rem;
+  font-style: normal;
+  font-weight: 800;
+}
+
+.mona-client header p {
+  margin: 0.2rem 0 0;
+  color: rgb(42 21 64 / 0.55);
+  font-size: 0.78rem;
+}
+
+.mona-client header small {
+  display: block;
+  margin-top: 0.1rem;
+  font-size: 0.62rem;
+}
+
+.mona-client nav {
+  display: flex;
+  gap: 0.35rem;
+  margin: 0.9rem 0 0.85rem;
+}
+
+.mona-client nav span,
+.mona-client nav b {
+  padding: 0.28rem 0.55rem;
+  border-radius: 999px;
+  background: rgb(88 43 134 / 0.06);
+  color: rgb(42 21 64 / 0.55);
+  font-size: 0.68rem;
+  font-weight: 700;
+}
+
+.mona-client nav b {
+  background: rgb(88 43 134 / 0.12);
+  color: #582b86;
+}
+
+.mona-client__kpis {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.55rem;
+}
+
+.mona-client__kpis div {
+  padding: 0.65rem 0.7rem;
+  border-radius: 16px;
+  background: rgb(255 247 241 / 0.92);
+}
+
+.mona-client__kpis p {
+  margin: 0;
+  color: rgb(42 21 64 / 0.5);
+  font-size: 0.62rem;
+}
+
+.mona-client__kpis strong {
+  display: block;
+  margin-top: 0.2rem;
+  font-size: 0.98rem;
+}
+
+.mona-client__split {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.8rem;
+  margin-top: 0.85rem;
+}
+
+.mona-client__split p {
+  margin: 0 0 0.4rem;
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+
+.mona-client__split ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.mona-client__split li {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.4rem;
+  padding: 0.32rem 0;
+  color: #2a1540;
+  font-size: 0.68rem;
+}
+
+.mona-client__split small {
+  color: rgb(42 21 64 / 0.45);
+}
+
+.mona-sat {
+  position: absolute;
+  z-index: 2;
+  width: 11.4rem;
+  padding: 0.7rem 0.75rem;
+  border: 1px solid rgb(255 255 255 / 0.8);
+  border-radius: 18px;
+  background: rgb(255 255 255 / 0.9);
+  box-shadow: 0 16px 36px rgb(88 43 134 / 0.12);
+}
+
+.mona-sat p {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin: 0 0 0.35rem;
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+
+.mona-sat strong {
+  display: block;
+  font-size: 1.15rem;
+}
+
+.mona-sat small,
+.mona-sat li {
+  color: rgb(42 21 64 / 0.55);
+  font-size: 0.62rem;
+}
+
+.mona-sat.is-sops small,
+.mona-sat.is-comms small {
+  display: block;
+  margin-top: 0.28rem;
+  line-height: 1.35;
+}
+
+.mona-sat.is-visao { top: 0; left: 16%; }
+.mona-sat.is-tarefas { top: 38%; left: 2%; }
+.mona-sat.is-agenda { bottom: 6%; left: 8%; width: 13.2rem; }
+.mona-sat.is-sops { right: 30%; bottom: 0; }
+.mona-sat.is-arquivos { top: 2%; right: 2%; }
+.mona-sat.is-fin { top: 30%; right: 0; }
+.mona-sat.is-comms { right: 2%; bottom: 8%; }
+
+.mona-sat__bars {
+  display: flex;
+  align-items: flex-end;
+  gap: 0.18rem;
+  height: 2.2rem;
+  margin-top: 0.4rem;
+}
+
+.mona-sat__bars span {
+  flex: 1;
+  border-radius: 3px;
+  background: linear-gradient(180deg, #8b4bb8, #f54d7d);
+}
+
+.mona-sat.is-tarefas ul {
+  display: grid;
+  gap: 0.28rem;
+  margin: 0.4rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.mona-sat.is-tarefas li {
+  height: 0.45rem;
+  border-radius: 999px;
+  background: rgb(88 43 134 / 0.1);
+}
+
+.mona-sat.is-tarefas li.is-on {
+  background: linear-gradient(90deg, #f54d7d, #ff7a33);
+  width: 70%;
+}
+
+.mona-sat__events {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.mona-sat__events li {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin-top: 0.28rem;
+}
+
+.mona-sat__events i {
+  width: 0.45rem;
+  height: 0.45rem;
+  border-radius: 999px;
+  background: #f54d7d;
+}
+
+.mona-sat__events .is-orange { background: #ff7a33; }
+.mona-sat__events .is-lilac { background: #8b4bb8; }
+
+.mona-path {
+  position: absolute;
+  top: 50%;
+  left: 42%;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  transform: translate(-50%, -50%);
+  perspective: 1400px;
+}
+
+.mona-path__floor {
+  position: absolute;
+  left: 6%;
+  right: 6%;
+  bottom: -18%;
+  height: 5rem;
+  border-radius: 50%;
+  background: radial-gradient(ellipse, rgb(88 43 134 / 0.2), transparent 70%);
+  filter: blur(10px);
+  pointer-events: none;
+}
+
+.mona-path__item {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.mona-path__card {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  width: min(16.8rem, 24vw);
+  min-height: 22.5rem;
+  padding: 1.15rem 1.2rem 1.25rem;
+  border: 1px solid rgb(255 255 255 / 0.72);
+  border-radius: 30px;
+  background: linear-gradient(165deg, rgb(255 255 255 / 0.46), rgb(255 255 255 / 0.14) 55%, rgb(255 255 255 / 0.22));
+  box-shadow:
+    0 28px 60px rgb(88 43 134 / 0.16),
+    inset 0 1px 0 rgb(255 255 255 / 0.85),
+    inset 0 -18px 28px rgb(88 43 134 / 0.05);
+  backdrop-filter: blur(28px) saturate(165%);
+  -webkit-backdrop-filter: blur(28px) saturate(165%);
+  transform: rotateY(-8deg) rotateX(7deg);
+}
+
+.mona-path__card::before {
+  content: '';
+  position: absolute;
+  inset: 1px 1px auto;
+  height: 46%;
+  border-radius: 28px 28px 42% 42%;
+  background: linear-gradient(180deg, rgb(255 255 255 / 0.62), rgb(255 255 255 / 0));
+  pointer-events: none;
+}
+
+.mona-path__card::after {
+  content: '';
+  position: absolute;
+  inset: auto -30% -38% -30%;
+  height: 58%;
+  pointer-events: none;
+}
+
+.mona-path__card > * {
+  position: relative;
+  z-index: 1;
+}
+
+.mona-path__card.is-purple::after {
+  background: radial-gradient(circle, rgb(88 43 134 / 0.32), transparent 68%);
+}
+
+.mona-path__card.is-rose {
+  background: linear-gradient(165deg, rgb(255 255 255 / 0.5), rgb(255 214 228 / 0.28) 58%, rgb(255 255 255 / 0.16));
+  transform: rotateY(0deg) rotateX(7deg) translateY(-10px);
+}
+
+.mona-path__card.is-rose::after {
+  background: radial-gradient(circle, rgb(245 77 125 / 0.34), transparent 68%);
+}
+
+.mona-path__card.is-orange {
+  background: linear-gradient(165deg, rgb(255 255 255 / 0.5), rgb(255 226 204 / 0.3) 58%, rgb(255 255 255 / 0.16));
+  transform: rotateY(8deg) rotateX(7deg);
+}
+
+.mona-path__card.is-orange::after {
+  background: radial-gradient(circle, rgb(255 122 51 / 0.3), transparent 68%);
+}
+
+.mona-path__card span {
+  color: rgb(42 21 64 / 0.4);
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+}
+
+.mona-path__card i {
+  display: grid;
+  width: 3.5rem;
+  height: 3.5rem;
+  margin: 0.9rem 0 0.75rem;
+  place-items: center;
+  border: 1px solid rgb(255 255 255 / 0.55);
+  border-radius: 1.15rem;
+  background: rgb(255 255 255 / 0.28);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.7);
+}
+
+.mona-path__card.is-purple i {
+  color: #582b86;
+}
+
+.mona-path__card.is-rose i {
+  color: #f54d7d;
+}
+
+.mona-path__card.is-orange i {
+  color: #ff7a33;
+}
+
+.mona-path__card h3 {
+  margin: 0 0 0.7rem;
+  font-size: 1.15rem;
+}
+
+.mona-path__card ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.mona-path__card li {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.28rem 0;
+  color: rgb(42 21 64 / 0.72);
+  font-size: 0.78rem;
+}
+
+.mona-path__card li svg {
+  flex: 0 0 auto;
+}
+
+.mona-path__card.is-purple li svg { color: #582b86; }
+.mona-path__card.is-rose li svg { color: #f54d7d; }
+.mona-path__card.is-orange li svg { color: #ff7a33; }
+
+.mona-path__item b {
+  display: grid;
+  width: 2rem;
+  height: 2rem;
+  place-items: center;
+  border-radius: 999px;
+  background: rgb(255 255 255 / 0.72);
+  color: #f54d7d;
+  box-shadow: 0 10px 22px rgb(245 77 125 / 0.2);
+  backdrop-filter: blur(12px);
+}
+
+.mona-scan {
+  --beam: 0;
+  position: absolute;
+  top: 50%;
+  left: 56%;
+  width: min(84vw, 1080px);
+  height: min(70vh, 560px);
+  transform: translate(-50%, -50%);
+}
+
+.mona-scan__chaos {
+  position: absolute;
+  inset: 0;
+}
+
+.mona-mess {
+  position: absolute;
+  display: grid;
+  width: 5.6rem;
+  min-height: 4.2rem;
+  padding: 0.55rem;
+  place-items: center;
+  border-radius: 16px;
+  background: rgb(255 255 255 / 0.88);
+  box-shadow: 0 14px 28px rgb(88 43 134 / 0.12);
+  color: #582b86;
+  text-align: center;
+  transition: opacity 0.35s ease, transform 0.45s ease, filter 0.35s ease;
+}
+
+.mona-mess.is-gone {
+  filter: blur(5px) saturate(0.4);
+  pointer-events: none;
+}
+
+.mona-mess p {
+  margin: 0.25rem 0 0;
+  font-size: 0.62rem;
+  font-weight: 700;
+  line-height: 1.25;
+  white-space: pre-line;
+}
+
+.mona-mess.is-note,
+.mona-mess.is-ideas {
+  background: #ffe3ea;
+  color: #9d174d;
+}
+
+.mona-mess.is-sheet { background: #ecfdf3; color: #166534; }
+.mona-mess.is-pdf { background: #fff1f2; color: #be123c; }
+.mona-mess.is-cal { width: 6.4rem; }
+
+.mona-scan__beam {
+  position: absolute;
+  top: 46%;
+  left: 2%;
+  z-index: 5;
+  width: calc(8% + var(--beam) * 90%);
+  height: 5px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, rgb(255 255 255 / 0.1), #fff 42%, #f54d7d);
+  box-shadow: 0 0 18px 8px rgb(245 77 125 / 0.55), 0 0 42px 16px rgb(255 122 51 / 0.28);
+}
+
+.mona-scan__beam::before {
+  content: '';
+  position: absolute;
+  top: -220%;
+  bottom: -220%;
+  right: 0;
+  width: 2px;
+  background: rgb(255 255 255 / 0.9);
+  box-shadow: 0 0 22px 8px rgb(245 77 125 / 0.45);
+}
+
+.mona-scan__beam::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  right: -7px;
+  width: 14px;
+  height: 14px;
+  border-radius: 999px;
+  background: #fff;
+  box-shadow: 0 0 16px 6px rgb(245 77 125 / 0.8);
+  transform: translateY(-50%);
+}
+
+.mona-scan__mona {
+  position: absolute;
+  inset: 6% 3% 8%;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.55rem;
+  align-content: start;
+  padding: 0.85rem;
+  border-radius: 24px;
+  background: rgb(255 247 241 / 0.62);
+  box-shadow: 0 20px 50px rgb(88 43 134 / 0.08);
+  backdrop-filter: blur(10px);
+  clip-path: inset(0 calc((1 - var(--beam)) * 100%) 0 0);
+}
+
+.mona-grid {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-height: 4.2rem;
+  padding: 0.7rem 0.8rem;
+  border-radius: 18px;
+  background: rgb(255 255 255 / 0.92);
+  box-shadow: 0 12px 28px rgb(88 43 134 / 0.1);
+  color: #582b86;
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.mona-grid.is-hero {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  min-height: 5.4rem;
+  background: linear-gradient(135deg, #fff, #fde8f2);
+}
+
+.mona-grid__progress span {
+  display: block;
+  width: 7rem;
+  height: 0.45rem;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #582b86, #f54d7d, #ff7a33);
+}
+
+.mona-grid.is-chart p { font-size: 0.72rem; }
+.mona-grid.is-cta {
+  background: linear-gradient(135deg, #f4e9ff, #ffe8d6);
+}
+
+.mona-arch,
+.mona-finale {
+  position: absolute;
+  top: 50%;
+  left: 44%;
+  width: min(52vw, 620px);
+  height: min(68vh, 560px);
+  transform: translate(-50%, -50%);
+}
+
+.mona-finale {
+  left: 58%;
+}
+
+.mona-arch__well,
+.mona-finale__well {
+  position: absolute;
+  inset: 22% 18% 18%;
+}
+
+.mona-arch__well i,
+.mona-finale__well i {
+  position: absolute;
+  inset: 0;
+  border: 2px solid rgb(255 255 255 / 0.55);
+  border-radius: 50%;
+  box-shadow: 0 0 40px rgb(245 77 125 / 0.12) inset;
+}
+
+.mona-arch__well i:nth-child(2),
+.mona-finale__well i:nth-child(2) { inset: 12%; }
+.mona-arch__well i:nth-child(3),
+.mona-finale__well i:nth-child(3) { inset: 24%; }
+
+.mona-arch__ring {
+  position: absolute;
+}
+
+.mona-arch__ring strong {
+  position: absolute;
+  padding: 0.18rem 0.5rem;
+  border-radius: 999px;
+  background: rgb(255 255 255 / 0.86);
+  color: rgb(42 21 64 / 0.62);
+  font-size: 0.68rem;
+  font-weight: 800;
+  box-shadow: 0 8px 18px rgb(88 43 134 / 0.1);
+}
+
+.mona-arch__ring span {
+  position: absolute;
+  display: grid;
+  width: 2.5rem;
+  height: 2.5rem;
+  place-items: center;
+  border-radius: 0.9rem;
+  background: rgb(255 255 255 / 0.94);
+  box-shadow: 0 12px 24px rgb(88 43 134 / 0.14);
+  color: #582b86;
+}
+
+.mona-arch__ring.is-clients { inset: 4% 22% auto; height: 7rem; }
+.mona-arch__ring.is-clients strong { left: 50%; top: -0.4rem; transform: translateX(-50%); }
+.mona-arch__ring.is-clients .is-a { left: 18%; top: 1.6rem; }
+.mona-arch__ring.is-clients .is-b { left: 50%; top: 0.4rem; transform: translateX(-50%); }
+.mona-arch__ring.is-clients .is-c { right: 18%; top: 1.6rem; }
+
+.mona-arch__ring.is-apps { left: -2%; top: 28%; width: 11rem; height: 12rem; }
+.mona-arch__ring.is-apps strong { left: 0; top: 38%; }
+.mona-arch__ring.is-apps .is-g { left: 58%; top: 0; }
+.mona-arch__ring.is-apps .is-m { left: 78%; top: 22%; }
+.mona-arch__ring.is-apps .is-w { left: 84%; top: 48%; }
+.mona-arch__ring.is-apps .is-s { left: 70%; top: 72%; }
+.mona-arch__ring.is-apps .is-p { left: 42%; top: 86%; }
+
+.mona-arch__ring.is-ops { right: -4%; top: 26%; width: 11rem; height: 12rem; }
+.mona-arch__ring.is-ops strong { right: 0; top: 42%; }
+.mona-arch__ring.is-ops .is-a { right: 58%; top: 0; }
+.mona-arch__ring.is-ops .is-b { right: 78%; top: 24%; }
+.mona-arch__ring.is-ops .is-c { right: 82%; top: 52%; }
+.mona-arch__ring.is-ops .is-d { right: 62%; top: 78%; }
+
+.mona-arch__dock {
+  position: absolute;
+  left: 50%;
+  bottom: 4%;
+  display: flex;
+  gap: 0.45rem;
+  transform: translateX(-50%);
+}
+
+.mona-arch__dock span {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.42rem 0.7rem;
+  border-radius: 999px;
+  background: rgb(255 255 255 / 0.92);
+  box-shadow: 0 10px 22px rgb(88 43 134 / 0.12);
+  color: #582b86;
+  font-size: 0.68rem;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.mona-finale__chip {
+  position: absolute;
+  display: grid;
+  width: 2.6rem;
+  height: 2.6rem;
+  place-items: center;
+  border-radius: 0.9rem;
+  background: rgb(255 255 255 / 0.94);
+  box-shadow: 0 12px 26px rgb(88 43 134 / 0.16);
+  color: #582b86;
+  transform: translate(-50%, -50%);
+}
+
+@media (min-width: 900px) {
+  .mona-land__nav {
+    padding-left: 2.4rem;
+    padding-right: 2.4rem;
+  }
+
+  .mona-land__card.is-left {
+    left: 3.2rem;
+  }
+
+  .mona-land__card.is-right {
+    right: 3.2rem;
+  }
+
+  .mona-pad {
+    --unit: min(58vmin, 34rem);
+    left: 56%;
+  }
+
+  .mona-land__float {
+    --unit: min(62vmin, 36rem);
+    left: 56%;
+  }
+}
+
+@media (max-width: 767px) {
+  .mona-land__skip,
+  .mona-land__hint,
+  .mona-land__dots {
+    display: none;
+  }
+
+  .mona-land__card,
+  .mona-land__card.is-left,
+  .mona-land__card.is-right {
+    top: auto;
+    right: 1rem;
+    bottom: 1.1rem;
+    left: 1rem;
+    width: auto;
+  }
+
+  .mona-pad {
+    --unit: min(46vw, 18rem);
+    top: 42%;
+    left: 50%;
+    transform: translate(-50%, -50%) rotateY(-8deg) rotateX(5deg) scale(calc(0.98 + var(--land) * 0.25));
+  }
+
+  .mona-land__float {
+    --unit: min(46vw, 18rem);
+    top: 42%;
+    left: 50%;
+  }
+
+  .mona-land__chip {
+    width: min(13.5rem, 62%);
+  }
+
+  .mona-land__chip.is-late {
+    display: none;
+  }
+
+  .mona-tour,
+  .mona-orbit,
+  .mona-path,
+  .mona-scan,
+  .mona-arch,
+  .mona-finale {
+    left: 50%;
+    width: 92vw;
+  }
+
+  .mona-tour__slide {
+    flex-basis: 88%;
+    height: 70%;
+    transform: none;
+    opacity: 1;
+    filter: none;
+  }
+
+  .mona-sat,
+  .mona-scene__note,
+  .mona-scene__foot {
+    display: none;
+  }
+
+  .mona-client {
+    left: 4%;
+    width: 92%;
+    top: 18%;
+  }
+
+  .mona-path {
+    left: 50%;
+  }
+
+  .mona-path__card {
+    width: 78vw;
+    min-height: auto;
+    transform: none;
+  }
+
+  .mona-path__item:not(:first-child) {
+    display: none;
+  }
+
+  .mona-scan {
+    left: 50%;
+  }
+}

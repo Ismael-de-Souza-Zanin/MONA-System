@@ -33,6 +33,7 @@ import { FaqsPage } from '../features/faqs/FaqsPage'
 import { ContractorPortalPage } from '../features/portal/ContractorPortalPage'
 import { ReportsPage } from '../features/reports/ReportsPage'
 import { MorePage } from '../features/more/MorePage'
+import { LandingPage } from '../features/landing/LandingPage'
 import { Permissions } from '../shared/permissions/constants'
 
 export function AppRouter() {
@@ -43,6 +44,7 @@ export function AppRouter() {
   return (
     <Router>
       <Routes>
+        <Route path="/conheca" element={<LandingPage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/s/:token" element={<ContractorPortalPage />} />
 

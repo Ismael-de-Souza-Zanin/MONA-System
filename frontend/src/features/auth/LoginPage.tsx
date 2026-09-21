@@ -1,6 +1,6 @@
 import { useMutation } from '@tanstack/react-query'
 import { useState, type FormEvent } from 'react'
-import { Navigate, useLocation, useNavigate } from 'react-router-dom'
+import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom'
 import { ArrowRight, Eye, EyeOff, Headphones, Lock, Mail, ShieldCheck } from 'lucide-react'
 import { useAuth } from '../../shared/auth/AuthContext'
 import { BrandLogo, Button, ErrorAlert, Input, LoadingSpinner, MonaArrow, MonaWave } from '../../shared/ui'
@@ -39,8 +39,13 @@ export function LoginPage() {
       <MonaWave className="pointer-events-none absolute -right-8 top-36 w-[280px] opacity-70" />
       <MonaArrow className="pointer-events-none absolute bottom-10 right-8 w-16 opacity-80" />
 
-      <div className="relative mx-auto flex max-w-6xl items-center gap-3">
-        <BrandLogo size={48} showWordmark title="MONA" subtitle="Organiza. Opera. Avança." />
+      <div className="relative mx-auto flex max-w-6xl items-center justify-between gap-3">
+        <Link to="/conheca" aria-label="MONA">
+          <BrandLogo size={48} showWordmark title="MONA" subtitle="Organiza. Opera. Avança." />
+        </Link>
+        <Link to="/conheca" className="text-sm font-semibold text-brand-800 hover:underline">
+          Conheça a MONA
+        </Link>
       </div>
 
       <div className="relative mx-auto mt-10 grid max-w-6xl items-stretch gap-8 lg:grid-cols-[1.05fr_0.95fr]">

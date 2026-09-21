@@ -8,6 +8,9 @@ export function RequireAuth() {
 
   if (isLoading) return <LoadingSpinner />
   if (!isAuthenticated) {
+    if (location.pathname === '/') {
+      return <Navigate to="/conheca" replace />
+    }
     return <Navigate to="/login" state={{ from: location }} replace />
   }
 
