@@ -183,7 +183,15 @@ export function SettingsPage() {
             <p>{user?.isOwner ? 'Administração' : user?.email || 'Equipe MONA'}</p>
           </div>
         </div>
-        <MobileTip to="/configuracoes?tab=appearance">Personalize a experiência. Ajuste o tema para um dia a dia mais seu.</MobileTip>
+        <MobileTip
+          to="/configuracoes?tab=appearance"
+          onClick={() => {
+            setTab('appearance')
+            setMobileMenu(false)
+          }}
+        >
+          Personalize a experiência. Ajuste o tema para um dia a dia mais seu.
+        </MobileTip>
         {mobileMenu ? (
           <>
             <div className="mona-m-list">
@@ -252,7 +260,7 @@ export function SettingsPage() {
         </Card>
       )}
 
-      <div className="mb-6 flex flex-wrap gap-2 border-b border-ink-100 pb-2 mona-desktop-only">
+      <div className="mb-6 flex flex-wrap gap-2 border-b border-ink-100 pb-2">
         {tabs.map((t) => {
           const Icon = t.icon
           return (

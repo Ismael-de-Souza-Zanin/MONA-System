@@ -1,17 +1,19 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
+import { AppWindow } from 'lucide-react'
 import { api } from '../../shared/api/client'
 import type { AppItem } from '../../shared/types'
 import { Permissions } from '../../shared/permissions/constants'
 import { usePermissions } from '../../shared/permissions/hooks'
 import {
   Button,
-  Card,
   EmptyState,
   Input,
   LoadingSpinner,
+  MobileHero,
+  MobileSection,
+  MobileTip,
   Modal,
-  PageHeader,
 } from '../../shared/ui'
 
 export function AppsPage() {
@@ -38,36 +40,45 @@ export function AppsPage() {
   if (isLoading) return <LoadingSpinner />
 
   return (
-    <div>
-      <PageHeader
-        title="Apps"
-        subtitle="Aplicativos utilizados no trabalho"
-        actions={canWrite && <Button onClick={() => setShowAdd(true)}>Adicionar app</Button>}
+    <div className="mona-m-stack">
+      <MobileHero
+        kicker="Apps"
+        title="Ferramentas do dia a dia"
+        lead="Acesse os aplicativos que a equipe usa no trabalho, em um só lugar."
+        note="Menos abas, mais foco"
       />
+
+      {canWrite && (
+        <div className="flex justify-end">
+          <Button onClick={() => setShowAdd(true)}>Adicionar app</Button>
+        </div>
+      )}
 
       {apps.length === 0 ? (
         <EmptyState title="Nenhum app cadastrado" />
       ) : (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {apps.map((app) => (
-            <Card key={app.id}>
-              <h3 className="font-semibold text-teal-900">{app.name}</h3>
-              <div className="mt-3 space-y-1 text-sm">
-                {app.homeUrl && (
-                  <a href={app.homeUrl} target="_blank" rel="noreferrer" className="block text-teal-700 hover:underline">
-                    Página inicial →
-                  </a>
-                )}
-                {app.downloadUrl && (
-                  <a href={app.downloadUrl} target="_blank" rel="noreferrer" className="block text-teal-700 hover:underline">
-                    Download →
-                  </a>
-                )}
-              </div>
-            </Card>
-          ))}
-        </div>
+        <MobileSection title="Seus apps">
+          <div className={`mona-m-apps${apps.length >= 4 ? ' is-4' : apps.length === 2 ? ' is-2' : ''}`}>
+            {apps.map((app) => (
+              <a
+                key={app.id}
+                href={app.homeUrl || app.downloadUrl || '#'}
+                target={app.homeUrl || app.downloadUrl ? '_blank' : undefined}
+                rel={app.homeUrl || app.downloadUrl ? 'noreferrer' : undefined}
+                className="mona-m-app"
+              >
+                <span className="mona-m-icon">
+                  <AppWindow size={16} strokeWidth={1.8} />
+                </span>
+                <strong>{app.name}</strong>
+                <p>{app.homeUrl ? 'Abrir app' : app.downloadUrl ? 'Download' : 'App cadastrado'}</p>
+              </a>
+            ))}
+          </div>
+        </MobileSection>
       )}
+
+      <MobileTip to="/configuracoes">Organize integrações e acessos em Configurações quando precisar.</MobileTip>
 
       <Modal open={showAdd} onClose={() => setShowAdd(false)} title="Novo app">
         <div className="space-y-4">

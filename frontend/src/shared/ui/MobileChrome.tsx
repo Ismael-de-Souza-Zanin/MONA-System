@@ -70,13 +70,15 @@ export function MobileTip({
   title = 'Dica da MONA',
   children,
   to = '/faqs',
+  onClick,
 }: {
   title?: string
   children: ReactNode
   to?: string
+  onClick?: () => void
 }) {
   return (
-    <Link to={to} className="mona-m-tip">
+    <Link to={to} className="mona-m-tip" onClick={onClick}>
       <span className="mona-m-icon">
         <Lightbulb size={16} />
       </span>

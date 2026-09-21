@@ -3546,3 +3546,148 @@ img.mona-m-avatar {
 .mona-shell.is-mobile .mona-topbar__logo img {
   max-width: none;
 }
+
+/* Desktop usa o mesmo visual do mobile, com proporções mais largas. */
+@media (min-width: 768px) {
+  .mona-shell:not(.is-mobile) .mona-mobile-only {
+    display: block;
+  }
+
+  .mona-shell:not(.is-mobile) .mona-desktop-only {
+    display: none !important;
+  }
+
+  .mona-shell:not(.is-mobile) .mona-home__mobile {
+    display: grid;
+    gap: 1rem;
+  }
+
+  .mona-shell:not(.is-mobile) .mona-home__desktop,
+  .mona-shell:not(.is-mobile) .mona-hero--stage {
+    display: none !important;
+  }
+
+  .mona-shell:not(.is-mobile) .mona-m-stack {
+    display: grid;
+    gap: 1.1rem;
+    width: min(100%, 72rem);
+  }
+
+  .mona-shell:not(.is-mobile) .mona-m-hero {
+    min-height: 230px;
+    padding: 1.55rem 1.7rem 1.45rem;
+    border-radius: 32px;
+  }
+
+  .mona-shell:not(.is-mobile) .mona-m-hero__copy {
+    max-width: 30rem;
+  }
+
+  .mona-shell:not(.is-mobile) .mona-m-title {
+    font-size: clamp(1.75rem, 2.4vw, 2.15rem);
+  }
+
+  .mona-shell:not(.is-mobile) .mona-m-lead {
+    max-width: 28rem;
+    font-size: 0.92rem;
+  }
+
+  .mona-shell:not(.is-mobile) .mona-m-hero__art {
+    width: 9.5rem;
+  }
+
+  .mona-shell:not(.is-mobile) .mona-m-hero__art img {
+    width: 148px !important;
+    height: auto !important;
+  }
+
+  .mona-shell:not(.is-mobile) .mona-m-stats {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.85rem;
+  }
+
+  .mona-shell:not(.is-mobile) .mona-m-stat {
+    padding: 1rem 0.95rem 0.9rem;
+    border-radius: 24px;
+  }
+
+  .mona-shell:not(.is-mobile) .mona-m-stat strong {
+    font-size: 1.55rem;
+  }
+
+  .mona-shell:not(.is-mobile) .mona-m-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(20rem, 1fr));
+    gap: 0.7rem;
+  }
+
+  .mona-shell:not(.is-mobile) .mona-m-list:has(> :only-child) {
+    grid-template-columns: 1fr;
+  }
+
+  .mona-shell:not(.is-mobile) .mona-m-row,
+  .mona-shell:not(.is-mobile) .mona-m-tip {
+    padding: 1rem 1.05rem;
+    border-radius: 22px;
+  }
+
+  .mona-shell:not(.is-mobile) .mona-m-quick {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 0.75rem;
+  }
+
+  .mona-shell:not(.is-mobile) .mona-m-apps.is-2,
+  .mona-shell:not(.is-mobile) .mona-m-folders {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .mona-shell:not(.is-mobile) .mona-m-apps.is-4 {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .mona-shell:not(.is-mobile) .mona-m-chips {
+    gap: 0.5rem;
+  }
+
+  .mona-shell:not(.is-mobile) .mona-m-search {
+    max-width: 28rem;
+  }
+
+  .mona-shell:not(.is-mobile) .mona-m-section__head h2 {
+    font-size: 1.05rem;
+  }
+
+  .mona-shell:not(.is-mobile) .mona-m-profile {
+    max-width: 36rem;
+  }
+
+  .mona-shell:not(.is-mobile) .mona-m-week {
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    max-width: 42rem;
+  }
+
+  .mona-shell:not(.is-mobile) .mona-m-fab {
+    right: 1.6rem;
+    bottom: 1.6rem;
+  }
+
+  .mona-shell:not(.is-mobile) .mona-canvas__main {
+    padding-bottom: 2rem;
+  }
+
+  /* Páginas ainda sem stack mobile: suaviza o desktop no mesmo idioma visual. */
+  .mona-shell:not(.is-mobile) .mona-page__title {
+    font-size: clamp(1.55rem, 2.2vw, 1.9rem);
+    letter-spacing: -0.02em;
+  }
+
+  .mona-shell:not(.is-mobile) .mona-card {
+    border-radius: 22px;
+    border-color: color-mix(in srgb, var(--mona-color-border) 80%, #fff);
+    box-shadow: 0 10px 28px color-mix(in srgb, var(--mona-color-purple) 6%, transparent);
+  }
+
+  .mona-shell:not(.is-mobile) .mona-m-actions {
+    max-width: 28rem;
+  }
+}
