@@ -11,16 +11,10 @@ import {
   ErrorAlert,
   Input,
   LoadingSpinner,
-  MobileChip,
-  MobileChips,
-  MobileHero,
-  MobileStat,
-  MobileTip,
   PageHeader,
   Select,
   Textarea,
 } from '../../shared/ui'
-import { CheckSquare, Clock3, Users, Wallet } from 'lucide-react'
 
 type Lens = 'adm' | 'va' | 'client'
 type Period = 'day' | 'week' | 'month'
@@ -196,43 +190,12 @@ export function ReportsPage() {
         ? 'Sua fila, suas horas e o seu repasse.'
         : 'O que este cliente pode validar: entregas e decisões visíveis.'
 
-  const done = data.todos.done
-  const open = data.todos.open
-  const productivity = done + open ? Math.round((done / (done + open)) * 100) : 0
 
   return (
     <div>
-      <div className="mona-mobile-only mona-m-stack">
-        <MobileHero
-          kicker="Relatórios"
-          title="Seu progresso em números"
-          lead="Acompanhe resultados, identifique oportunidades e veja como a MONA impulsiona o dia a dia."
-          note="Dados que geram mais tempo"
-        />
-        <MobileChips>
-          {([
-            ['day', 'Hoje'],
-            ['week', 'Semana'],
-            ['month', 'Mês'],
-          ] as const).map(([id, label]) => (
-            <MobileChip key={id} active={period === id} onClick={() => setPeriod(id)}>
-              {label}
-            </MobileChip>
-          ))}
-        </MobileChips>
-        <div className="mona-m-stats" style={{ gridTemplateColumns: '1fr 1fr' }}>
-          <MobileStat icon={CheckSquare} label="Produtividade" value={`${productivity}%`} hint="tarefas concluídas" tone="purple" progress={productivity} />
-          <MobileStat icon={CheckSquare} label="Tarefas concluídas" value={done} hint={`${open} em aberto`} tone="mint" />
-          <MobileStat icon={Users} label="Reuniões" value={data.agenda.meetings} hint={`${data.agenda.events} compromissos`} tone="orange" />
-          <MobileStat icon={Clock3} label="Horas" value={`${data.time.hours}h`} hint={`pacote ${data.time.retainerHours}h`} tone="rose" />
-        </div>
-        {data.money?.agency && (
-          <MobileStat icon={Wallet} label="Fatto recebido" value={money(data.money.agency.paid)} hint={`Pendente ${money(data.money.agency.pending)}`} tone="purple" />
-        )}
-        <MobileTip>Você concluiu {done} tarefas neste recorte. Ótimo progresso.</MobileTip>
-      </div>
 
-      <div className="mona-desktop-only">
+
+      <div className="mona-responsive-content">
       <PageHeader title="Relatórios operacionais" subtitle={subtitle} />
 
       <div className="mb-5 grid gap-3 sm:grid-cols-3">

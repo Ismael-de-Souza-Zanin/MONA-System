@@ -5,18 +5,12 @@ import type { Client, EmailAccount, MailboxMessage, ScheduledEmail } from '../..
 import { Permissions } from '../../shared/permissions/constants'
 import { usePermissions } from '../../shared/permissions/hooks'
 import { useTimeZones, useUserPreferences } from '../../shared/hooks/useWorkspaceData'
-import { PenSquare } from 'lucide-react'
 import {
   Button,
   Card,
   EmptyState,
   Input,
   LoadingSpinner,
-  MobileAvatar,
-  MobileChip,
-  MobileChips,
-  MobileHero,
-  MobileTip,
   Modal,
   PageHeader,
   Select,
@@ -113,53 +107,12 @@ export function EmailsPage() {
 
   if (loadingAccounts) return <LoadingSpinner />
 
-  const messages = mailbox?.messages ?? []
-  const unread = messages.filter((m) => !m.isRead).length
 
   return (
     <div>
-      <div className="mona-mobile-only mona-m-stack">
-        <MobileHero
-          kicker="E-mails"
-          title="Todas as suas comunicações em um só lugar"
-          lead="Centralize seus e-mails, acompanhe o cliente e mantenha a equipe alinhada."
-          note="Conexões que fazem o negócio avançar"
-        />
-        <MobileChips>
-          <MobileChip active={folder === 'INBOX'} onClick={() => setFolder('INBOX')}>
-            Todos ({messages.length})
-          </MobileChip>
-          <MobileChip active={false} onClick={() => setFolder('INBOX')}>
-            Não lidos ({unread})
-          </MobileChip>
-          <MobileChip active={folder === 'SENT'} onClick={() => setFolder('SENT')}>
-            Enviados
-          </MobileChip>
-        </MobileChips>
-        <div className="mona-m-list">
-          {messages.slice(0, 8).map((m) => (
-            <button key={m.id} type="button" className="mona-m-row" onClick={() => setSelectedMsg(m)}>
-              <MobileAvatar name={m.from} />
-              <div className="mona-m-row__body">
-                <strong>{m.subject || '(sem assunto)'}</strong>
-                <p>{m.snippet || m.from}</p>
-              </div>
-              <span className="mona-m-badge">
-                {new Date(m.receivedAtUtc).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
-              </span>
-            </button>
-          ))}
-          {messages.length === 0 && <EmptyState title="Caixa vazia" />}
-        </div>
-        {canSend && (
-          <button type="button" className="mona-m-fab" onClick={() => setShowSchedule(true)} aria-label="Novo e-mail">
-            <PenSquare size={18} />
-          </button>
-        )}
-        <MobileTip>Um e-mail claro hoje evita três mensagens amanhã.</MobileTip>
-      </div>
 
-      <div className="mona-desktop-only">
+
+      <div className="mona-responsive-content">
       <PageHeader
         title="E-mails"
         subtitle={`Caixas dos clientes diretos (POC) · fuso efetivo ${effectiveTz}. Envio programado já dispara via EmailKit.`}

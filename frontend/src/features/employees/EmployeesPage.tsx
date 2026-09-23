@@ -6,20 +6,12 @@ import type { AccessType, Client, Employee, SharedUser } from '../../shared/type
 import { Permissions } from '../../shared/permissions/constants'
 import { usePermissions } from '../../shared/permissions/hooks'
 import { useAuth } from '../../shared/auth/AuthContext'
-import { CalendarDays, MessageCircle, UserPlus, Users } from 'lucide-react'
 import {
   Button,
   Checkbox,
   EmptyState,
   Input,
   LoadingSpinner,
-  MobileAvatar,
-  MobileChip,
-  MobileChips,
-  MobileHero,
-  MobileRow,
-  MobileStat,
-  MobileTip,
   Modal,
   PageHeader,
   Select,
@@ -99,68 +91,7 @@ export function EmployeesPage() {
 
   return (
     <div>
-      <div className="mona-mobile-only mona-m-stack">
-        <MobileHero
-          kicker="Minha equipe"
-          title="Quem tem login na MONA"
-          lead="Só entra na equipe quem tem usuário criado — e-mail e senha para acessar."
-          note="Sem login, não está na equipe"
-        />
-        <div className="mona-m-stats" style={{ gridTemplateColumns: '1fr 1fr' }}>
-          <MobileStat icon={Users} label="Com acesso" value={employees.length} hint="pessoas" tone="mint" />
-          <MobileStat icon={UserPlus} label="Tipos" value={accessTypes.length || '—'} hint="de acesso" tone="orange" />
-        </div>
-        <div className="mona-m-search">
-          <input
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Buscar na equipe..."
-          />
-        </div>
-        <MobileChips>
-          <MobileChip active>Todos ({employees.length})</MobileChip>
-        </MobileChips>
-        <div className="mona-m-list">
-          {filtered.map((emp) => (
-            <MobileRow
-              key={emp.id}
-              to={`/prestadores/${emp.id}`}
-              icon={<MobileAvatar name={emp.name} />}
-              title={emp.name}
-              meta={
-                emp.isOwner
-                  ? 'Conta principal · acesso total'
-                  : `${emp.accessTypeName || 'Login'} · ${emp.assignedClientIds?.length ?? 0} cliente(s)`
-              }
-              trailing={
-                <span className="flex items-center gap-2 text-ink-400">
-                  {emp.phone ? <MessageCircle size={16} /> : null}
-                  <CalendarDays size={16} />
-                </span>
-              }
-            />
-          ))}
-          {filtered.length === 0 && (
-            <EmptyState title="Ninguém com login ainda" description="Crie um usuário para a pessoa entrar na equipe." />
-          )}
-          {canCreateLogin && (
-            <button type="button" className="mona-m-row" onClick={() => setOpen(true)}>
-              <span className="mona-m-icon">
-                <UserPlus size={16} />
-              </span>
-              <div className="mona-m-row__body">
-                <strong>Criar usuário da equipe</strong>
-                <p>E-mail, senha e clientes liberados</p>
-              </div>
-            </button>
-          )}
-        </div>
-        <MobileTip>
-          Minha equipe = quem pode entrar na MONA. Clientes usam o portal por link, não login de equipe.
-        </MobileTip>
-      </div>
-
-      <div className="mona-desktop-only">
+      <div className="mona-responsive-content">
         <PageHeader
           title="Minha equipe"
           subtitle="Somente quem tem usuário (login) na MONA"
@@ -172,14 +103,15 @@ export function EmployeesPage() {
             ) : undefined
           }
         />
-        {sorted.length === 0 ? (
+        <div className="mb-4"><Input label="Buscar na equipe" placeholder="Nome, login ou tipo de acesso" value={search} onChange={(event) => setSearch(event.target.value)} /></div>
+        {filtered.length === 0 ? (
           <EmptyState
             title="Ninguém com login ainda"
             description="Crie um usuário com e-mail e senha para a pessoa aparecer aqui."
           />
         ) : (
           <div className="overflow-hidden rounded-xl border border-sand-200 bg-white/90">
-            <table className="w-full text-left text-sm">
+            <table className="mona-data-table w-full text-left text-sm">
               <thead className="border-b border-sand-200 bg-sand-50/80">
                 <tr>
                   <th className="px-4 py-3 font-medium text-teal-900">Nome</th>
@@ -189,9 +121,9 @@ export function EmployeesPage() {
                 </tr>
               </thead>
               <tbody>
-                {sorted.map((emp) => (
+                {filtered.map((emp) => (
                   <tr key={emp.id} className="border-b border-sand-100 hover:bg-sand-50/50">
-                    <td className="px-4 py-3">
+                    <td data-label="Nome" className="px-4 py-3">
                       <div className="flex items-center gap-2">
                         <span
                           className="inline-block h-4 w-4 rounded-full border border-sand-300"
@@ -210,9 +142,9 @@ export function EmployeesPage() {
                         )}
                       </div>
                     </td>
-                    <td className="px-4 py-3 font-mono text-xs text-teal-700">{emp.email || '—'}</td>
-                    <td className="px-4 py-3 text-teal-700">{emp.accessTypeName || '—'}</td>
-                    <td className="px-4 py-3 text-teal-700">
+                    <td data-label="Login" className="px-4 py-3 font-mono text-xs text-teal-700">{emp.email || '—'}</td>
+                    <td data-label="Tipo" className="px-4 py-3 text-teal-700">{emp.accessTypeName || '—'}</td>
+                    <td data-label="Clientes" className="px-4 py-3 text-teal-700">
                       {emp.isOwner ? 'Todos' : `${emp.assignedClientIds?.length ?? 0} atribuído(s)`}
                     </td>
                   </tr>

@@ -133,12 +133,13 @@ export function resolveMenu(
   const ordered: NavDefinition[] = []
   for (const p of prefs) {
     const def = byKey.get(p.key)
-    if (!def || p.visible === false) continue
+    if (!def) continue
+    byKey.delete(p.key)
+    if (p.visible === false) continue
     ordered.push({
       ...def,
       label: p.customLabel?.trim() || def.label,
     })
-    byKey.delete(p.key)
   }
   for (const rest of byKey.values()) ordered.push(rest)
   return ordered

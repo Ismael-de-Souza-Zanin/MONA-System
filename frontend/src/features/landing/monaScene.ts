@@ -53,10 +53,6 @@ function easeInOut(t: number) {
   return t < 0.5 ? 2 * t * t : 1 - (2 - 2 * t) * (2 - 2 * t) / 2
 }
 
-function windowed(t: number, a: number, b: number, c: number, d: number) {
-  return easeInOut(range(t, a, b)) * (1 - easeInOut(range(t, c, d)))
-}
-
 function roundedRect(w: number, h: number, r: number) {
   const shape = new THREE.Shape()
   const x = -w / 2
@@ -606,7 +602,6 @@ export function createMonaScene(canvas: HTMLCanvasElement): MonaScene {
     const enter = easeInOut(range(t, 0.42, 0.475))
     const through = easeInOut(range(t, 0.42, 0.49))
     const crossed = through > 0.78
-    const live = windowed(t, 0.5, 0.54, 0.68, 0.73)
     const process = 0
     const scan = 0
     const architecture = easeInOut(range(t, 0.84, 0.92)) * (1 - easeInOut(range(t, 0.93, 0.97)))

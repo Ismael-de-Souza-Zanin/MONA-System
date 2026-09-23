@@ -80,6 +80,9 @@ public class TodoBoardController : ControllerBase
     {
         var orgId = User.GetOrganizationId();
         var cols = await _db.TodoBoardColumns.Where(c => c.OrganizationId == orgId).ToListAsync();
+        if (body.Ids is null || body.Ids.Count != cols.Count || body.Ids.Distinct().Count() != cols.Count ||
+            body.Ids.Any(id => cols.All(c => c.Id != id)))
+            return BadRequest(new { detail = "Informe todas as colunas, sem repetições. Atualize o quadro e tente novamente." });
         var order = 0;
         foreach (var id in body.Ids ?? [])
         {
