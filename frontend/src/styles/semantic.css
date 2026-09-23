@@ -3861,3 +3861,25 @@ body:has(.mona-modal) { overflow: hidden; }
 
 
 .mona-agenda-calendar { display: grid; gap: 0.75rem; margin-bottom: 1.25rem; }
+
+/* Keep the daily panels usable when the desktop rail moves above the workspace. */
+@media (min-width: 768px) and (max-width: 1023px) {
+  .mona-shell:not(.is-mobile) .mona-dock { flex-direction: column; gap: 8px; }
+  .mona-shell:not(.is-mobile) .mona-dock__stack {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    flex: none;
+    gap: 8px;
+    padding: 0;
+  }
+  .mona-shell:not(.is-mobile) .mona-stack__card {
+    min-width: 0;
+    height: 144px;
+    max-height: 144px;
+    margin: 0;
+    padding: 12px;
+    border-radius: 20px;
+  }
+  .mona-shell:not(.is-mobile) .mona-day__head { flex-shrink: 0; min-height: 32px; }
+  .mona-shell:not(.is-mobile) .mona-day__list { min-height: 0; overflow-y: auto; }
+}
