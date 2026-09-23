@@ -134,6 +134,7 @@ export function SettingsPage() {
       }),
     onSuccess: (_data, _vars) => {
       void qc.invalidateQueries({ queryKey: ['shared-users'] })
+      void qc.invalidateQueries({ queryKey: ['employees'] })
       setCreatedCreds({ email: sharedForm.email, password: sharedForm.password })
       setShowSharedUser(false)
       setSharedForm({ name: '', email: '', password: '', accessTypeId: '', assignedClientIds: [] })

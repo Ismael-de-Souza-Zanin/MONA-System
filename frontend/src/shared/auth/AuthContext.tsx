@@ -7,6 +7,7 @@ import {
   useState,
   type ReactNode,
 } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
 import { api } from '../api/client'
 import type { AuthUser, LoginResponse } from '../types'
 import { clearTokens, getAccessToken, hasTokens, setTokens } from './tokens'
@@ -25,6 +26,7 @@ const AuthContext = createContext<AuthContextValue | null>(null)
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+  const queryClient = useQueryClient()
 
   const refreshUser = useCallback(async () => {
     if (!hasTokens()) {
@@ -50,15 +52,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     void init()
   }, [refreshUser])
 
-  const login = useCallback(async (email: string, password: string) => {
-    const res = await api.post<LoginResponse>(
-      '/auth/login',
-      { email, password },
-      { skipAuth: true },
-    )
-    setTokens(res.accessToken, res.refreshToken)
-    setUser(res.user)
-  }, [])
+  const login = useCallback(
+    async (email: string, password: string) => {
+      const res = await api.post<LoginResponse>(
+        '/auth/login',
+        { email, password },
+        { skipAuth: true },
+      )
+      setTokens(res.accessToken, res.refreshToken)
+      setUser(res.user)
+      try {
+        localStorage.removeItem('fatto_workspace_tabs_v2')
+      } catch {
+        /* ignore */
+      }
+      await queryClient.clear()
+    },
+    [queryClient],
+  )
 
   const logout = useCallback(async () => {
     try {
@@ -68,8 +79,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } finally {
       clearTokens()
       setUser(null)
+      try {
+        localStorage.removeItem('fatto_workspace_tabs_v2')
+      } catch {
+        /* ignore */
+      }
+      await queryClient.clear()
     }
-  }, [])
+  }, [queryClient])
 
   const value = useMemo(
     () => ({

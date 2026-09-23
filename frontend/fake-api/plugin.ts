@@ -31,7 +31,8 @@ async function middleware(req: IncomingMessage, res: ServerResponse, next: () =>
 
   const method = (req.method ?? 'GET').toUpperCase()
   const body = method === 'GET' || method === 'HEAD' ? undefined : await readBody(req)
-  const result = handleFakeApi(method, url, body)
+  const authHeader = typeof req.headers.authorization === 'string' ? req.headers.authorization : undefined
+  const result = handleFakeApi(method, url, body, authHeader)
 
   res.statusCode = result.status
   if (result.status === 204) {
@@ -52,6 +53,7 @@ export function fakeApiPlugin(): Plugin {
       server.httpServer?.once('listening', () => {
         server.config.logger.info('  Fake API: /api/v1 (sem Docker, sem banco)')
         server.config.logger.info('  Login:    ju@fattovirtual.com / Admin123!')
+        server.config.logger.info('  Assistente: marina@fattovirtual.com / Admin123!')
       })
     },
     configurePreviewServer(server) {

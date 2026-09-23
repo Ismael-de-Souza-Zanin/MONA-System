@@ -21,7 +21,14 @@ import {
   Wallet,
 } from 'lucide-react'
 import { api } from '../../shared/api/client'
-import type { ClientDetail, ClientPartnerLink, Partner, PaymentLink } from '../../shared/types'
+import type {
+  ClientDetail,
+  ClientPartnerLink,
+  Employee,
+  Partner,
+  PaymentLink,
+  SharedUser,
+} from '../../shared/types'
 import { Permissions } from '../../shared/permissions/constants'
 import { usePermissions } from '../../shared/permissions/hooks'
 import { useTimeZones } from '../../shared/hooks/useWorkspaceData'
@@ -51,6 +58,7 @@ import {
 
 type TabId =
   | 'resumo'
+  | 'equipe'
   | 'apps'
   | 'acessos'
   | 'crm'
@@ -63,6 +71,7 @@ type TabId =
 
 const TABS: { id: TabId; label: string }[] = [
   { id: 'resumo', label: 'Resumo' },
+  { id: 'equipe', label: 'Equipe' },
   { id: 'apps', label: 'Aplicativos' },
   { id: 'acessos', label: 'Acessos' },
   { id: 'crm', label: 'CRM' },
@@ -87,6 +96,68 @@ function initials(name: string) {
     .join('')
 }
 
+type ClientTeamRow = {
+  key: string
+  name: string
+  email?: string
+  color?: string
+  employeeId?: string
+  user?: SharedUser
+  atende: boolean
+  podeEntrar: boolean
+}
+
+function buildClientTeamRows(
+  responsibles: { id: string; name: string; color?: string; email?: string }[] | undefined,
+  sharedUsers: SharedUser[],
+  clientId: string,
+  includeLogins: boolean,
+): ClientTeamRow[] {
+  const rows = new Map<string, ClientTeamRow>()
+  const emailKey = (email?: string, fallback?: string) => (email || fallback || '').toLowerCase()
+
+  for (const r of responsibles ?? []) {
+    const key = emailKey(r.email, r.id)
+    rows.set(key, {
+      key,
+      name: r.name,
+      email: r.email,
+      color: r.color,
+      employeeId: r.id,
+      atende: true,
+      podeEntrar: false,
+    })
+  }
+
+  if (includeLogins) {
+    for (const u of sharedUsers) {
+      const hasAccess = !!u.isOwner || u.assignedClientIds.includes(clientId)
+      const key = emailKey(u.email, u.id)
+      const existing = rows.get(key)
+      if (existing) {
+        if (hasAccess) {
+          existing.podeEntrar = true
+          existing.user = u
+        } else if (!existing.user) {
+          existing.user = u
+        }
+        continue
+      }
+      if (!hasAccess) continue
+      rows.set(key, {
+        key,
+        name: u.name,
+        email: u.email,
+        user: u,
+        atende: false,
+        podeEntrar: true,
+      })
+    }
+  }
+
+  return [...rows.values()].sort((a, b) => a.name.localeCompare(b.name, 'pt-BR'))
+}
+
 export function ClientDetailPage() {
   const { id } = useParams<{ id: string }>()
   const { hasPermission } = usePermissions()
@@ -95,6 +166,8 @@ export function ClientDetailPage() {
   const canTodos = hasPermission(Permissions.TodosWrite)
   const canContracts = hasPermission(Permissions.ContractsWrite)
   const canPartners = hasPermission(Permissions.PartnersWrite)
+  const canEmployees = hasPermission(Permissions.EmployeesWrite)
+  const canSettings = hasPermission(Permissions.Settings)
   const { renameTab } = useWorkspaceTabs()
   const qc = useQueryClient()
   const [tab, setTab] = useState<TabId>('resumo')
@@ -130,6 +203,7 @@ export function ClientDetailPage() {
   const [settleId, setSettleId] = useState<string | null>(null)
   const [newContractName, setNewContractName] = useState('')
   const [partnerPick, setPartnerPick] = useState('')
+  const [employeePick, setEmployeePick] = useState('')
   const [portalReply, setPortalReply] = useState('')
   const [portalLinkUrl, setPortalLinkUrl] = useState('')
   const [showPasswordId, setShowPasswordId] = useState<string | null>(null)
@@ -196,6 +270,62 @@ export function ClientDetailPage() {
     queryKey: ['partners'],
     queryFn: () => api.get<Partner[]>('/partners'),
     enabled: tab === 'parceiros' && canPartners,
+  })
+
+  const { data: employees = [] } = useQuery({
+    queryKey: ['employees'],
+    queryFn: () => api.get<Employee[]>('/employees'),
+    enabled: !!id && (tab === 'equipe' || canEmployees),
+  })
+
+  const { data: sharedUsers = [] } = useQuery({
+    queryKey: ['shared-users'],
+    queryFn: () => api.get<SharedUser[]>('/shared-users'),
+    enabled: !!id && tab === 'equipe' && canSettings,
+  })
+
+  const assignEmployee = useMutation({
+    mutationFn: async (employeeId: string) => {
+      await api.post(`/employees/${employeeId}/clients/${id}`, {})
+      if (!canSettings || !id) return
+      const emp = employees.find((e) => e.id === employeeId)
+      const email = emp?.email?.toLowerCase()
+      if (!email) return
+      const user = sharedUsers.find(
+        (u) => !u.isOwner && u.email?.toLowerCase() === email,
+      )
+      if (!user || user.assignedClientIds.includes(id)) return
+      await api.patch(`/shared-users/${user.id}`, {
+        assignedClientIds: [...user.assignedClientIds, id],
+      })
+    },
+    onSuccess: () => {
+      setEmployeePick('')
+      void qc.invalidateQueries({ queryKey: ['client', id] })
+      void qc.invalidateQueries({ queryKey: ['employee-summary'] })
+      void qc.invalidateQueries({ queryKey: ['shared-users'] })
+    },
+  })
+
+  const unassignEmployee = useMutation({
+    mutationFn: async (employeeId: string) => {
+      await api.delete(`/employees/${employeeId}/clients/${id}`)
+      // Mantém o login: tirar do atendimento ≠ bloquear a conta.
+    },
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ['client', id] })
+      void qc.invalidateQueries({ queryKey: ['employee-summary'] })
+    },
+  })
+
+  const toggleSharedAccess = useMutation({
+    mutationFn: ({ user, grant }: { user: SharedUser; grant: boolean }) => {
+      const next = grant
+        ? [...new Set([...user.assignedClientIds, id!])]
+        : user.assignedClientIds.filter((cid) => cid !== id)
+      return api.patch<SharedUser>(`/shared-users/${user.id}`, { assignedClientIds: next })
+    },
+    onSuccess: () => void qc.invalidateQueries({ queryKey: ['shared-users'] }),
   })
 
   useEffect(() => {
@@ -504,6 +634,14 @@ export function ClientDetailPage() {
     return { date: date.toLocaleDateString('pt-BR'), days }
   }, [client?.contractRenewalDate])
 
+  const teamRows = useMemo(
+    () =>
+      id
+        ? buildClientTeamRows(client?.responsibles, sharedUsers, id, canSettings)
+        : [],
+    [client?.responsibles, sharedUsers, id, canSettings],
+  )
+
   if (isLoading) return <LoadingSpinner />
   if (!client) return <EmptyState title="Cliente não encontrado" />
 
@@ -511,6 +649,16 @@ export function ClientDetailPage() {
   const nextMeetings = (client.agenda || []).slice(0, 2)
   const docs = (client.contracts || []).slice(0, 3)
   const relation = client.onboardingCompleted ? 80 : client.status === 'Active' ? 72 : 45
+  const loginOnlyCandidates = canSettings
+    ? sharedUsers.filter(
+        (u) =>
+          !u.isOwner &&
+          !u.assignedClientIds.includes(id!) &&
+          !client.responsibles?.some(
+            (r) => r.email && r.email.toLowerCase() === u.email?.toLowerCase(),
+          ),
+      )
+    : []
 
   return (
     <div>
@@ -653,11 +801,23 @@ export function ClientDetailPage() {
               </div>
               <div>
                 <p className="text-ink-500">Responsáveis</p>
-                <p className="font-medium text-ink-900">
-                  {client.responsibles?.length
-                    ? client.responsibles.map((r) => r.name).join(', ')
-                    : '—'}
-                </p>
+                {client.responsibles?.length ? (
+                  <button
+                    type="button"
+                    className="font-medium text-brand-800 hover:underline"
+                    onClick={() => setTab('equipe')}
+                  >
+                    {client.responsibles.map((r) => r.name).join(', ')}
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    className="font-medium text-ink-500 hover:text-brand-800 hover:underline"
+                    onClick={() => setTab('equipe')}
+                  >
+                    Nenhum — vincular equipe
+                  </button>
+                )}
               </div>
               <div>
                 <p className="text-ink-500">Contato</p>
@@ -732,6 +892,38 @@ export function ClientDetailPage() {
               <p className="mt-1 text-lg font-semibold text-ink-900">{client.summary?.invoices ?? 0}</p>
             </Card>
           </div>
+
+          <Card>
+            <div className="mb-3 flex items-center justify-between gap-2">
+              <div>
+                <h3 className="font-semibold text-ink-900">Equipe neste cliente</h3>
+                <p className="text-xs text-ink-500">Quem da minha equipe atende este cliente</p>
+              </div>
+              <Button size="sm" variant="secondary" onClick={() => setTab('equipe')}>
+                Ver e vincular
+              </Button>
+            </div>
+            {client.responsibles?.length ? (
+              <ul className="flex flex-wrap gap-2">
+                {client.responsibles.map((r) => (
+                  <li key={r.id}>
+                    <Link
+                      to={`/prestadores/${r.id}`}
+                      className="inline-flex items-center gap-2 rounded-full border border-ink-100 bg-ink-50 px-3 py-1.5 text-sm text-ink-900 hover:border-brand-300 hover:bg-brand-50"
+                    >
+                      <span
+                        className="h-2.5 w-2.5 rounded-full"
+                        style={{ backgroundColor: r.color || '#0F4C5C' }}
+                      />
+                      {r.name}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="text-sm text-ink-500">Ninguém da equipe vinculado ainda.</p>
+            )}
+          </Card>
 
           <div className="grid gap-4 lg:grid-cols-2">
             <Card>
@@ -834,6 +1026,182 @@ export function ClientDetailPage() {
                 </Button>
               </Link>
             </div>
+          </Card>
+        </div>
+      )}
+
+      {tab === 'equipe' && (
+        <div className="space-y-4">
+          <Card>
+            <div className="mb-4">
+              <h3 className="font-semibold text-ink-900">Quem está neste cliente</h3>
+              <p className="mt-1 text-sm text-ink-600">
+                Quem <strong>atende</strong> precisa conseguir <strong>entrar na MONA</strong>. Ao
+                vincular alguém, o login é liberado automaticamente se a pessoa já tiver conta.
+              </p>
+            </div>
+
+            {teamRows.length === 0 ? (
+              <EmptyState
+                title="Ninguém neste cliente ainda"
+                description="Vincule alguém da Minha equipe abaixo."
+              />
+            ) : (
+              <ul className="space-y-2">
+                {teamRows.map((row) => (
+                  <li
+                    key={row.key}
+                    className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-ink-100 px-3 py-3"
+                  >
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2">
+                        {row.color && (
+                          <span
+                            className="h-3 w-3 shrink-0 rounded-full"
+                            style={{ backgroundColor: row.color }}
+                          />
+                        )}
+                        {row.employeeId ? (
+                          <Link
+                            to={`/prestadores/${row.employeeId}`}
+                            className="truncate font-medium text-ink-900 hover:underline"
+                          >
+                            {row.name}
+                          </Link>
+                        ) : (
+                          <span className="truncate font-medium text-ink-900">{row.name}</span>
+                        )}
+                      </div>
+                      {row.email && <p className="truncate text-xs text-ink-500">{row.email}</p>}
+                      <div className="mt-2 flex flex-wrap gap-1.5">
+                        <span
+                          className={`rounded-md px-2 py-0.5 text-xs font-medium ${
+                            row.atende ? 'bg-brand-50 text-brand-900' : 'bg-ink-50 text-ink-400'
+                          }`}
+                        >
+                          {row.atende ? 'Atende' : 'Não atende'}
+                        </span>
+                        <span
+                          className={`rounded-md px-2 py-0.5 text-xs font-medium ${
+                            row.podeEntrar ? 'bg-emerald-50 text-emerald-800' : 'bg-amber-50 text-amber-900'
+                          }`}
+                        >
+                          {row.user?.isOwner
+                            ? 'Pode entrar · conta principal'
+                            : row.podeEntrar
+                              ? `Pode entrar${row.user?.accessTypeName ? ` · ${row.user.accessTypeName}` : ''}`
+                              : row.atende
+                                ? 'Falta login — não abre a MONA'
+                                : 'Sem login neste cliente'}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="flex shrink-0 flex-wrap items-center gap-2">
+                      {canEmployees && row.employeeId && row.atende && (
+                        <button
+                          type="button"
+                          className="text-xs text-red-700 hover:underline"
+                          disabled={unassignEmployee.isPending}
+                          onClick={() => unassignEmployee.mutate(row.employeeId!)}
+                        >
+                          Tirar do atendimento
+                        </button>
+                      )}
+                      {canSettings && row.user && !row.user.isOwner && row.podeEntrar && (
+                        <button
+                          type="button"
+                          className="text-xs text-red-700 hover:underline"
+                          disabled={toggleSharedAccess.isPending}
+                          onClick={() => toggleSharedAccess.mutate({ user: row.user!, grant: false })}
+                        >
+                          Tirar o login
+                        </button>
+                      )}
+                      {canSettings && row.user && !row.user.isOwner && !row.podeEntrar && row.atende && (
+                        <Button
+                          size="sm"
+                          variant="secondary"
+                          disabled={toggleSharedAccess.isPending}
+                          onClick={() => toggleSharedAccess.mutate({ user: row.user!, grant: true })}
+                        >
+                          Liberar login
+                        </Button>
+                      )}
+                      {canSettings && row.atende && !row.podeEntrar && !row.user && (
+                        <Link to="/configuracoes" className="text-xs text-brand-800 hover:underline">
+                          Criar login em Configurações
+                        </Link>
+                      )}
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
+
+            {canEmployees && (
+              <div className="mt-5 border-t border-ink-100 pt-4">
+                <p className="mb-2 text-sm font-medium text-ink-900">Colocar alguém para atender</p>
+                <p className="mb-2 text-xs text-ink-500">
+                  Só quem tem login (Minha equipe). Ao vincular, o acesso na MONA também é liberado.
+                </p>
+                <div className="flex flex-wrap items-end gap-2">
+                  <Select
+                    label="Da Minha equipe"
+                    value={employeePick}
+                    onChange={(e) => setEmployeePick(e.target.value)}
+                    className="min-w-[200px]"
+                  >
+                    <option value="">Selecione…</option>
+                    {employees
+                      .filter((e) => !client.responsibles?.some((r) => r.id === e.id))
+                      .map((e) => (
+                        <option key={e.id} value={e.id}>
+                          {e.name}
+                        </option>
+                      ))}
+                  </Select>
+                  <Button
+                    size="sm"
+                    disabled={!employeePick || assignEmployee.isPending}
+                    onClick={() => assignEmployee.mutate(employeePick)}
+                  >
+                    Vincular atendimento
+                  </Button>
+                  <Link to="/prestadores" className="text-sm text-brand-800 hover:underline">
+                    Abrir Minha equipe →
+                  </Link>
+                </div>
+              </div>
+            )}
+
+            {loginOnlyCandidates.length > 0 && (
+              <div className="mt-4 border-t border-ink-100 pt-4">
+                <p className="mb-1 text-sm font-medium text-ink-900">
+                  Liberar login (sem colocar no atendimento)
+                </p>
+                <p className="mb-2 text-xs text-ink-500">
+                  Raro: a pessoa vê o cliente na MONA, mas não está marcada como quem atende.
+                </p>
+                <div className="max-h-36 space-y-1 overflow-y-auto rounded-lg border border-ink-100 p-3">
+                  {loginOnlyCandidates.map((u) => (
+                    <div key={u.id} className="flex items-center justify-between gap-2 text-sm">
+                      <span className="truncate text-ink-800">
+                        {u.name}
+                        <span className="text-ink-500"> · {u.email}</span>
+                      </span>
+                      <Button
+                        size="sm"
+                        variant="secondary"
+                        disabled={toggleSharedAccess.isPending}
+                        onClick={() => toggleSharedAccess.mutate({ user: u, grant: true })}
+                      >
+                        Liberar
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </Card>
         </div>
       )}

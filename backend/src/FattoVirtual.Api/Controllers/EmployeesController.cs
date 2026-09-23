@@ -18,40 +18,50 @@ public class EmployeesController : ControllerBase
     [RequirePermission(Permissions.EmployeesRead)]
     public async Task<IActionResult> List()
     {
-        var items = await _db.Employees
-            .Where(e => e.OrganizationId == User.GetOrganizationId())
+        var orgId = User.GetOrganizationId();
+        // Minha equipe = somente quem tem login (UserId) na organização.
+        var employees = await _db.Employees
+            .Where(e => e.OrganizationId == orgId && e.UserId != null && e.UserId != "")
             .OrderBy(e => e.Name)
-            .Select(e => new
+            .ToListAsync();
+
+        var userIds = employees.Select(e => e.UserId!).Distinct().ToList();
+        var users = await _db.Users
+            .Where(u => u.OrganizationId == orgId && userIds.Contains(u.Id))
+            .ToListAsync();
+        var usersById = users.ToDictionary(u => u.Id);
+        var accessTypeIds = users.Where(u => u.AccessTypeId != null).Select(u => u.AccessTypeId!.Value).Distinct().ToList();
+        var accessTypes = await _db.AccessTypes
+            .Where(a => a.OrganizationId == orgId && accessTypeIds.Contains(a.Id))
+            .ToDictionaryAsync(a => a.Id, a => a.Name);
+
+        var items = employees.Select(e =>
+        {
+            usersById.TryGetValue(e.UserId!, out var u);
+            return new
             {
                 id = e.Id,
                 name = e.Name,
                 phone = e.Phone,
-                email = e.Email,
+                email = e.Email ?? u?.Email,
                 color = e.Color,
                 status = e.Status,
-                managerId = e.ManagerId
-            }).ToListAsync();
+                managerId = e.ManagerId,
+                userId = e.UserId,
+                accessTypeName = u?.AccessTypeId is Guid atId ? accessTypes.GetValueOrDefault(atId) : null,
+                isOwner = u?.IsOrganizationOwner ?? false,
+                assignedClientIds = u?.AssignedClientIds.Select(x => x.ToString()).ToList() ?? new List<string>()
+            };
+        }).ToList();
+
         return Ok(items);
     }
 
     [HttpPost("employees")]
     [RequirePermission(Permissions.EmployeesWrite)]
-    public async Task<IActionResult> Create([FromBody] EmployeeBody body)
+    public IActionResult Create([FromBody] EmployeeBody body)
     {
-        var e = new Domain.Entities.Employee
-        {
-            OrganizationId = User.GetOrganizationId(),
-            Name = body.Name,
-            Phone = body.Phone,
-            Email = body.Email,
-            Color = body.Color ?? "#0F4C5C",
-            ManagerId = body.ManagerId,
-            Status = body.Status ?? "Active",
-            UserId = body.UserId
-        };
-        _db.Employees.Add(e);
-        await _db.SaveChangesAsync();
-        return Ok(new { id = e.Id, name = e.Name, phone = e.Phone, email = e.Email, color = e.Color, status = e.Status, managerId = e.ManagerId });
+        return BadRequest(new { detail = "Crie a pessoa em Minha equipe / Configurações com e-mail e senha (login na MONA)." });
     }
 
     [HttpGet("employees/{id:guid}/summary")]

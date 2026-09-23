@@ -6,6 +6,7 @@ type RouteCtx = {
   params: Record<string, string>
   query: URLSearchParams
   body: Json
+  authHeader?: string
 }
 
 type Route = {
@@ -115,6 +116,121 @@ function requireRow<T extends { id: string }>(rows: T[], id: string) {
     throw err
   }
   return row
+}
+
+function httpError(status: number, detail: string): never {
+  const err = new Error(detail) as Error & { status: number; payload: { detail: string } }
+  err.status = status
+  err.payload = { detail }
+  throw err
+}
+
+type SharedUserRow = {
+  id: string
+  name: string
+  email: string
+  accessTypeId: string
+  accessTypeName?: string
+  assignedClientIds: string[]
+  isOwner?: boolean
+  isCurrentUser?: boolean
+  password?: string
+}
+
+function toAuthUser(u: SharedUserRow) {
+  const accessType = db.accessTypes.find((a) => a.id === u.accessTypeId)
+  const isOwner = !!u.isOwner || !!accessType?.isOwnerType
+  return {
+    id: u.id,
+    name: u.name,
+    email: u.email,
+    organizationId: 'org-fatto',
+    isOwner,
+    permissions: isOwner ? PERMISSIONS : (accessType?.permissions ?? []),
+    assignedClientIds: isOwner
+      ? db.clients.map((c) => c.id)
+      : [...(u.assignedClientIds ?? [])],
+  }
+}
+
+function resolveSharedUser(authHeader?: string): SharedUserRow {
+  const token = (authHeader ?? '').replace(/^Bearer\s+/i, '').trim()
+  const fromToken = token.startsWith('fake-access-') ? token.slice('fake-access-'.length) : ''
+  const id = fromToken || 'u-ju'
+  const row = db.sharedUsers.find((u) => u.id === id)
+  if (!row) return db.sharedUsers[0] as SharedUserRow
+  return row as SharedUserRow
+}
+
+function currentUser(authHeader?: string) {
+  return toAuthUser(resolveSharedUser(authHeader))
+}
+
+function visibleClients(authHeader?: string) {
+  const user = currentUser(authHeader)
+  if (user.isOwner) return db.clients
+  const allowed = new Set(user.assignedClientIds)
+  return db.clients.filter((c) => allowed.has(c.id))
+}
+
+function assertClientAccess(clientId: string, authHeader?: string) {
+  const user = currentUser(authHeader)
+  if (user.isOwner) return
+  if (!user.assignedClientIds.includes(clientId)) httpError(403, 'Sem acesso a este cliente.')
+}
+
+function ensureEmployeeForUser(u: SharedUserRow) {
+  let emp = db.employees.find(
+    (e) => e.userId === u.id || (e.email && e.email.toLowerCase() === u.email.toLowerCase()),
+  )
+  if (!emp) {
+    emp = {
+      id: nid('e'),
+      name: u.name,
+      email: u.email,
+      phone: undefined as string | undefined,
+      color: '#0F4C5C',
+      status: 'Active',
+      managerId: null as string | null,
+      userId: u.id,
+    }
+    db.employees.push(emp)
+  } else {
+    emp.userId = u.id
+    emp.name = u.name
+    emp.email = u.email
+  }
+  return emp
+}
+
+function syncEmployeeClientsFromUser(u: SharedUserRow) {
+  const emp = ensureEmployeeForUser(u)
+  if (u.isOwner) return emp
+  for (const cid of u.assignedClientIds ?? []) {
+    if (!db.employeeClients.some((x) => x.employeeId === emp.id && x.clientId === cid)) {
+      db.employeeClients.push({ employeeId: emp.id, clientId: cid })
+    }
+  }
+  return emp
+}
+
+function teamEmployees() {
+  return db.sharedUsers.map((u) => {
+    const emp = ensureEmployeeForUser(u as SharedUserRow)
+    return {
+      id: emp.id,
+      name: u.name,
+      email: u.email,
+      phone: emp.phone,
+      color: emp.color || '#0F4C5C',
+      status: emp.status || 'Active',
+      managerId: emp.managerId ?? null,
+      userId: u.id,
+      accessTypeName: u.accessTypeName,
+      isOwner: !!u.isOwner,
+      assignedClientIds: u.assignedClientIds ?? [],
+    }
+  })
 }
 
 const db = seed()
@@ -287,12 +403,19 @@ function seed() {
   ]
 
   const employees = [
-    { id: 'e-marina', name: 'Marina Souza', phone: '+55 11 91111-0001', email: 'marina@fattovirtual.com', color: '#0F4C5C', status: 'Active', managerId: null },
-    { id: 'e-paulo', name: 'Paulo Henrique', phone: '+55 11 92222-0002', email: 'paulo@fattovirtual.com', color: '#C4A574', status: 'Active', managerId: 'e-marina' },
+    {
+      id: 'e-marina',
+      name: 'Marina Souza',
+      phone: '+55 11 91111-0001',
+      email: 'marina@fattovirtual.com',
+      color: '#0F4C5C',
+      status: 'Active',
+      managerId: null as string | null,
+      userId: 'u-marina',
+    },
   ]
   const employeeClients: { employeeId: string; clientId: string }[] = [
     { employeeId: 'e-marina', clientId: 'c-ana' },
-    { employeeId: 'e-paulo', clientId: 'c-bruno' },
   ]
 
   const columns = [
@@ -751,8 +874,27 @@ function seed() {
   ]
 
   const sharedUsers = [
-    { id: 'u-ju', name: 'Juliana', email: 'ju@fattovirtual.com', accessTypeId: 'at-owner', accessTypeName: 'Owner', assignedClientIds: USER.assignedClientIds, isOwner: true, isCurrentUser: true },
-    { id: 'u-marina', name: 'Marina Souza', email: 'marina@fattovirtual.com', accessTypeId: 'at-op', accessTypeName: 'Operação', assignedClientIds: ['c-ana'], isOwner: false },
+    {
+      id: 'u-ju',
+      name: 'Juliana',
+      email: 'ju@fattovirtual.com',
+      accessTypeId: 'at-owner',
+      accessTypeName: 'Owner',
+      assignedClientIds: USER.assignedClientIds,
+      isOwner: true,
+      isCurrentUser: true,
+      password: 'Admin123!',
+    },
+    {
+      id: 'u-marina',
+      name: 'Marina Souza',
+      email: 'marina@fattovirtual.com',
+      accessTypeId: 'at-op',
+      accessTypeName: 'Operação',
+      assignedClientIds: ['c-ana'],
+      isOwner: false,
+      password: 'Admin123!',
+    },
   ]
 
   const chatThreads = [
@@ -1137,10 +1279,44 @@ function publicPortal(token: string) {
 }
 
 const routes: Route[] = [
-  { method: 'POST', pattern: '/auth/login', handle: () => ({ ...TOKENS, expiresAt: iso(24), user: USER }) },
-  { method: 'POST', pattern: '/auth/refresh', handle: () => ({ ...TOKENS, expiresAt: iso(24) }) },
+  {
+    method: 'POST',
+    pattern: '/auth/login',
+    handle: ({ body }) => {
+      const email = String(body.email ?? '').trim().toLowerCase()
+      const password = String(body.password ?? '')
+      const row = db.sharedUsers.find((u) => u.email.toLowerCase() === email) as SharedUserRow | undefined
+      if (!row) httpError(401, 'E-mail ou senha inválidos.')
+      if (row.password && row.password !== password) httpError(401, 'E-mail ou senha inválidos.')
+      const user = toAuthUser(row)
+      return {
+        accessToken: `fake-access-${row.id}`,
+        refreshToken: `fake-refresh-${row.id}`,
+        expiresAt: iso(24),
+        user,
+      }
+    },
+  },
+  {
+    method: 'POST',
+    pattern: '/auth/refresh',
+    handle: ({ body, authHeader }) => {
+      const refresh = String(body.refreshToken ?? '')
+      const fromRefresh = refresh.startsWith('fake-refresh-') ? refresh.slice('fake-refresh-'.length) : ''
+      const id =
+        fromRefresh ||
+        (authHeader ?? '').replace(/^Bearer\s+/i, '').replace(/^fake-access-/, '') ||
+        'u-ju'
+      const row = (db.sharedUsers.find((u) => u.id === id) ?? db.sharedUsers[0]) as SharedUserRow
+      return {
+        accessToken: `fake-access-${row.id}`,
+        refreshToken: `fake-refresh-${row.id}`,
+        expiresAt: iso(24),
+      }
+    },
+  },
   { method: 'POST', pattern: '/auth/logout', handle: () => undefined },
-  { method: 'GET', pattern: '/auth/me', handle: () => USER },
+  { method: 'GET', pattern: '/auth/me', handle: ({ authHeader }) => currentUser(authHeader) },
   { method: 'POST', pattern: '/auth/verify-admin-password', handle: () => ({ ok: true }) },
 
   { method: 'GET', pattern: '/preferences/me', handle: () => db.prefs },
@@ -1206,23 +1382,37 @@ const routes: Route[] = [
   {
     method: 'GET',
     pattern: '/dashboard/stats',
-    handle: () => ({
-      isOwner: true,
-      clients: db.clients.length,
-      activeClients: db.clients.filter((c) => c.status === 'Active').length,
-      paymentsPending: db.payments.filter((p) => p.status !== 'Paid').length,
-      employees: db.employees.length,
-      partners: db.partners.length,
-      services: db.services.length,
-      contracts: db.contracts.length,
-      onboardingPending: db.clients.filter((c) => !c.onboardingCompleted).length,
-      agendaToday: db.events.length,
-      myClients: db.clients.length,
-      myTodos: db.todos.filter((t) => t.status !== 'Done').length,
-      myAgenda: db.events.length,
-      requests: 0,
-      sops: db.sops.length,
-    }),
+    handle: ({ authHeader }) => {
+      const user = currentUser(authHeader)
+      const clients = visibleClients(authHeader)
+      const clientIds = new Set(clients.map((c) => c.id))
+      const payments = user.isOwner
+        ? db.payments
+        : db.payments.filter((p) => p.clientId && clientIds.has(p.clientId))
+      const todos = user.isOwner
+        ? db.todos
+        : db.todos.filter((t) => !t.clientId || clientIds.has(t.clientId))
+      const events = user.isOwner
+        ? db.events
+        : db.events.filter((e) => !e.clientId || clientIds.has(e.clientId))
+      return {
+        isOwner: user.isOwner,
+        clients: clients.length,
+        activeClients: clients.filter((c) => c.status === 'Active').length,
+        paymentsPending: payments.filter((p) => p.status !== 'Paid').length,
+        employees: db.employees.length,
+        partners: db.partners.length,
+        services: db.services.length,
+        contracts: db.contracts.length,
+        onboardingPending: clients.filter((c) => !c.onboardingCompleted).length,
+        agendaToday: events.length,
+        myClients: clients.length,
+        myTodos: todos.filter((t) => t.status !== 'Done').length,
+        myAgenda: events.length,
+        requests: 0,
+        sops: db.sops.length,
+      }
+    },
   },
   { method: 'GET', pattern: '/reports', handle: ({ query }) => buildReport(query) },
   {
@@ -1331,15 +1521,18 @@ const routes: Route[] = [
   {
     method: 'GET',
     pattern: '/clients/counts',
-    handle: () => ({
-      total: db.clients.length,
-      active: db.clients.filter((c) => c.status === 'Active').length,
-      inactive: db.clients.filter((c) => c.status === 'Inactive').length,
-      notice: db.clients.filter((c) => c.status === 'Notice').length,
-      hold: db.clients.filter((c) => c.status === 'Hold').length,
-    }),
+    handle: ({ authHeader }) => {
+      const clients = visibleClients(authHeader)
+      return {
+        total: clients.length,
+        active: clients.filter((c) => c.status === 'Active').length,
+        inactive: clients.filter((c) => c.status === 'Inactive').length,
+        notice: clients.filter((c) => c.status === 'Notice').length,
+        hold: clients.filter((c) => c.status === 'Hold').length,
+      }
+    },
   },
-  { method: 'GET', pattern: '/clients', handle: () => db.clients },
+  { method: 'GET', pattern: '/clients', handle: ({ authHeader }) => visibleClients(authHeader) },
   {
     method: 'POST',
     pattern: '/clients',
@@ -1415,7 +1608,10 @@ const routes: Route[] = [
     client.retainerHoursPerMonth = Math.max(0, Number(body.hoursPerMonth ?? 0))
     return { id: client.id, retainerHoursPerMonth: client.retainerHoursPerMonth }
   } },
-  { method: 'GET', pattern: '/clients/:id', handle: ({ params }) => clientDetail(params.id) },
+  { method: 'GET', pattern: '/clients/:id', handle: ({ params, authHeader }) => {
+    assertClientAccess(params.id, authHeader)
+    return clientDetail(params.id)
+  } },
   { method: 'PUT', pattern: '/clients/:id', handle: ({ params, body }) => {
     const client = requireRow(db.clients, params.id)
     Object.assign(client, body)
@@ -1433,11 +1629,9 @@ const routes: Route[] = [
     refreshGroupCounts()
   } },
 
-  { method: 'GET', pattern: '/employees', handle: () => db.employees },
-  { method: 'POST', pattern: '/employees', handle: ({ body }) => {
-    const row = { id: nid('e'), name: String(body.name ?? 'Prestador'), phone: body.phone as string | undefined, email: body.email as string | undefined, color: String(body.color ?? '#0F4C5C'), status: 'Active', managerId: (body.managerId as string | null) ?? null }
-    db.employees.push(row)
-    return row
+  { method: 'GET', pattern: '/employees', handle: () => teamEmployees() },
+  { method: 'POST', pattern: '/employees', handle: () => {
+    httpError(400, 'Crie a pessoa em Minha equipe / Configurações com e-mail e senha (login na MONA).')
   } },
   { method: 'GET', pattern: '/employees/:id/summary', handle: ({ params }) => {
     const emp = requireRow(db.employees, params.id)
@@ -1785,9 +1979,15 @@ const routes: Route[] = [
     const i = db.columns.findIndex((c) => c.id === params.id)
     if (i >= 0) db.columns.splice(i, 1)
   } },
-  { method: 'GET', pattern: '/todos', handle: ({ query }) => {
+  { method: 'GET', pattern: '/todos', handle: ({ query, authHeader }) => {
     const ownerId = query.get('ownerId')
-    return ownerId ? db.todos.filter((t) => t.ownerUserId === ownerId) : db.todos
+    const user = currentUser(authHeader)
+    let rows = db.todos
+    if (!user.isOwner) {
+      const allowed = new Set(user.assignedClientIds)
+      rows = rows.filter((t) => !t.clientId || allowed.has(t.clientId))
+    }
+    return ownerId ? rows.filter((t) => t.ownerUserId === ownerId) : rows
   } },
   { method: 'POST', pattern: '/todos', handle: ({ body }) => {
     const colId = String(body.boardColumnId || 'col-todo')
@@ -1939,19 +2139,103 @@ const routes: Route[] = [
 
   { method: 'GET', pattern: '/organizations/me', handle: () => db.org },
   { method: 'PATCH', pattern: '/organizations/me', handle: ({ body }) => Object.assign(db.org, body) },
-  { method: 'GET', pattern: '/users/me', handle: () => db.userProfile },
-  { method: 'PATCH', pattern: '/users/me', handle: ({ body }) => Object.assign(db.userProfile, body) },
+  {
+    method: 'GET',
+    pattern: '/users/me',
+    handle: ({ authHeader }) => {
+      const user = currentUser(authHeader)
+      return { id: user.id, name: user.name, email: user.email, phone: db.userProfile.phone }
+    },
+  },
+  {
+    method: 'PATCH',
+    pattern: '/users/me',
+    handle: ({ body, authHeader }) => {
+      const row = resolveSharedUser(authHeader)
+      if (typeof body.name === 'string') row.name = body.name
+      if (typeof body.email === 'string') row.email = body.email
+      if (typeof body.phone === 'string') db.userProfile.phone = body.phone
+      return { id: row.id, name: row.name, email: row.email, phone: db.userProfile.phone }
+    },
+  },
   { method: 'GET', pattern: '/access-types', handle: () => db.accessTypes },
   { method: 'POST', pattern: '/access-types', handle: ({ body }) => {
     const row = { id: nid('at'), name: String(body.name ?? 'Perfil'), permissions: (body.permissions as string[]) ?? [], isOwnerType: false, description: body.description as string | undefined }
     db.accessTypes.push(row)
     return row
   } },
-  { method: 'GET', pattern: '/shared-users', handle: () => db.sharedUsers },
-  { method: 'POST', pattern: '/shared-users', handle: ({ body }) => {
-    const row = { id: nid('u'), name: String(body.name ?? 'Usuário'), email: String(body.email ?? ''), accessTypeId: String(body.accessTypeId ?? ''), accessTypeName: db.accessTypes.find((a) => a.id === body.accessTypeId)?.name, assignedClientIds: (body.assignedClientIds as string[]) ?? [], isOwner: false }
-    db.sharedUsers.push(row)
-    return row
+  {
+    method: 'GET',
+    pattern: '/shared-users',
+    handle: ({ authHeader }) => {
+      const me = currentUser(authHeader)
+      return db.sharedUsers.map((u) => ({
+        id: u.id,
+        name: u.name,
+        email: u.email,
+        accessTypeId: u.accessTypeId,
+        accessTypeName: u.accessTypeName,
+        assignedClientIds: u.assignedClientIds,
+        isOwner: u.isOwner,
+        isCurrentUser: u.id === me.id,
+      }))
+    },
+  },
+  {
+    method: 'POST',
+    pattern: '/shared-users',
+    handle: ({ body }) => {
+      const email = String(body.email ?? '').trim()
+      if (!email) httpError(400, 'E-mail é obrigatório.')
+      if (db.sharedUsers.some((u) => u.email.toLowerCase() === email.toLowerCase())) {
+        httpError(400, 'Já existe um usuário com este e-mail.')
+      }
+      const accessType = db.accessTypes.find((a) => a.id === body.accessTypeId)
+      const equalHierarchy = !!accessType?.isOwnerType || body.isOwner === true
+      const row = {
+        id: nid('u'),
+        name: String(body.name ?? 'Usuário'),
+        email,
+        accessTypeId: String(body.accessTypeId ?? ''),
+        accessTypeName: accessType?.name,
+        assignedClientIds: equalHierarchy ? [] : ((body.assignedClientIds as string[]) ?? []),
+        isOwner: equalHierarchy,
+        password: String(body.password ?? ''),
+      }
+      db.sharedUsers.push(row)
+      syncEmployeeClientsFromUser(row)
+      return {
+        id: row.id,
+        name: row.name,
+        email: row.email,
+        accessTypeId: row.accessTypeId,
+        accessTypeName: row.accessTypeName,
+        assignedClientIds: row.assignedClientIds,
+        isOwner: row.isOwner,
+        employeeId: ensureEmployeeForUser(row).id,
+      }
+    },
+  },
+  { method: 'PATCH', pattern: '/shared-users/:id', handle: ({ params, body }) => {
+    const row = requireRow(db.sharedUsers, params.id) as SharedUserRow
+    if (row.isOwner) throw Object.assign(new Error('A conta principal já tem acesso a todos os clientes.'), { status: 400 })
+    if (Array.isArray(body.assignedClientIds)) {
+      row.assignedClientIds = (body.assignedClientIds as string[]).filter((cid) => db.clients.some((c) => c.id === cid))
+      const emp = ensureEmployeeForUser(row)
+      db.employeeClients = db.employeeClients.filter((x) => x.employeeId !== emp.id)
+      for (const cid of row.assignedClientIds) {
+        db.employeeClients.push({ employeeId: emp.id, clientId: cid })
+      }
+    }
+    return {
+      id: row.id,
+      name: row.name,
+      email: row.email,
+      accessTypeId: row.accessTypeId,
+      accessTypeName: row.accessTypeName,
+      assignedClientIds: row.assignedClientIds,
+      isOwner: row.isOwner,
+    }
   } },
 
   { method: 'GET', pattern: '/share-links', handle: () => db.shareLinks },
@@ -2014,7 +2298,12 @@ const routes: Route[] = [
   } },
 ]
 
-export function handleFakeApi(method: string, rawUrl: string, body: unknown): HttpResult {
+export function handleFakeApi(
+  method: string,
+  rawUrl: string,
+  body: unknown,
+  authHeader?: string,
+): HttpResult {
   const url = new URL(rawUrl, 'http://local.fake')
   let path = url.pathname
   if (path.startsWith('/api/v1')) path = path.slice('/api/v1'.length) || '/'
@@ -2025,13 +2314,21 @@ export function handleFakeApi(method: string, rawUrl: string, body: unknown): Ht
       if (route.method !== method) continue
       const params = matchRoute(route.pattern, path)
       if (!params) continue
-      const payload = route.handle({ params, query: url.searchParams, body: asJson(body) })
+      const payload = route.handle({
+        params,
+        query: url.searchParams,
+        body: asJson(body),
+        authHeader,
+      })
       if (payload === undefined) return { status: 204 }
       return { status: 200, body: payload }
     }
   } catch (error) {
-    const err = error as { status?: number; payload?: unknown }
+    const err = error as { status?: number; payload?: unknown; message?: string }
     if (err.status === 404) return { status: 404, body: err.payload ?? { detail: 'Não encontrado' } }
+    if (err.status === 400) return { status: 400, body: err.payload ?? { detail: err.message ?? 'Requisição inválida' } }
+    if (err.status === 401) return { status: 401, body: err.payload ?? { detail: err.message ?? 'Não autorizado' } }
+    if (err.status === 403) return { status: 403, body: err.payload ?? { detail: err.message ?? 'Proibido' } }
     throw error
   }
 

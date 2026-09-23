@@ -91,6 +91,81 @@ function setCable(mesh: THREE.Mesh, from: THREE.Vector3, to: THREE.Vector3) {
   mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), dir.multiplyScalar(1 / length))
 }
 
+function makePortalPhrase() {
+  const canvas = document.createElement('canvas')
+  canvas.width = 1024
+  canvas.height = 256
+  const ctx = canvas.getContext('2d')
+  if (ctx) {
+    ctx.clearRect(0, 0, 1024, 256)
+    ctx.fillStyle = '#2a1540'
+    ctx.textAlign = 'center'
+    ctx.textBaseline = 'middle'
+    ctx.font = '600 40px Georgia, "Times New Roman", serif'
+    ctx.shadowColor = 'rgba(255,255,255,0.95)'
+    ctx.shadowBlur = 16
+    ctx.fillText('Seu dia começa aqui.', 512, 128)
+  }
+  const texture = new THREE.CanvasTexture(canvas)
+  texture.colorSpace = THREE.SRGBColorSpace
+  texture.needsUpdate = true
+  const mesh = new THREE.Mesh(
+    new THREE.PlaneGeometry(0.62, 0.16),
+    new THREE.MeshBasicMaterial({
+      map: texture,
+      transparent: true,
+      opacity: 0,
+      depthWrite: false,
+      side: THREE.DoubleSide,
+    }),
+  )
+  mesh.name = 'portal-phrase'
+  mesh.renderOrder = 3
+  return mesh
+}
+
+function makePortalFill() {
+  // Soft glow that fills the vão openings — feathered rect, not a round ball.
+  const canvas = document.createElement('canvas')
+  canvas.width = 512
+  canvas.height = 512
+  const ctx = canvas.getContext('2d')
+  if (ctx) {
+    ctx.clearRect(0, 0, 512, 512)
+    // Horizontal soft light field (matches the M openings better than a circle).
+    const glow = ctx.createRadialGradient(256, 256, 4, 256, 256, 240)
+    glow.addColorStop(0, 'rgba(255,255,255,1)')
+    glow.addColorStop(0.2, 'rgba(255,248,252,0.95)')
+    glow.addColorStop(0.45, 'rgba(255,220,236,0.7)')
+    glow.addColorStop(0.75, 'rgba(255,190,220,0.25)')
+    glow.addColorStop(1, 'rgba(255,255,255,0)')
+    ctx.fillStyle = glow
+    ctx.save()
+    ctx.translate(256, 256)
+    ctx.beginPath()
+    ctx.ellipse(0, 0, 220, 175, 0, 0, Math.PI * 2)
+    ctx.fill()
+    ctx.restore()
+  }
+  const texture = new THREE.CanvasTexture(canvas)
+  texture.colorSpace = THREE.SRGBColorSpace
+  texture.needsUpdate = true
+  const mesh = new THREE.Mesh(
+    new THREE.PlaneGeometry(1.15, 0.95),
+    new THREE.MeshBasicMaterial({
+      map: texture,
+      transparent: true,
+      opacity: 0,
+      depthWrite: false,
+      blending: THREE.AdditiveBlending,
+      side: THREE.DoubleSide,
+    }),
+  )
+  mesh.name = 'portal-fill'
+  mesh.renderOrder = 1
+  return mesh
+}
+
 function makePanel(w: number, h: number, accent: number) {
   const group = new THREE.Group()
   const board = new THREE.Mesh(
@@ -209,12 +284,16 @@ const CAM = [
   { t: 0.08, p: [0, 0.32, 12], l: [0, 0.22, 0] },
   { t: 0.14, p: [0, 0.38, 12.4], l: [0, 0.22, 0] },
   { t: 0.22, p: [0, 0.38, 9.4], l: [0, 0.3, 0] },
-  { t: 0.3, p: [0, 0.3, 5.2], l: [0, 0.26, 0] },
-  { t: 0.33, p: [0, 0.16, 2.2], l: [0, 0.1, -2.8] },
-  { t: 0.36, p: [0, 0.05, 0.5], l: [0, 0.02, -6] },
-  { t: 0.385, p: [0, 0.18, 13], l: [0, 0.12, 0] },
-  { t: 0.42, p: [0, 0.18, 14], l: [0, 0.12, 0] },
-  { t: 0.51, p: [0, 0.18, 14], l: [0, 0.12, 0] },
+  { t: 0.28, p: [0, 0.3, 5.8], l: [0, 0.24, 0] },
+  { t: 0.34, p: [0, 0.26, 4.4], l: [0, 0.22, 0] },
+  // Hold: full M + soft light + small phrase.
+  { t: 0.4, p: [0, 0.24, 3.8], l: [0, 0.2, 0] },
+  { t: 0.42, p: [0, 0.22, 3.2], l: [0, 0.16, -0.25] },
+  // Cross through the M — hide emblem before the session-05 camera.
+  { t: 0.45, p: [0, 0.14, 1.6], l: [0, 0.1, -0.55] },
+  { t: 0.475, p: [0, 0.08, 0.5], l: [0, 0.05, -0.85] },
+  { t: 0.5, p: [0, 0.18, 14], l: [0, 0.12, 0] },
+  { t: 0.56, p: [0, 0.18, 14], l: [0, 0.12, 0] },
   { t: 0.62, p: [0, 0.2, 14], l: [0, 0.1, 0] },
   { t: 0.72, p: [0, 0.22, 13.5], l: [0, 0.1, 0] },
   { t: 0.82, p: [0, 0.28, 12], l: [0, 0.12, 0] },
@@ -404,18 +483,21 @@ export function createMonaScene(canvas: HTMLCanvasElement): MonaScene {
   const emblem = new THREE.Group()
   emblem.visible = false
   root.add(emblem)
-  const veil = new THREE.Mesh(
-    new THREE.CircleGeometry(0.72, 48),
-    new THREE.MeshBasicMaterial({
-      color: 0xfff4fb,
-      transparent: true,
-      opacity: 0,
-      side: THREE.DoubleSide,
-      depthWrite: false,
-    }),
-  )
-  veil.position.set(0, 0.28, -0.16)
-  root.add(veil)
+
+  // Light + phrase live behind the M mesh — only visible through the 3D openings.
+  const portalInM = new THREE.Group()
+  portalInM.visible = false
+  root.add(portalInM)
+  const portalFill = makePortalFill()
+  portalFill.position.set(0, 0.02, -0.14)
+  portalInM.add(portalFill)
+  const portalPhrase = makePortalPhrase()
+  portalPhrase.position.set(0, 0.02, -0.1)
+  portalInM.add(portalPhrase)
+  const portalLight = new THREE.PointLight(0xfff8fc, 0, 4, 1.4)
+  portalLight.position.set(0, 0.05, -0.02)
+  portalInM.add(portalLight)
+
   new GLTFLoader().load(
     mGlbUrl,
     (gltf) => {
@@ -520,10 +602,11 @@ export function createMonaScene(canvas: HTMLCanvasElement): MonaScene {
     const explode = easeInOut(range(t, 0.06, 0.13))
     const wire = easeInOut(range(t, 0.09, 0.16))
     const converge = easeInOut(range(t, 0.19, 0.31))
-    const approach = easeInOut(range(t, 0.28, 0.38))
-    const enter = t < 0.39 ? easeInOut(range(t, 0.32, 0.37)) : 0
-    const through = range(t, 0.35, 0.385)
-    const live = windowed(t, 0.48, 0.52, 0.68, 0.73)
+    const approach = easeInOut(range(t, 0.28, 0.4))
+    const enter = easeInOut(range(t, 0.42, 0.475))
+    const through = easeInOut(range(t, 0.42, 0.49))
+    const crossed = through > 0.78
+    const live = windowed(t, 0.5, 0.54, 0.68, 0.73)
     const process = 0
     const scan = 0
     const architecture = easeInOut(range(t, 0.84, 0.92)) * (1 - easeInOut(range(t, 0.93, 0.97)))
@@ -548,34 +631,64 @@ export function createMonaScene(canvas: HTMLCanvasElement): MonaScene {
       cableMat.opacity = mix(0, 0.86, wire) * mix(1, 0.06, absorb)
     })
 
-    const portalOn = t > 0.06 && t < 0.39
+    // After crossing, M stays gone until later stations — no ghost / come-back.
+    const portalOn = t > 0.06 && t < 0.5 && !crossed
     const nucleus = t > 0.84 && t < 0.94
     emblem.visible = portalOn || nucleus || t > 0.93
     const hub = mix(0.48, 0.78, explode)
     const formed = mix(hub, 1.12, converge)
-    const gate = mix(formed, 1.85, approach)
+    const portalHold = mix(formed, 1.28, approach)
+    const flyPast = mix(portalHold, 2.2, through)
     const core = mix(0.82, 1.02, architecture)
     const end = mix(1.08, 1.48, collapse)
-    emblem.scale.setScalar(t > 0.93 ? end : nucleus ? core : t < 0.39 ? gate : 0)
+    emblem.scale.setScalar(t > 0.93 ? end : nucleus ? core : portalOn ? flyPast : 0)
     emblem.position.set(nucleus ? -0.55 : t > 0.93 ? 0.72 : 0, 0.22, 0)
-    emblem.rotation.y = t > 0.84 ? 0.06 : mix(0.38, 0, easeInOut(range(t, 0.22, 0.36)))
-    emblem.rotation.x = t > 0.84 ? 0 : mix(0.1, 0, approach)
+    emblem.rotation.y = t > 0.84 ? 0.06 : mix(0.38, 0, easeInOut(range(t, 0.22, 0.34)))
+    emblem.rotation.x = t > 0.84 ? 0 : mix(0.08, 0, approach)
 
-    const veilMat = veil.material as THREE.MeshBasicMaterial
-    veil.visible = t > 0.28 && t < 0.39
-    veil.scale.setScalar(mix(1, 2.6, enter))
-    veilMat.opacity = mix(0, 0.55, range(t, 0.32, 0.37)) * mix(1, 0, through)
+    emblem.traverse((child) => {
+      if (!(child instanceof THREE.Mesh)) return
+      const mats = Array.isArray(child.material) ? child.material : [child.material]
+      mats.forEach((material) => {
+        if (!(material instanceof THREE.MeshStandardMaterial)) return
+        material.transparent = false
+        material.opacity = 1
+        material.depthWrite = true
+        if (portalOn) {
+          material.emissive.setHex(0xffb0d0)
+          material.emissiveIntensity = mix(0, 0.45, easeInOut(range(t, 0.28, 0.42)))
+        } else {
+          material.emissiveIntensity = 0
+        }
+        material.needsUpdate = true
+      })
+    })
+
+    const glowIn = easeInOut(range(t, 0.26, 0.38))
+    const gateOn = portalOn && t > 0.24
+    portalInM.visible = gateOn
+    if (gateOn) {
+      portalInM.position.copy(emblem.position)
+      portalInM.rotation.copy(emblem.rotation)
+      portalInM.scale.copy(emblem.scale)
+      const fillMat = portalFill.material as THREE.MeshBasicMaterial
+      const phraseMat = portalPhrase.material as THREE.MeshBasicMaterial
+      fillMat.opacity = mix(0, 1, glowIn) * mix(1, 0.2, through)
+      phraseMat.opacity = mix(0, 1, glowIn) * mix(1, 0, enter)
+      portalPhrase.scale.setScalar(1)
+      portalLight.intensity = mix(0, 6.5, glowIn) * mix(1, 0.35, through)
+    } else {
+      portalLight.intensity = 0
+    }
+
+    dots.points.visible = false
 
     const fog = scene.fog as THREE.Fog
-    const inPortal = t > 0.3 && t < 0.39
-    fog.near = inPortal ? mix(18, 6, enter * 0.45) : 80
-    fog.far = inPortal ? mix(42, 16, enter * 0.45) : 120
+    fog.near = 80
+    fog.far = 140
     fog.color.setHex(SKY)
     renderer.setClearColor(0x000000, 0)
     renderer.setClearAlpha(0)
-
-    // Image BGs carry the atmosphere — keep 3D particles off.
-    dots.points.visible = false
 
     orbs.forEach((orb) => {
       orb.visible = false
@@ -601,10 +714,10 @@ export function createMonaScene(canvas: HTMLCanvasElement): MonaScene {
       ring.scale.setScalar(0)
     })
 
-    bloom.enabled = inPortal && enter > 0.08
-    bloom.strength = inPortal ? mix(0.08, 0.28, enter) : 0
-    camera.fov = inPortal ? mix(mobile ? 48 : 42, 56, enter) : mobile ? 48 : 42
-    camera.near = inPortal ? mix(0.05, 0.02, enter) : 0.05
+    bloom.enabled = false
+    bloom.strength = 0
+    camera.fov = mix(mobile ? 48 : 42, mobile ? 52 : 48, enter)
+    camera.near = 0.05
     camera.updateProjectionMatrix()
 
     const cam = sampleCam(t)

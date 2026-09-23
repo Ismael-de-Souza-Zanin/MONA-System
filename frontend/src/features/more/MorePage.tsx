@@ -9,7 +9,7 @@ const BLURBS: Record<string, string> = {
   operacao: 'Defina como você trabalha',
   sops: 'Padronize e escale',
   onboarding: 'Estruture a entrada de novos clientes',
-  prestadores: 'Gerencie sua equipe externa',
+  prestadores: 'Sua equipe de assistentes',
   parceiras: 'Suas parcerias estratégicas',
   servicos: 'Configure seus serviços',
   contratos: 'Modelos e gestão de contratos',

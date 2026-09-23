@@ -2,7 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { api } from '../../shared/api/client'
-import type { Client, Contract, EmployeeSummary } from '../../shared/types'
+import type { Client, Contract, EmployeeSummary, SharedUser } from '../../shared/types'
 import { Permissions } from '../../shared/permissions/constants'
 import { usePermissions } from '../../shared/permissions/hooks'
 import { Button, Card, EmptyState, LoadingSpinner, PageHeader, Select } from '../../shared/ui'
@@ -15,6 +15,7 @@ export function EmployeeSummaryPage() {
   const { hasPermission } = usePermissions()
   const canWrite = hasPermission(Permissions.EmployeesWrite)
   const canContracts = hasPermission(Permissions.ContractsWrite)
+  const canSettings = hasPermission(Permissions.Settings)
   const qc = useQueryClient()
   const [clientId, setClientId] = useState('')
 
@@ -30,11 +31,29 @@ export function EmployeeSummaryPage() {
     enabled: canWrite && validId,
   })
 
+  const { data: sharedUsers = [] } = useQuery({
+    queryKey: ['shared-users'],
+    queryFn: () => api.get<SharedUser[]>('/shared-users'),
+    enabled: canSettings && validId,
+  })
+
   const assign = useMutation({
-    mutationFn: () => api.post(`/employees/${id}/clients/${clientId}`, {}),
+    mutationFn: async () => {
+      await api.post(`/employees/${id}/clients/${clientId}`, {})
+      if (!canSettings || !clientId) return
+      const email = summary?.email?.toLowerCase()
+      if (!email) return
+      const user = sharedUsers.find((u) => !u.isOwner && u.email?.toLowerCase() === email)
+      if (!user || user.assignedClientIds.includes(clientId)) return
+      await api.patch(`/shared-users/${user.id}`, {
+        assignedClientIds: [...user.assignedClientIds, clientId],
+      })
+    },
     onSuccess: () => {
       setClientId('')
       void qc.invalidateQueries({ queryKey: ['employee-summary', id] })
+      void qc.invalidateQueries({ queryKey: ['shared-users'] })
+      void qc.invalidateQueries({ queryKey: ['client'] })
     },
   })
 
@@ -54,9 +73,9 @@ export function EmployeeSummaryPage() {
     onSuccess: () => void qc.invalidateQueries({ queryKey: ['employee-summary', id] }),
   })
 
-  if (!validId) return <EmptyState title="Prestador inválido" description="Volte à lista e escolha um prestador." />
+  if (!validId) return <EmptyState title="Pessoa inválida" description="Volte à equipe e escolha alguém." />
   if (isLoading) return <LoadingSpinner />
-  if (!summary) return <EmptyState title="Prestador não encontrado" />
+  if (!summary) return <EmptyState title="Pessoa não encontrada" />
 
   const contracts = summary.contracts ?? []
 
@@ -64,10 +83,10 @@ export function EmployeeSummaryPage() {
     <div>
       <PageHeader
         title={summary.name}
-        subtitle="Resumo do prestador / colaborador"
+        subtitle="Resumo na minha equipe"
         actions={
           <Link to="/prestadores">
-            <Button variant="secondary" size="sm">← Voltar</Button>
+            <Button variant="secondary" size="sm">← Minha equipe</Button>
           </Link>
         }
       />
@@ -144,6 +163,10 @@ export function EmployeeSummaryPage() {
 
         <Card>
           <h2 className="mb-3 text-lg font-semibold text-ink-900 brand-font">Clientes direcionados</h2>
+          <p className="mb-3 text-xs text-ink-500">
+            Ao vincular, o login na MONA também é liberado se ela já tiver conta. Também dá pela aba
+            Equipe na ficha do cliente.
+          </p>
           {summary.assignedClients?.length ? (
             <ul className="space-y-1 text-sm">
               {summary.assignedClients.map((c) => (

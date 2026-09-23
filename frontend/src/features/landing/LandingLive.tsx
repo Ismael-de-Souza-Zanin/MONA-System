@@ -117,18 +117,20 @@ function Scene({
   on,
   dim,
   className,
+  style,
   children,
 }: {
   on: number
   dim?: boolean
   className: string
+  style?: CSSProperties
   children: ReactNode
 }) {
   if (on < 0.03) return null
   return (
     <div
       className={`mona-scene ${className}${on > 0.08 ? ' is-on' : ''}${dim ? ' is-dim' : ''}`}
-      style={{ opacity: on }}
+      style={{ opacity: on, ...style }}
       aria-hidden
     >
       {children}
@@ -146,15 +148,17 @@ export function LandingLive({ progress }: { progress: number }) {
     queryFn: () => api.get<ClientDetail>('/clients/c-ana', { skipAuth: true }),
   })
 
-  const tour = fade(progress, 0.37, 0.42, 0.51, 0.56)
-  const clientIn = fade(progress, 0.5, 0.55, 0.61, 0.66)
-  const path = fade(progress, 0.61, 0.66, 0.70, 0.734)
-  const scan = fade(progress, 0.736, 0.76, 0.84, 0.88)
-  const arch = fade(progress, 0.82, 0.86, 0.92, 0.96)
-  const finale = fade(progress, 0.92, 0.96, 1, 1.05)
-  const beam = span(progress, 0.735, 0.845)
-  const slide = Math.min(2, span(progress, 0.39, 0.498) * 2)
-  const focus = Math.round(slide)
+  // Full session 05 tour after the crossing (Tarefas → Agenda → Financeiro).
+  const tour = fade(progress, 0.49, 0.52, 0.64, 0.68)
+  const clientIn = fade(progress, 0.66, 0.7, 0.74, 0.78)
+  const path = fade(progress, 0.7, 0.74, 0.78, 0.82)
+  const scan = fade(progress, 0.78, 0.82, 0.88, 0.92)
+  const arch = fade(progress, 0.86, 0.9, 0.94, 0.98)
+  const finale = fade(progress, 0.94, 0.97, 1, 1.05)
+  const beam = span(progress, 0.79, 0.88)
+  const slide = progress < 0.52 ? 0 : Math.min(2, span(progress, 0.52, 0.64) * 2)
+  const focus = progress < 0.52 ? 0 : Math.min(2, Math.floor(span(progress, 0.52, 0.64) * 3))
+  const showTourSides = slide > 0.08
   const name = client?.name || 'Ana Beatriz'
   const company = client?.companyName || 'Studio Lima'
   const initials = name
@@ -174,7 +178,9 @@ export function LandingLive({ progress }: { progress: number }) {
             {TOUR_SCREENS.map((screen, index) => (
               <article
                 key={screen.label}
-                className={`mona-tour__slide${index === focus ? ' is-on' : index < focus ? ' is-prev' : ' is-next'}`}
+                className={`mona-tour__slide${index === focus ? ' is-on' : index < focus ? ' is-prev' : ' is-next'}${
+                  !showTourSides && index !== 0 ? ' is-wait' : ''
+                }`}
               >
                 <p className="mona-tour__tag">
                   <span>{screen.num}</span> {screen.label}

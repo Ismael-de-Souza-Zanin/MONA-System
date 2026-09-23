@@ -52,6 +52,7 @@ import { FloatingTabsLayer } from './FloatingTabsLayer'
 import { ChatWidget } from '../features/chat/ChatWidget'
 import type { LucideIcon } from 'lucide-react'
 import { BrandLogo, MonaFolder } from '../shared/ui'
+import { PageTutorialHost, reopenPageTutorial } from '../shared/tutorial/PageTutorial'
 
 const WHATSAPP_URL = 'https://wa.me/5511999999999'
 const SIDEBAR_KEY = 'fatto_sidebar_collapsed'
@@ -1409,6 +1410,18 @@ function UserMenu({
             <Settings size={16} />
             Configurações
           </button>
+          <button
+            type="button"
+            role="menuitem"
+            className="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm text-ink-800 hover:bg-brand-50 hover:text-brand-900"
+            onClick={() => {
+              setOpen(false)
+              reopenPageTutorial()
+            }}
+          >
+            <HelpCircle size={16} />
+            Tutorial desta página
+          </button>
           <a
             href={WHATSAPP_URL}
             target="_blank"
@@ -1417,7 +1430,7 @@ function UserMenu({
             className="flex w-full items-center gap-3 px-4 py-2.5 text-sm text-ink-800 hover:bg-brand-50 hover:text-brand-900"
             onClick={() => setOpen(false)}
           >
-            <HelpCircle size={16} />
+            <MessageSquare size={16} />
             Central de ajuda
           </a>
           <div className="my-1 h-px bg-ink-100" />
@@ -2042,6 +2055,7 @@ function AppShell() {
       </div>
 
       <FloatingTabsLayer />
+      <PageTutorialHost />
       <ChatWidget />
     </div>
   )

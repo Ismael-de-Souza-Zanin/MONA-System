@@ -211,6 +211,10 @@ export interface Employee {
   color?: string
   status?: string
   managerId?: string | null
+  userId?: string
+  accessTypeName?: string
+  isOwner?: boolean
+  assignedClientIds?: string[]
 }
 
 export interface EmployeeSummary extends Employee {

@@ -188,6 +188,71 @@ public class SettingsController : ControllerBase
         if (!result.Succeeded)
             return BadRequest(new { detail = string.Join("; ", result.Errors.Select(e => e.Description)) });
 
+        // Minha equipe = quem tem login: espelha o usuário em Employee para operação/vínculos.
+        var employee = new Domain.Entities.Employee
+        {
+            OrganizationId = orgId,
+            Name = user.FullName,
+            Email = user.Email,
+            Color = "#0F4C5C",
+            Status = "Active",
+            UserId = user.Id
+        };
+        _db.Employees.Add(employee);
+        if (!equalHierarchy && user.AssignedClientIds.Count > 0)
+        {
+            foreach (var clientId in user.AssignedClientIds.Distinct())
+            {
+                if (await _db.Clients.AnyAsync(c => c.Id == clientId && c.OrganizationId == orgId))
+                {
+                    _db.EmployeeClients.Add(new Domain.Entities.EmployeeClient
+                    {
+                        EmployeeId = employee.Id,
+                        ClientId = clientId
+                    });
+                }
+            }
+        }
+        await _db.SaveChangesAsync();
+
+        return Ok(new
+        {
+            id = user.Id,
+            name = user.FullName,
+            email = user.Email,
+            accessTypeId = user.AccessTypeId,
+            assignedClientIds = user.AssignedClientIds.Select(x => x.ToString()).ToList(),
+            isOwner = user.IsOrganizationOwner,
+            employeeId = employee.Id.ToString()
+        });
+    }
+
+    [HttpPatch("shared-users/{id}")]
+    [RequirePermission(Permissions.Settings)]
+    public async Task<IActionResult> UpdateSharedUser(string id, [FromBody] SharedUserUpdateBody body)
+    {
+        if (!User.IsOwner() && !User.HasPermission(Permissions.Settings))
+            return StatusCode(403, new { detail = "Somente a conta principal gerencia usuários." });
+
+        var orgId = User.GetOrganizationId();
+        var user = await _users.FindByIdAsync(id);
+        if (user is null || user.OrganizationId != orgId)
+            return NotFound();
+
+        if (user.IsOrganizationOwner)
+            return BadRequest(new { detail = "A conta principal já tem acesso a todos os clientes." });
+
+        if (body.AssignedClientIds is not null)
+        {
+            var allowed = await _db.Clients
+                .Where(c => c.OrganizationId == orgId)
+                .Select(c => c.Id)
+                .ToListAsync();
+            var allowedSet = allowed.ToHashSet();
+            user.AssignedClientIds = body.AssignedClientIds.Where(allowedSet.Contains).Distinct().ToList();
+        }
+
+        await _users.UpdateAsync(user);
         return Ok(new
         {
             id = user.Id,
@@ -210,4 +275,5 @@ public class SettingsController : ControllerBase
         string? FullName,
         List<Guid>? AssignedClientIds,
         bool? IsOwner);
+    public record SharedUserUpdateBody(List<Guid>? AssignedClientIds);
 }

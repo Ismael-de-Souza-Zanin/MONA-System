@@ -78,7 +78,7 @@ function titleFromPath(path: string): string {
   const parts = path.split('/').filter(Boolean)
   const map: Record<string, string> = {
     clientes: 'Clientes',
-    prestadores: 'Prestadores',
+    prestadores: 'Minha equipe',
     financeiro: 'Financeiro',
     agenda: 'Agenda',
     todos: 'Tarefas',

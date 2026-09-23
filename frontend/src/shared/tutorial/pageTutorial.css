@@ -1,0 +1,144 @@
+.mona-tutorial {
+  position: fixed;
+  right: 1.25rem;
+  bottom: 5.5rem;
+  z-index: 80;
+  width: min(22.5rem, calc(100vw - 1.6rem));
+  padding: 1rem 1.05rem 1.05rem;
+  border: 1px solid rgb(255 255 255 / 0.85);
+  border-radius: 22px;
+  background: rgb(255 255 255 / 0.94);
+  box-shadow: 0 22px 50px rgb(88 43 134 / 0.18);
+  color: #2a1540;
+  backdrop-filter: blur(16px);
+  animation: mona-tutorial-in 0.35s ease;
+}
+
+.mona-tutorial__head {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 0.65rem;
+  align-items: start;
+  margin-bottom: 0.55rem;
+}
+
+.mona-tutorial__icon {
+  display: grid;
+  width: 2rem;
+  height: 2rem;
+  place-items: center;
+  border-radius: 0.75rem;
+  background: linear-gradient(135deg, #582b86, #f54d7d 70%, #ff7a33);
+  color: #fff;
+}
+
+.mona-tutorial__eyebrow {
+  margin: 0;
+  color: #f54d7d;
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.mona-tutorial__head h2 {
+  margin: 0.1rem 0 0;
+  font-size: 1.05rem;
+  font-weight: 800;
+  line-height: 1.2;
+}
+
+.mona-tutorial__close {
+  display: grid;
+  width: 1.85rem;
+  height: 1.85rem;
+  place-items: center;
+  border: 0;
+  border-radius: 999px;
+  background: rgb(88 43 134 / 0.08);
+  color: #582b86;
+  cursor: pointer;
+}
+
+.mona-tutorial__lead {
+  margin: 0 0 0.7rem;
+  color: rgb(42 21 64 / 0.68);
+  font-size: 0.88rem;
+  line-height: 1.45;
+}
+
+.mona-tutorial__tips {
+  display: grid;
+  gap: 0.45rem;
+  margin: 0 0 0.95rem;
+  padding: 0;
+  list-style: none;
+}
+
+.mona-tutorial__tips li {
+  position: relative;
+  padding-left: 0.9rem;
+  color: #2a1540;
+  font-size: 0.82rem;
+  line-height: 1.4;
+}
+
+.mona-tutorial__tips li::before {
+  content: '';
+  position: absolute;
+  top: 0.45rem;
+  left: 0;
+  width: 0.35rem;
+  height: 0.35rem;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #f54d7d, #ff7a33);
+}
+
+.mona-tutorial__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  justify-content: flex-end;
+}
+
+.mona-tutorial__ghost,
+.mona-tutorial__ok {
+  border: 0;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.mona-tutorial__ghost {
+  padding: 0.55rem 0.85rem;
+  background: transparent;
+  color: rgb(42 21 64 / 0.55);
+}
+
+.mona-tutorial__ok {
+  padding: 0.55rem 1rem;
+  background: linear-gradient(135deg, #582b86, #c4489a 55%, #ff7a33);
+  color: #fff;
+  box-shadow: 0 10px 22px rgb(245 77 125 / 0.28);
+}
+
+@keyframes mona-tutorial-in {
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (max-width: 767px) {
+  .mona-tutorial {
+    right: 0.75rem;
+    left: 0.75rem;
+    bottom: 5.75rem;
+    width: auto;
+  }
+}
