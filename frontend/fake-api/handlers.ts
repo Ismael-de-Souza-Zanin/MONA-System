@@ -1970,6 +1970,14 @@ const routes: Route[] = [
     db.columns.push(row)
     return row
   } },
+  { method: 'POST', pattern: '/todo-board/columns/reorder', handle: ({ body }) => {
+    const ids = body.ids as string[]
+    if (!Array.isArray(ids) || ids.length !== db.columns.length || new Set(ids).size !== ids.length || ids.some((id) => !db.columns.some((column) => column.id === id))) {
+      throw new Error('Informe todas as colunas, sem repetições.')
+    }
+    db.columns = ids.map((id, sortOrder) => ({ ...requireRow(db.columns, id), sortOrder }))
+    return { ok: true }
+  } },
   { method: 'PUT', pattern: '/todo-board/columns/:id', handle: ({ params, body }) => {
     const col = requireRow(db.columns, params.id)
     if (body.name) col.name = String(body.name)

@@ -3,7 +3,6 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { api } from '../../shared/api/client'
 import type { ShareLink } from '../../shared/types'
-import { Briefcase, Clock3, FileText, Folder } from 'lucide-react'
 import {
   Button,
   Card,
@@ -11,11 +10,6 @@ import {
   EmptyState,
   Input,
   LoadingSpinner,
-  MobileHero,
-  MobileRow,
-  MobileSection,
-  MobileStat,
-  MobileTip,
   PageHeader,
   Select,
 } from '../../shared/ui'
@@ -74,45 +68,12 @@ export function ShareLinksPage() {
 
   if (isLoading) return <LoadingSpinner />
 
-  const activeLinks = links.filter((l) => l.isActive !== false && !l.expired)
 
   return (
     <div>
-      <div className="mona-mobile-only mona-m-stack">
-        <MobileHero
-          kicker="Portal contratante"
-          title="Conectando você aos resultados"
-          lead="Área do contratante para acompanhar solicitações, aprovações, documentos e o andamento dos projetos."
-          note="Parceria que gera grandes resultados"
-        />
-        <div className="mona-m-stats">
-          <MobileStat icon={FileText} label="Solicitações" value={links.length} hint="links gerados" tone="purple" />
-          <MobileStat icon={Clock3} label="Pendentes" value={links.filter((l) => l.expired).length} hint="expirados" tone="orange" />
-          <MobileStat icon={Folder} label="Ativos" value={activeLinks.length} hint="prontos para uso" tone="mint" />
-        </div>
-        <MobileSection title="Últimas solicitações" action={{ to: '/compartilhar', label: 'Ver todas' }}>
-          <div className="mona-m-list">
-            {links.slice(0, 6).map((link) => (
-              <MobileRow
-                key={link.id}
-                to={link.clientId ? `/clientes/${link.clientId}` : '/compartilhar'}
-                icon={<span className="mona-m-icon"><Briefcase size={15} /></span>}
-                title={link.clientName || link.scope}
-                meta={link.expiresAt ? new Date(link.expiresAt).toLocaleDateString('pt-BR') : 'Sem validade'}
-                trailing={
-                  <span className="mona-m-badge">
-                    {link.isActive === false ? 'Revogado' : link.expired ? 'Expirado' : 'Ativo'}
-                  </span>
-                }
-              />
-            ))}
-            {links.length === 0 && <EmptyState title="Nenhum link criado" />}
-          </div>
-        </MobileSection>
-        <MobileTip>Gere um link com o escopo certo e o cliente vê só o que precisa.</MobileTip>
-      </div>
 
-      <div className="mona-desktop-only">
+
+      <div className="mona-responsive-content">
       <PageHeader
         title="Portal do contratante"
         subtitle="Controle o que o cliente publica/vê pelo link — sem login. Revogue a qualquer momento."
@@ -193,7 +154,7 @@ export function ShareLinksPage() {
         <EmptyState title="Nenhum link criado" description="Gere um link acima ou na ficha do cliente." />
       ) : (
         <div className="overflow-hidden rounded-xl border border-ink-100 bg-surface">
-          <table className="w-full text-left text-sm">
+          <table className="mona-data-table w-full text-left text-sm">
             <thead className="border-b border-ink-100 bg-ink-50/80">
               <tr>
                 <th className="px-4 py-3">Status</th>
@@ -210,7 +171,7 @@ export function ShareLinksPage() {
                 const expired = !!link.expired
                 return (
                   <tr key={link.id} className="border-b border-ink-50">
-                    <td className="px-4 py-3">
+                    <td data-label="Status" className="px-4 py-3">
                       <span
                         className={`rounded-full px-2 py-0.5 text-xs font-medium ${
                           inactive
@@ -223,8 +184,8 @@ export function ShareLinksPage() {
                         {inactive ? 'Revogado' : expired ? 'Expirado' : 'Ativo'}
                       </span>
                     </td>
-                    <td className="px-4 py-3">{link.scope}</td>
-                    <td className="px-4 py-3">
+                    <td data-label="Escopo" className="px-4 py-3">{link.scope}</td>
+                    <td data-label="Cliente" className="px-4 py-3">
                       {link.clientId ? (
                         <Link
                           to={`/clientes/${link.clientId}`}
@@ -236,12 +197,12 @@ export function ShareLinksPage() {
                         '—'
                       )}
                     </td>
-                    <td className="px-4 py-3 text-ink-500">
+                    <td data-label="Validade" className="px-4 py-3 text-ink-500">
                       {link.expiresAt
                         ? new Date(link.expiresAt).toLocaleString('pt-BR')
                         : 'Sem validade'}
                     </td>
-                    <td className="px-4 py-3 text-xs text-ink-600">
+                    <td data-label="ACL" className="px-4 py-3 text-xs text-ink-600">
                       {[
                         link.allowMessages ? 'msgs' : null,
                         link.allowUploads ? 'upload' : null,
@@ -250,7 +211,7 @@ export function ShareLinksPage() {
                         .filter(Boolean)
                         .join(' · ') || 'só leitura'}
                     </td>
-                    <td className="px-4 py-3">
+                    <td data-label="Ações" className="px-4 py-3">
                       <div className="flex flex-wrap gap-1">
                         <a
                           href={`/s/${link.token}`}

@@ -12,11 +12,6 @@ import {
   EmptyState,
   Input,
   LoadingSpinner,
-  MobileChip,
-  MobileChips,
-  MobileHero,
-  MobileRow,
-  MobileTip,
   PageHeader,
   Select,
   Textarea,
@@ -86,70 +81,12 @@ export function SopsListPage() {
 
   if (hubLoading) return <LoadingSpinner />
 
-  const library = results.length ? results : (hub?.frequent || []).map((f) => ({
-    id: f.sopId,
-    name: f.name,
-    category: f.category || f.procedureType,
-    stepCount: f.runs,
-  }))
 
   return (
     <div className="mx-auto max-w-3xl">
-      <div className="mona-mobile-only mona-m-stack">
-        <MobileHero
-          kicker="Procedimentos (SOPs)"
-          title="Organize processos, entregue mais"
-          lead="Padronize rotinas, alinhe sua equipe e garanta mais qualidade em todas as entregas."
-          note="Processos claros, resultados consistentes"
-        />
-        {canWrite && (
-          <button type="button" className="mona-m-cta" onClick={() => navigate('/sops/nova')}>
-            Novo procedimento
-          </button>
-        )}
-        <div className="mona-m-search">
-          <input
-            value={search}
-            onChange={(e) => {
-              setSearch(e.target.value)
-              setShowLibrary(true)
-            }}
-            placeholder="Buscar procedimentos..."
-          />
-        </div>
-        <MobileChips>
-          <MobileChip active={!area} onClick={() => setArea('')}>
-            Todos
-          </MobileChip>
-          {(hub?.areas ?? []).slice(0, 4).map((a) => (
-            <MobileChip
-              key={a.area}
-              active={area === a.area}
-              onClick={() => {
-                setArea(a.area)
-                setShowLibrary(true)
-              }}
-            >
-              {a.area} ({a.count})
-            </MobileChip>
-          ))}
-        </MobileChips>
-        <div className="mona-m-list">
-          {library.slice(0, 8).map((sop) => (
-            <MobileRow
-              key={sop.id}
-              to={`/sops/${sop.id}`}
-              title={sop.name}
-              meta={sop.category || 'Procedimento'}
-              trailing={<span className="mona-m-badge">{sop.stepCount ? `${sop.stepCount} usos` : 'Aberto'}</span>}
-            />
-          ))}
-          {library.length === 0 && <EmptyState title="Nenhum procedimento encontrado" />}
-        </div>
-        <MobileTip>Documente seus processos e reduza o operacional no dia a dia.</MobileTip>
-      </div>
 
-      <div className="mona-desktop-only">
+
+      <div className="mona-responsive-content">
       <PageHeader
         title="Procedimentos"
         subtitle="Chegue com um problema e saia com o próximo passo — não uma biblioteca de documentos."

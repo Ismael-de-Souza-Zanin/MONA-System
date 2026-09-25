@@ -12,17 +12,10 @@ import {
   EmptyState,
   Input,
   LoadingSpinner,
-  MobileHero,
-  MobileRow,
-  MobileSection,
-  MobileStat,
-  MobileTip,
   Modal,
   PageHeader,
   Select,
-  formatMoneyBr,
 } from '../../shared/ui'
-import { ArrowDownRight, ArrowUpRight, CalendarDays, CreditCard, Wallet } from 'lucide-react'
 import { SettlePaymentModal } from './SettlePaymentModal'
 import {
   EntityLinksField,
@@ -260,64 +253,12 @@ export function FinancePage() {
 
   if (isLoading) return <LoadingSpinner />
 
-  const income = totals.agencyPaid + totals.arPaid
-  const expense = totals.apPaid + totals.payoutPaid
-  const profit = income - expense
-  const incoming = totals.agencyPending + totals.arPending
-  const nextPay = payments
-    .filter((p) => p.status === 'Pending')
-    .sort((a, b) => +new Date(a.dueDate || 0) - +new Date(b.dueDate || 0))[0]
-  const recent = [...payments]
-    .sort((a, b) => +new Date(b.paidAt || b.dueDate || 0) - +new Date(a.paidAt || a.dueDate || 0))
-    .slice(0, 5)
 
   return (
     <div>
-      <div className="mona-mobile-only mona-m-stack">
-        <MobileHero
-          kicker={`${new Date().getHours() < 12 ? 'Bom dia' : new Date().getHours() < 18 ? 'Boa tarde' : 'Boa noite'}, ${user?.name?.split(' ')[0] || 'por aqui'}!`}
-          title="Seu financeiro em dia, sempre"
-          lead="Acompanhe receitas, despesas e o que o negócio ainda precisa receber."
-          cta={canManageAll ? { to: '/relatorios', label: 'Ver relatório' } : undefined}
-          note="Mais controle para ir longe"
-        />
-        <div className="mona-m-stats" style={{ gridTemplateColumns: '1fr 1fr' }}>
-          <MobileStat icon={ArrowUpRight} label="Receitas" value={formatMoneyBr(income)} hint="baixado" tone="mint" />
-          <MobileStat icon={ArrowDownRight} label="Despesas" value={formatMoneyBr(expense)} hint="baixado" tone="rose" />
-          <MobileStat icon={Wallet} label="Lucro" value={formatMoneyBr(profit)} hint="no recorte" tone="purple" />
-          <MobileStat icon={CreditCard} label="A receber" value={formatMoneyBr(incoming)} hint="pendente" tone="orange" />
-        </div>
-        {nextPay && (
-          <MobileRow
-            to="/financeiro"
-            icon={<span className="mona-m-icon"><CalendarDays size={16} /></span>}
-            title={nextPay.description || 'Próximo pagamento'}
-            meta={nextPay.dueDate ? new Date(nextPay.dueDate).toLocaleDateString('pt-BR') : 'Sem vencimento'}
-            trailing={<span className="mona-m-badge">{formatMoneyBr(nextPay.amount)}</span>}
-          />
-        )}
-        <MobileSection title="Últimas movimentações" action={{ to: '/financeiro', label: 'Ver todas' }}>
-          <div className="mona-m-list">
-            {recent.map((p) => (
-              <MobileRow
-                key={p.id}
-                title={p.description || ledgerLabel(p.ledger)}
-                meta={p.clientName || p.category || ledgerLabel(p.ledger)}
-                trailing={
-                  <strong style={{ color: p.ledger === 'ClientAp' || p.ledger === 'AssistantPayout' ? 'var(--mona-color-pink)' : 'var(--mona-color-purple)' }}>
-                    {p.ledger === 'ClientAp' || p.ledger === 'AssistantPayout' ? '-' : ''}
-                    {formatMoneyBr(p.amount)}
-                  </strong>
-                }
-              />
-            ))}
-            {recent.length === 0 && <EmptyState title="Nenhuma movimentação" />}
-          </div>
-        </MobileSection>
-        <MobileTip to="/relatorios">Separe o que já entrou do que ainda está pendente antes de decidir o mês.</MobileTip>
-      </div>
 
-      <div className="mona-desktop-only">
+
+      <div className="mona-responsive-content">
       <PageHeader
         title={canManageAll ? 'Financeiro' : 'Meu financeiro'}
         subtitle="Gavetas separadas: negócio do cliente, mensalidade da Fatto e repasse da VA."
@@ -407,7 +348,7 @@ export function FinancePage() {
         <EmptyState title="Nenhum movimento neste filtro" />
       ) : (
         <div className="overflow-hidden rounded-xl border border-ink-100 bg-white">
-          <table className="w-full text-left text-sm">
+          <table className="mona-data-table w-full text-left text-sm">
             <thead className="border-b border-ink-100 bg-ink-50/80">
               <tr>
                 <th className="px-4 py-3 font-medium text-ink-800">Descrição</th>
@@ -422,13 +363,13 @@ export function FinancePage() {
             <tbody>
               {filtered.map((p) => (
                 <tr key={p.id} className="border-b border-ink-50">
-                  <td className="px-4 py-3">
+                  <td data-label="Descrição" className="px-4 py-3">
                     <p className="font-medium text-ink-900">{p.description || '—'}</p>
                     {p.category && <p className="text-xs text-ink-500">{p.category}</p>}
                     <PaymentLinksChips links={p.links} />
                   </td>
-                  <td className="px-4 py-3 text-xs text-ink-600">{ledgerLabel(p.ledger)}</td>
-                  <td className="px-4 py-3">
+                  <td data-label="Livro" className="px-4 py-3 text-xs text-ink-600">{ledgerLabel(p.ledger)}</td>
+                  <td data-label="Cliente / terceiro" className="px-4 py-3">
                     {p.clientId ? (
                       <Link to={`/clientes/${p.clientId}`} className="text-brand-800 hover:underline">
                         {p.clientName || 'Cliente'}
@@ -440,11 +381,11 @@ export function FinancePage() {
                       <p className="text-xs text-ink-500">{p.counterpartyName}</p>
                     )}
                   </td>
-                  <td className="px-4 py-3 text-ink-600">
+                  <td data-label="Venc." className="px-4 py-3 text-ink-600">
                     {p.dueDate ? new Date(p.dueDate).toLocaleDateString('pt-BR') : '—'}
                   </td>
-                  <td className="px-4 py-3 font-medium">{money(p.amount)}</td>
-                  <td className="px-4 py-3">
+                  <td data-label="Valor" className="px-4 py-3 font-medium">{money(p.amount)}</td>
+                  <td data-label="Status" className="px-4 py-3">
                     <span
                       className={`rounded-full px-2 py-0.5 text-xs font-medium ${
                         p.status === 'Paid'
@@ -455,7 +396,7 @@ export function FinancePage() {
                       {p.status === 'Paid' ? 'Baixado' : 'Pendente'}
                     </span>
                   </td>
-                  <td className="px-4 py-3">
+                  <td data-label="Ações" className="px-4 py-3">
                     <div className="flex flex-wrap gap-1">
                       {p.status === 'Pending' && canManageAll && (
                         <Button size="sm" variant="secondary" onClick={() => setSettleId(p.id)}>

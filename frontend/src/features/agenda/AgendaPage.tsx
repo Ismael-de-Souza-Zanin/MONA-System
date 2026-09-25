@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useMemo, useState } from 'react'
-import { CalendarDays, ChevronLeft, ChevronRight, Plus } from 'lucide-react'
+import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { api } from '../../shared/api/client'
 import type { AgendaCategory, AgendaEvent } from '../../shared/types'
 import { Permissions } from '../../shared/permissions/constants'
@@ -11,9 +11,9 @@ import {
   Button,
   Card,
   EmptyState,
+  ErrorAlert,
   Input,
   LoadingSpinner,
-  MobileTip,
   Modal,
   PageHeader,
   Select,
@@ -44,28 +44,8 @@ function dayHeading(value: Date, today: Date) {
   return sameDay(value, today) ? `HOJE, ${date}` : date
 }
 
-function timeLabel(value?: string) {
-  if (!value) return ''
-  return new Date(value).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
-}
 
-function countdownLabel(value: string) {
-  const mins = Math.round((+new Date(value) - Date.now()) / 60000)
-  if (mins < 1) return 'Agora'
-  if (mins < 60) return `Em ${mins} min`
-  const hours = Math.floor(mins / 60)
-  const rest = mins % 60
-  if (hours < 24) return rest ? `Em ${hours} h ${rest} min` : `Em ${hours} h`
-  const days = Math.floor(hours / 24)
-  return `Em ${days} dia${days === 1 ? '' : 's'}`
-}
 
-function kindLabel(kind?: string) {
-  if (kind === 'Meeting') return 'Reunião'
-  if (kind === 'Block') return 'Bloqueio'
-  if (kind === 'Event') return 'Compromisso'
-  return kind || ''
-}
 
 export function AgendaPage() {
   const { user } = useAuth()
@@ -93,7 +73,7 @@ export function AgendaPage() {
   const [categoryForm, setCategoryForm] = useState({ name: '', color: '#006D69' })
 
   const displayTz = preferences?.effectiveTimeZoneId || preferences?.timeZoneId
-  const { data: events = [], isLoading } = useQuery({
+  const { data: events = [], isLoading, error: eventsError } = useQuery({
     queryKey: ['agenda-events', displayTz],
     queryFn: () =>
       api.get<AgendaEvent[]>(
@@ -157,11 +137,13 @@ export function AgendaPage() {
     onSuccess: () => void qc.invalidateQueries({ queryKey: ['agenda-categories'] }),
   })
 
+  const [showAllDays, setShowAllDays] = useState(true)
   const [selectedDay, setSelectedDay] = useState(() => new Date())
 
   if (isLoading) return <LoadingSpinner />
 
-  const groupedByDate = filteredEvents.reduce<Record<string, AgendaEvent[]>>((acc, e) => {
+  const visibleEvents = showAllDays ? filteredEvents : filteredEvents.filter((event) => isSameLocalDay(event.startAt, selectedDay))
+  const groupedByDate = visibleEvents.reduce<Record<string, AgendaEvent[]>>((acc, e) => {
     const date = new Date(e.startAt).toLocaleDateString('pt-BR')
     acc[date] = acc[date] || []
     acc[date].push(e)
@@ -175,101 +157,14 @@ export function AgendaPage() {
     day.setDate(day.getDate() - day.getDay() + i)
     return day
   })
-  const dayEvents = filteredEvents
-    .filter((event) => isSameLocalDay(event.startAt, selectedDay))
-    .sort((a, b) => +new Date(a.startAt) - +new Date(b.startAt))
-  const nextEvent = filteredEvents
-    .filter((event) => new Date(event.startAt) >= new Date())
-    .sort((a, b) => +new Date(a.startAt) - +new Date(b.startAt))[0]
 
   return (
     <div>
-      <div className="mona-mobile-only mona-m-stack">
-        <div className="mona-m-calhead">
-          <p className="mona-m-kicker">Sua agenda</p>
-          <div className="mona-m-calhead__row">
-            <h1 className="mona-m-calhead__month">{monthTitle(selectedDay)}</h1>
-            <div className="mona-m-calhead__nav">
-              <button type="button" aria-label="Semana anterior" onClick={() => setSelectedDay((day) => shiftDays(day, -7))}>
-                <ChevronLeft size={18} />
-              </button>
-              <button type="button" className="is-today" onClick={() => setSelectedDay(shiftDays(today, 0))}>
-                Hoje
-              </button>
-              <button type="button" aria-label="Próxima semana" onClick={() => setSelectedDay((day) => shiftDays(day, 7))}>
-                <ChevronRight size={18} />
-              </button>
-            </div>
-          </div>
-        </div>
-        <div className="mona-m-week">
-          {weekDays.map((day) => (
-            <button
-              key={day.toISOString()}
-              type="button"
-              className={sameDay(day, selectedDay) ? 'is-active' : ''}
-              onClick={() => setSelectedDay(day)}
-            >
-              {day.toLocaleDateString('pt-BR', { weekday: 'short' }).replace('.', '')}
-              <strong>{day.getDate()}</strong>
-            </button>
-          ))}
-        </div>
-        {nextEvent && (
-          <div className="mona-m-next">
-            <span className="mona-m-next__icon" aria-hidden>
-              <CalendarDays size={16} />
-            </span>
-            <div>
-              <p className="mona-m-kicker">Próxima reunião</p>
-              <strong>{nextEvent.clientName || nextEvent.title}</strong>
-              <p>
-                {nextEvent.categoryName || kindLabel(nextEvent.kind) || nextEvent.title} · {timeLabel(nextEvent.startAt)}
-              </p>
-            </div>
-            <em>{countdownLabel(nextEvent.startAt)}</em>
-          </div>
-        )}
-        <div className="mona-m-dayhead">
-          <h2>{dayHeading(selectedDay, today)}</h2>
-          <span>
-            {dayEvents.length} compromisso{dayEvents.length === 1 ? '' : 's'}
-          </span>
-        </div>
-        <div className="mona-m-list">
-          {dayEvents.map((event) => (
-            <div key={event.id} className="mona-m-event">
-              <time>
-                <b>{timeLabel(event.startAt)}</b>
-                {event.endAt ? <i>{timeLabel(event.endAt)}</i> : null}
-              </time>
-              <div>
-                <strong>{event.clientName || event.title}</strong>
-                <p>{event.clientName ? event.title : event.description || kindLabel(event.kind)}</p>
-                {event.description && event.clientName ? <p>{event.description}</p> : null}
-              </div>
-              <div className="mona-m-event__tags">
-                {kindLabel(event.kind) ? <span className="mona-m-badge">{kindLabel(event.kind)}</span> : null}
-                {event.categoryName && event.categoryName !== kindLabel(event.kind) ? (
-                  <span className="mona-m-badge">{event.categoryName}</span>
-                ) : null}
-              </div>
-            </div>
-          ))}
-          {dayEvents.length === 0 && <EmptyState title="Nenhum compromisso neste dia" />}
-        </div>
-        {canWrite && (
-          <button type="button" className="mona-m-fab" onClick={() => setShowEvent(true)} aria-label="Novo evento">
-            <Plus size={22} />
-          </button>
-        )}
-        <MobileTip>Mantenha sua agenda atualizada e proteja o seu dia.</MobileTip>
-      </div>
-
-      <div className="mona-desktop-only">
+      <div className="mona-responsive-content">
+      {eventsError && <ErrorAlert message={eventsError.message} />}
       <PageHeader
         title="Agenda"
-        subtitle={`Exibição no fuso efetivo: ${displayTz || 'America/Sao_Paulo'} (casa ou viagem). Eventos em UTC + fuso do cliente. Tarefas vinculadas são follow-ups, não o compromisso.`}
+        subtitle={`Compromissos, reuniões e próximos passos. Horários em ${displayTz || 'America/Sao_Paulo'}.`}
         actions={
           <div className="flex gap-2">
             {canWrite && (
@@ -302,6 +197,40 @@ export function AgendaPage() {
             {v.label}
           </button>
         ))}
+      </div>
+
+      <div className="mona-agenda-calendar mona-m-stack">
+        <div className="mona-m-calhead">
+          <p className="mona-m-kicker">Sua agenda</p>
+          <div className="mona-m-calhead__row">
+            <h1 className="mona-m-calhead__month">{monthTitle(selectedDay)}</h1>
+            <div className="mona-m-calhead__nav">
+              <button type="button" aria-label="Semana anterior" onClick={() => setSelectedDay((day) => shiftDays(day, -7))}>
+                <ChevronLeft size={18} />
+              </button>
+              <button type="button" className="is-today" onClick={() => setSelectedDay(shiftDays(today, 0))}>
+                Hoje
+              </button>
+              <button type="button" aria-label="Próxima semana" onClick={() => setSelectedDay((day) => shiftDays(day, 7))}>
+                <ChevronRight size={18} />
+              </button>
+            </div>
+          </div>
+        </div>
+        <div className="mona-m-week">
+          {weekDays.map((day) => (
+            <button
+              key={day.toISOString()}
+              type="button"
+              className={!showAllDays && sameDay(day, selectedDay) ? 'is-active' : ''}
+              aria-pressed={!showAllDays && sameDay(day, selectedDay)} onClick={() => { setSelectedDay(day); setShowAllDays(false) }}
+            >
+              {day.toLocaleDateString('pt-BR', { weekday: 'short' }).replace('.', '')}
+              <strong>{day.getDate()}</strong>
+            </button>
+          ))}
+        </div>
+        <div className="mona-m-dayhead"><h2>{showAllDays ? 'Todos os compromissos' : dayHeading(selectedDay, today)}</h2><Button size="sm" variant="ghost" onClick={() => setShowAllDays((value) => !value)}>{showAllDays ? 'Ver este dia' : 'Ver todos'}</Button></div>
       </div>
 
       {Object.keys(groupedByDate).length === 0 ? (

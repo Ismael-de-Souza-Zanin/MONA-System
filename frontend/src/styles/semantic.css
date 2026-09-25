@@ -3691,3 +3691,195 @@ img.mona-m-avatar {
     max-width: 28rem;
   }
 }
+
+/* Shared operational views: one set of data/actions at every viewport. */
+.mona-responsive-content { min-width: 0; }
+.mona-board {
+  display: grid;
+  gap: 1rem;
+  max-width: 100%;
+  overflow-x: auto;
+  align-items: start;
+  padding: 0.5rem 0.125rem 1rem;
+  scrollbar-width: thin;
+  scrollbar-color: var(--mona-color-border) transparent;
+}
+.mona-board__column {
+  min-width: 0;
+  padding: 0.75rem;
+  background: color-mix(in srgb, var(--mona-color-accent-soft) 45%, var(--mona-color-surface));
+  border: 1px solid var(--mona-color-border);
+  border-radius: var(--mona-radius-lg);
+  &.is-dragging { opacity: 0.55; }
+  & .mona-card { box-shadow: none; border-radius: var(--mona-radius-md); }
+}
+.mona-board__heading {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  min-height: 44px;
+  margin-bottom: 0.75rem;
+  & h3 { display: flex; align-items: center; gap: 0.5rem; flex: 1; min-width: 0; font-size: 0.875rem; font-weight: 700; overflow-wrap: anywhere; }
+}
+.mona-board__count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 24px;
+  padding: 0.125rem 0.4rem;
+  border-radius: var(--mona-radius-pill);
+  background: var(--mona-color-surface);
+  color: var(--mona-color-muted);
+  font-size: 0.75rem;
+}
+.mona-board__empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  min-height: 200px;
+  padding: 1.25rem;
+  text-align: center;
+  color: var(--mona-color-muted);
+  font-size: 0.8rem;
+  border: 1px dashed var(--mona-color-border);
+  border-radius: var(--mona-radius-md);
+  & strong { color: var(--mona-color-ink); font-weight: 600; }
+}
+.mona-board__hint { color: var(--mona-color-muted); font-size: 0.8125rem; line-height: 1.6; }
+.mona-task-filters { display: grid; gap: 0.625rem; margin-bottom: 1rem; }
+.mona-column-handle {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: var(--mona-radius-sm);
+  color: var(--mona-color-muted);
+  &[draggable="true"] { cursor: grab; }
+  &:hover:not(:disabled) { color: var(--mona-color-accent); background: var(--mona-color-accent-soft); }
+  &:disabled { opacity: 0.3; cursor: not-allowed; }
+  &.is-danger:hover:not(:disabled) { color: var(--mona-color-danger); background: var(--mona-color-danger-soft); }
+}
+.mona-column-editor { display: grid; gap: 1.25rem; }
+.mona-column-editor__list { display: grid; gap: 0.75rem; }
+.mona-column-editor__row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem;
+  border: 1px solid var(--mona-color-border);
+  border-radius: var(--mona-radius-md);
+  background: var(--mona-color-surface);
+  &.is-dragging { opacity: 0.5; }
+}
+.mona-column-editor__name {
+  min-width: 0;
+  flex: 1;
+  & > label { display: flex; flex-wrap: wrap; align-items: center; gap: 0.375rem; margin-bottom: 0.4rem; color: var(--mona-color-muted); font-size: 0.75rem; }
+  & .mona-field__control { border-radius: var(--mona-radius-sm); width: 100%; }
+}
+.mona-column-dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
+.mona-column-editor__done { display: inline-flex; align-items: center; gap: 0.2rem; color: var(--mona-color-success-ink); }
+.mona-column-editor__actions { display: flex; align-items: center; }
+.mona-column-editor__create {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  border-top: 1px solid var(--mona-color-border);
+  padding-top: 1.25rem;
+  & .mona-field { flex: 1; min-width: 0; }
+}
+.mona-modal { z-index: 100; overscroll-behavior: contain; }
+.mona-modal__dialog { display: flex; flex-direction: column; max-height: calc(100dvh - 2rem); outline: none; }
+.mona-modal__header { flex-shrink: 0; }
+.mona-modal__body { min-height: 0; overflow-y: auto; overscroll-behavior: contain; }
+body:has(.mona-modal) { overflow: hidden; }
+:is(button, a, input, select, textarea, summary):focus-visible { outline: 2px solid var(--mona-color-accent); outline-offset: 3px; }
+
+@media (max-width: 767px) {
+  .mona-shell.is-mobile .mona-canvas { height: calc(100dvh - 72px - env(safe-area-inset-bottom, 0px)); max-height: calc(100dvh - 72px - env(safe-area-inset-bottom, 0px)); }
+  .mona-shell.is-mobile .mona-canvas__main { padding-bottom: 1.5rem; }
+  .mona-shell.is-mobile .mona-page__header {
+    position: relative;
+    padding: 1.25rem 1rem;
+    border: 1px solid var(--mona-color-border);
+    border-radius: var(--mona-radius-lg);
+    background: radial-gradient(ellipse at 100% 0, color-mix(in srgb, var(--mona-color-pink) 9%, transparent), transparent 65%), var(--mona-color-surface);
+    &::before { content: ''; width: 32px; height: 4px; border-radius: var(--mona-radius-pill); background: var(--mona-gradient-brand); }
+  }
+  .mona-shell.is-mobile .mona-page__subtitle { font-size: 0.875rem; line-height: 1.6; }
+  .mona-shell.is-mobile .mona-page__actions { margin-top: 0.25rem; }
+  .mona-shell.is-mobile :is(.mona-btn, .mona-icon-btn, .mona-m-chip, .mona-modal__close) { min-height: 44px; }
+  .mona-shell.is-mobile .mona-field { min-width: 0; flex: 1 1 0; }
+  .mona-shell.is-mobile .mona-field__control, .mona-modal .mona-field__control { min-width: 0; width: 100%; font-size: 16px; }
+  .mona-shell.is-mobile .mona-responsive-content :is(.flex-wrap) > .mona-field { flex-basis: 100%; }
+  .mona-shell.is-mobile .mona-responsive-content > .grid:has(> .mona-card),
+  .mona-shell.is-mobile .mona-responsive-content > .grid:has(> a > .mona-card) { min-width: 0; }
+  .mona-shell.is-mobile .mona-responsive-content > .grid[class*="xl:grid-cols-4"],
+  .mona-shell.is-mobile .mona-responsive-content > .grid[class*="xl:grid-cols-5"] { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .mona-shell.is-mobile .mona-responsive-content .mona-card { min-width: 0; }
+  .mona-shell.is-mobile .mona-responsive-content .mona-card p { overflow-wrap: anywhere; }
+  .mona-shell.is-mobile .mona-responsive-content > .flex:has(> button) { flex-wrap: nowrap; overflow-x: auto; padding-bottom: 0.5rem; scrollbar-width: thin; }
+  .mona-shell.is-mobile .mona-responsive-content > .flex:has(> button) > button { flex-shrink: 0; min-height: 44px; }
+  .mona-shell.is-mobile .mona-board__column { padding: 0.75rem; }
+  .mona-shell.is-mobile .mona-board__empty { min-height: 150px; }
+  .mona-column-editor__row { flex-wrap: wrap; gap: 0.25rem; }
+  .mona-column-editor__name { flex-basis: calc(100% - 52px); }
+  .mona-column-editor__actions { width: 100%; justify-content: flex-end; }
+  .mona-column-editor__create { flex-wrap: wrap; }
+  .mona-column-editor__create > .mona-field { flex-basis: 100%; }
+  .mona-column-editor__create > .mona-btn { width: 100%; }
+  .mona-modal { align-items: flex-end; padding: 0; }
+  .mona-modal__dialog { width: 100%; max-width: 100%; max-height: calc(100dvh - 12px - env(safe-area-inset-top, 0px)); border-radius: 24px 24px 0 0; }
+  .mona-modal__header { padding: 1rem; }
+  .mona-modal__body { padding: 1rem 1rem calc(1rem + env(safe-area-inset-bottom, 0px)); }
+  .mona-modal__close { width: 44px; height: 44px; }
+  .mona-modal .mona-btn { min-height: 44px; }
+  .mona-shell.is-mobile div:has(> .mona-data-table) { overflow: visible; border: 0; background: transparent; }
+  .mona-shell.is-mobile .mona-data-table {
+    display: block;
+    min-width: 0;
+    width: 100%;
+    & thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+    & tbody { display: grid; gap: 0.875rem; }
+    & tbody tr { display: flex; flex-direction: column; padding: 0.75rem 1rem; border: 1px solid var(--mona-color-border); border-radius: var(--mona-radius-md); background: var(--mona-color-surface); }
+    & td { display: block; min-width: 0; width: 100%; padding: 0.5rem 0; white-space: normal; overflow-wrap: anywhere; border: 0; }
+    & td[data-label]::before { content: attr(data-label); display: block; margin-bottom: 0.25rem; color: var(--mona-color-muted); font-size: 0.7rem; font-weight: 600; letter-spacing: 0.025em; }
+    & td[data-label="Ações"] { border-top: 1px solid var(--mona-color-border); margin-top: 0.4rem; }
+    & td .relative { width: fit-content; margin-left: auto; }
+    & td button { min-height: 44px; }
+  }
+  .mona-m-apps, .mona-m-apps.is-4 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .mona-m-hero { background: radial-gradient(ellipse at 100% 0, color-mix(in srgb, var(--mona-color-pink) 12%, transparent), transparent 65%), var(--mona-color-surface); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .mona-shell *, .mona-modal * { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; scroll-behavior: auto !important; }
+}
+
+
+.mona-agenda-calendar { display: grid; gap: 0.75rem; margin-bottom: 1.25rem; }
+
+/* Keep the daily panels usable when the desktop rail moves above the workspace. */
+@media (min-width: 768px) and (max-width: 1023px) {
+  .mona-shell:not(.is-mobile) .mona-dock { flex-direction: column; gap: 8px; }
+  .mona-shell:not(.is-mobile) .mona-dock__stack {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    flex: none;
+    gap: 8px;
+    padding: 0;
+  }
+  .mona-shell:not(.is-mobile) .mona-stack__card {
+    min-width: 0;
+    height: 144px;
+    max-height: 144px;
+    margin: 0;
+    padding: 12px;
+    border-radius: 20px;
+  }
+  .mona-shell:not(.is-mobile) .mona-day__head { flex-shrink: 0; min-height: 32px; }
+  .mona-shell:not(.is-mobile) .mona-day__list { min-height: 0; overflow-y: auto; }
+}

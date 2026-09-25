@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
-import { Bell, Building2, HelpCircle, Link2, LogOut, Monitor, Palette, Shield, User, UserPlus } from 'lucide-react'
+import { Building2, Monitor, Palette, Shield, User, UserPlus } from 'lucide-react'
 import { AppearanceStudio } from '../../shared/theme/AppearanceStudio'
 import { api, getApiBase, setApiBaseOverride } from '../../shared/api/client'
 import { isDesktopApp } from '../../shared/desktop'
@@ -21,9 +21,6 @@ import {
   LoadingSpinner,
   Modal,
   PageHeader,
-  MobileAvatar,
-  MobileRow,
-  MobileTip,
   Select,
 } from '../../shared/ui'
 
@@ -31,8 +28,7 @@ type TabId = 'people' | 'access' | 'org' | 'user' | 'appearance' | 'desktop'
 
 export function SettingsPage() {
   const qc = useQueryClient()
-  const { user, logout } = useAuth()
-  const [mobileMenu, setMobileMenu] = useState(true)
+  const { user } = useAuth()
   const [searchParams, setSearchParams] = useSearchParams()
   const desktop = isDesktopApp()
 
@@ -165,82 +161,13 @@ export function SettingsPage() {
 
   if (orgLoading || profileLoading) return <LoadingSpinner />
 
-  const mobileItems = [
-    { id: 'user' as TabId, label: 'Conta', meta: 'Seus dados, perfil e preferências', icon: User },
-    { id: 'people' as TabId, label: 'Notificações', meta: 'Escolha o que você quer receber', icon: Bell, to: '/notificacoes' },
-    { id: 'org' as TabId, label: 'Integrações', meta: 'Conecte com outras ferramentas', icon: Link2, to: '/apps' },
-    { id: 'appearance' as TabId, label: 'Aparência', meta: 'Tema, cores e personalização', icon: Palette },
-    { id: 'access' as TabId, label: 'Segurança', meta: 'Senha, verificação e acesso', icon: Shield },
-    { id: 'org' as TabId, label: 'Ajuda', meta: 'Central de ajuda e suporte', icon: HelpCircle, to: '/faqs' },
-  ]
 
   return (
     <div>
-      <div className="mona-mobile-only mona-m-stack">
-        <div className="mona-m-profile">
-          <MobileAvatar name={user?.name} />
-          <div>
-            <strong>{user?.name || 'Seu perfil'}</strong>
-            <p>{user?.isOwner ? 'Administração' : user?.email || 'Equipe MONA'}</p>
-          </div>
-        </div>
-        <MobileTip
-          to="/configuracoes?tab=appearance"
-          onClick={() => {
-            setTab('appearance')
-            setMobileMenu(false)
-          }}
-        >
-          Personalize a experiência. Ajuste o tema para um dia a dia mais seu.
-        </MobileTip>
-        {mobileMenu ? (
-          <>
-            <div className="mona-m-list">
-              {mobileItems.map((item) =>
-                item.to ? (
-                  <MobileRow
-                    key={item.label}
-                    to={item.to}
-                    icon={<span className="mona-m-icon"><item.icon size={16} /></span>}
-                    title={item.label}
-                    meta={item.meta}
-                    trailing={<span>›</span>}
-                  />
-                ) : (
-                  <button
-                    key={item.label}
-                    type="button"
-                    className="mona-m-row"
-                    onClick={() => {
-                      setTab(item.id)
-                      setMobileMenu(false)
-                    }}
-                  >
-                    <span className="mona-m-icon">
-                      <item.icon size={16} />
-                    </span>
-                    <div className="mona-m-row__body">
-                      <strong>{item.label}</strong>
-                      <p>{item.meta}</p>
-                    </div>
-                    <span>›</span>
-                  </button>
-                ),
-              )}
-            </div>
-            <button type="button" className="mona-m-logout" onClick={() => void logout()}>
-              <LogOut size={16} />
-              Sair da conta
-            </button>
-          </>
-        ) : (
-          <button type="button" className="text-sm font-semibold text-ink-600" onClick={() => setMobileMenu(true)}>
-            ← Voltar ao perfil
-          </button>
-        )}
-      </div>
 
-      <div className={mobileMenu ? 'mona-desktop-only' : undefined}>
+
+
+      <div className="mona-responsive-content">
       <PageHeader
         title="Configurações"
         subtitle="Pessoas, permissões, empresa e aparência — ponto único para a Ju gerir a operação."
@@ -261,7 +188,8 @@ export function SettingsPage() {
         </Card>
       )}
 
-      <div className="mb-6 flex flex-wrap gap-2 border-b border-ink-100 pb-2">
+      <div className="mb-6 flex flex-wrap gap-2 border-b border-ink-100 pb-2 mona-responsive-content">
+
         {tabs.map((t) => {
           const Icon = t.icon
           return (
@@ -341,7 +269,7 @@ export function SettingsPage() {
             />
           ) : (
             <div className="overflow-hidden rounded-xl border border-ink-100 bg-surface">
-              <table className="w-full text-left text-sm">
+              <table className="mona-data-table w-full text-left text-sm">
                 <thead className="border-b border-ink-100 bg-ink-50/80">
                   <tr>
                     <th className="px-4 py-3 font-medium">Nome</th>
@@ -353,7 +281,7 @@ export function SettingsPage() {
                 <tbody>
                   {sharedUsers.map((su) => (
                     <tr key={su.id} className="border-b border-ink-50">
-                      <td className="px-4 py-3">
+                      <td data-label="Nome" className="px-4 py-3">
                         <span className="font-medium text-ink-900">{su.name}</span>
                         {su.isOwner && (
                           <span className="ml-2 rounded-full bg-brand-100 px-2 py-0.5 text-[11px] font-semibold text-brand-800">
@@ -364,9 +292,9 @@ export function SettingsPage() {
                           <span className="ml-1 text-[11px] text-ink-500">(você)</span>
                         )}
                       </td>
-                      <td className="px-4 py-3 font-mono text-xs text-ink-700">{su.email}</td>
-                      <td className="px-4 py-3">{su.accessTypeName || '—'}</td>
-                      <td className="px-4 py-3">
+                      <td data-label="E-mail / login" className="px-4 py-3 font-mono text-xs text-ink-700">{su.email}</td>
+                      <td data-label="Tipo" className="px-4 py-3">{su.accessTypeName || '—'}</td>
+                      <td data-label="Clientes" className="px-4 py-3">
                         {su.isOwner ? 'Todos' : `${su.assignedClientIds.length} atribuído(s)`}
                       </td>
                     </tr>

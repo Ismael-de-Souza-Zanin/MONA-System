@@ -2,19 +2,12 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { api } from '../../shared/api/client'
 import type { Client } from '../../shared/types'
-import { MessageCircle } from 'lucide-react'
 import {
   Button,
   Card,
   EmptyState,
   Input,
   LoadingSpinner,
-  MobileAvatar,
-  MobileChip,
-  MobileChips,
-  MobileHero,
-  MobileRow,
-  MobileTip,
   PageHeader,
   Select,
   Textarea,
@@ -34,7 +27,6 @@ export function WhatsAppPage() {
   const [body, setBody] = useState('')
   const [clientId, setClientId] = useState('')
   const [lastResult, setLastResult] = useState<string | null>(null)
-  const [waFilter, setWaFilter] = useState<'all' | 'unread' | 'clients'>('all')
 
   const { data: inbox = [], isLoading } = useQuery({
     queryKey: ['wa-inbox'],
@@ -64,64 +56,12 @@ export function WhatsAppPage() {
 
   if (isLoading) return <LoadingSpinner />
 
-  const visibleInbox =
-    waFilter === 'unread'
-      ? inbox.slice(0, Math.max(1, Math.ceil(inbox.length / 2)))
-      : inbox
 
   return (
     <div>
-      <div className="mona-mobile-only mona-m-stack">
-        <MobileHero
-          kicker="WhatsApp"
-          title="Converse, atenda e conquiste mais"
-          lead="Gerencie conversas, responda com agilidade e ofereça uma experiência melhor aos seus clientes."
-          cta={{ to: '/whatsapp', label: 'Abrir WhatsApp' }}
-          note="Conexões que geram oportunidades"
-        />
-        <MobileChips>
-          <MobileChip active={waFilter === 'all'} onClick={() => setWaFilter('all')}>
-            Todas ({inbox.length})
-          </MobileChip>
-          <MobileChip active={waFilter === 'unread'} onClick={() => setWaFilter('unread')}>
-            Não lidas
-          </MobileChip>
-          <MobileChip active={waFilter === 'clients'} onClick={() => setWaFilter('clients')}>
-            Clientes ({clients.length})
-          </MobileChip>
-        </MobileChips>
-        <div className="mona-m-list">
-          {visibleInbox.map((m) => (
-            <button
-              key={m.id}
-              type="button"
-              className="mona-m-row"
-              onClick={() => {
-                setTo(m.from)
-                setBody(`Re: ${m.body.slice(0, 40)}`)
-              }}
-            >
-              <MobileAvatar name={m.contactName || m.from} />
-              <div className="mona-m-row__body">
-                <strong>{m.contactName || m.from}</strong>
-                <p>{m.body}</p>
-              </div>
-              <span className="mona-m-badge">
-                {new Date(m.receivedAtUtc).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
-              </span>
-            </button>
-          ))}
-          {visibleInbox.length === 0 && <EmptyState title="Sem mensagens" />}
-        </div>
-        <MobileRow
-          icon={<span className="mona-m-icon"><MessageCircle size={16} /></span>}
-          title="Respostas rápidas"
-          meta="Use mensagens prontas e ganhe tempo no atendimento"
-        />
-        <MobileTip>Uma resposta rápida no WhatsApp evita um cliente esperando no escuro.</MobileTip>
-      </div>
 
-      <div className="mona-desktop-only">
+
+      <div className="mona-responsive-content">
       <PageHeader
         title="WhatsApp"
         subtitle="POC da linha Fatto (WhatsAppKit). Envio grava na outbox DevFile — Meta Cloud fica no próximo passo."

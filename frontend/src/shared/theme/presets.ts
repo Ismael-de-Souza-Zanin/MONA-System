@@ -210,8 +210,7 @@ export function hydrateAppearance(prefs: AppearancePrefs): AppearancePrefs {
     if (prefs.preset !== 'custom') chrome.tabStyle = 'pill'
   }
 
-  const branded = prefs.preset === 'fatto-light' || prefs.preset === 'fatto-dark' || prefs.preset === 'mona-ink'
-  if (branded) {
+  if (prefs.preset === 'fatto-light' || prefs.preset === 'fatto-dark' || prefs.preset === 'mona-ink') {
     const fresh = presetPrefs(prefs.preset)
     const oldFactory =
       OLD_NEON.has((prefs.colors?.accent || '').toLowerCase()) ||

@@ -5,7 +5,6 @@ import { api } from '../../shared/api/client'
 import type { Client, ClientStatus, ClientStatusChangeRequest, ClientStatusCounts } from '../../shared/types'
 import { Permissions } from '../../shared/permissions/constants'
 import { usePermissions } from '../../shared/permissions/hooks'
-import { ArrowRight, CalendarDays, MessageCircle, MoreHorizontal, UserPlus } from 'lucide-react'
 import {
   Button,
   Checkbox,
@@ -15,12 +14,6 @@ import {
   ErrorAlert,
   Input,
   LoadingSpinner,
-  MobileAvatar,
-  MobileChip,
-  MobileChips,
-  MobileHero,
-  MobileRow,
-  MobileTip,
   Modal,
   PageHeader,
   Select,
@@ -287,86 +280,12 @@ export function ClientsPage() {
 
   if (isLoading) return <LoadingSpinner />
 
-  const activeCount = counts?.active ?? clients.filter((c) => c.status === 'Active').length
-  const noticeCount = counts?.notice ?? clients.filter((c) => c.status === 'Notice').length
-  const holdCount = counts?.hold ?? clients.filter((c) => c.status === 'Hold').length
 
   return (
     <div className="min-w-0">
-      <div className="mona-mobile-only mona-m-stack">
-        <MobileHero
-          kicker="Seus clientes"
-          title="Relacionamentos que geram resultado"
-          lead="Acompanhe seus clientes, mantenha o atendimento em dia e impulsione o crescimento do seu negócio."
-          note="Clientes perto do sucesso"
-        />
-        <div className="mona-m-stats">
-          <div className="mona-m-stat is-purple">
-            <p>Clientes ativos</p>
-            <strong>{activeCount}</strong>
-            <span>{counts?.total ?? clients.length} no total</span>
-          </div>
-          <div className="mona-m-stat is-orange">
-            <p>Em follow-up</p>
-            <strong>{noticeCount + holdCount}</strong>
-            <span>aviso e hold</span>
-          </div>
-        </div>
-        <div className="mona-m-search">
-          <input
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Buscar cliente ou empresa..."
-          />
-        </div>
-        <MobileChips>
-          {STATUS_FILTERS.map((f) => (
-            <MobileChip key={f.value} active={statusFilter === f.value} onClick={() => setStatusFilter(f.value)}>
-              {f.label}
-              {counts && f.value !== 'all' ? ` (${counts[STATUS_COUNT_KEYS[f.value]] ?? 0})` : ` (${counts?.total ?? clients.length})`}
-            </MobileChip>
-          ))}
-        </MobileChips>
-        <div className="mona-m-list">
-          {filtered.map((client) => (
-            <MobileRow
-              key={client.id}
-              to={`/clientes/${client.id}`}
-              icon={<MobileAvatar name={client.name} />}
-              title={client.name}
-              meta={client.companyName || client.clientGroupName || 'Cliente'}
-              extra={
-                <p>
-                  <StatusDot status={client.status} /> {getStatusLabel(client.status)}
-                </p>
-              }
-              trailing={
-                <span className="flex items-center gap-2 text-ink-400">
-                  {client.phone ? <MessageCircle size={16} /> : null}
-                  <CalendarDays size={16} />
-                  <MoreHorizontal size={16} />
-                </span>
-              }
-            />
-          ))}
-          {filtered.length === 0 && <EmptyState title="Nenhum cliente encontrado" />}
-          {canWrite && (
-            <button type="button" className="mona-m-row" onClick={() => setShowAdd(true)}>
-              <span className="mona-m-icon">
-                <UserPlus size={16} />
-              </span>
-              <div className="mona-m-row__body">
-                <strong>Novo cliente</strong>
-                <p>Cadastre um novo cliente e amplie suas oportunidades</p>
-              </div>
-              <ArrowRight size={16} />
-            </button>
-          )}
-        </div>
-        <MobileTip>Um follow-up curto hoje evita um cliente perdido amanhã.</MobileTip>
-      </div>
 
-      <div className="mona-desktop-only">
+
+      <div className="mona-responsive-content">
       <PageHeader
         title="Clientes totais"
         subtitle={`${counts?.total ?? clients.length} clientes · agrupe como a equipe definir`}
@@ -433,7 +352,7 @@ export function ClientsPage() {
         <EmptyState title="Nenhum cliente encontrado" />
       ) : (
         <div className="overflow-hidden rounded-xl border border-sand-200 bg-white/90">
-          <table className="w-full text-left text-sm">
+          <table className="mona-data-table w-full text-left text-sm">
             <thead className="border-b border-sand-200 bg-sand-50/80">
               <tr>
                 <th className="px-4 py-3 font-medium text-teal-900">Status</th>
@@ -447,10 +366,10 @@ export function ClientsPage() {
             <tbody>
               {filtered.map((client) => (
                 <tr key={client.id} className="border-b border-sand-100 hover:bg-sand-50/50">
-                  <td className="px-4 py-3">
+                  <td data-label="Status" className="px-4 py-3">
                     <StatusDot status={client.status} />
                   </td>
-                  <td className="px-4 py-3">
+                  <td data-label="Nome" className="px-4 py-3">
                     <Link to={`/clientes/${client.id}`} className="font-medium text-teal-900 hover:underline">
                       {client.name}
                     </Link>
@@ -462,7 +381,7 @@ export function ClientsPage() {
                       )}
                     </div>
                   </td>
-                  <td className="px-4 py-3 text-teal-700">
+                  <td data-label="Grupo" className="px-4 py-3 text-teal-700">
                     {client.clientGroupName ? (
                       <span className="inline-flex items-center gap-1.5">
                         <span
@@ -475,9 +394,9 @@ export function ClientsPage() {
                       '—'
                     )}
                   </td>
-                  <td className="px-4 py-3 text-teal-700">{client.phone || '—'}</td>
-                  <td className="px-4 py-3 text-teal-700">{client.companyName || '—'}</td>
-                  <td className="px-4 py-3">
+                  <td data-label="Telefone" className="px-4 py-3 text-teal-700">{client.phone || '—'}</td>
+                  <td data-label="Empresa" className="px-4 py-3 text-teal-700">{client.companyName || '—'}</td>
+                  <td data-label="Ações" className="px-4 py-3">
                     {canWrite && (
                       <DropdownMenu trigger={<span className="text-lg">⋯</span>}>
                         <DropdownItem onClick={() => setStatusClient(client)}>

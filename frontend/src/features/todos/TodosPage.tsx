@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useMemo, useState } from 'react'
-import { Check, ChevronDown, ChevronRight, Clock3, Pencil, Plus, ShieldCheck, Trash2 } from 'lucide-react'
+import { ArrowDown, ArrowUp, GripVertical, Check, ChevronDown, ChevronRight, Clock3, Pencil, Plus, ShieldCheck, Trash2 } from 'lucide-react'
 import { api } from '../../shared/api/client'
 import type { TodoItem } from '../../shared/types'
 import { Permissions } from '../../shared/permissions/constants'
@@ -9,13 +9,11 @@ import { useAuth } from '../../shared/auth/AuthContext'
 import {
   Button,
   Card,
-  EmptyState,
+  ErrorAlert,
   Input,
   LoadingSpinner,
   MobileChip,
   MobileChips,
-  MobileHero,
-  MobileTip,
   Modal,
   PageHeader,
   Select,
@@ -97,7 +95,11 @@ function TodoCard({
   onToggleDone,
   onAddComment,
   onSchedule,
+  canWrite,
+  busy,
 }: {
+  canWrite: boolean
+  busy: boolean
   todo: TodoItem
   columns: BoardColumn[]
   onMove: (id: string, boardColumnId: string) => void
@@ -119,6 +121,7 @@ function TodoCard({
               id={`todo-check-${todo.id}`}
               type="checkbox"
               checked={checked}
+              disabled={!canWrite || busy}
               onChange={(event) => onToggleDone(todo, event.target.checked)}
             />
             <label htmlFor={`todo-check-${todo.id}`} className="font-medium">
@@ -188,7 +191,7 @@ function TodoCard({
           </dl>
           {todo.comments?.length > 0 && (
             <div className="mt-3 space-y-2">
-              {todo.comments.slice(-2).map((comment) => (
+              {todo.comments.map((comment) => (
                 <div key={comment.id} className="rounded-lg border border-ink-100 px-2.5 py-2">
                   <p className="text-xs font-semibold text-ink-800">{comment.authorName}</p>
                   <p className="mt-0.5 text-xs text-ink-600">{comment.content}</p>
@@ -201,6 +204,8 @@ function TodoCard({
 
       <div className="mt-3 flex flex-wrap gap-1">
         <Select
+          aria-label={`Mover ${todo.title} para coluna`}
+          disabled={!canWrite || busy}
           value={todo.boardColumnId || ''}
           onChange={(e) => onMove(todo.id, e.target.value)}
           className="text-xs"
@@ -211,11 +216,11 @@ function TodoCard({
             </option>
           ))}
         </Select>
-        <Button size="sm" variant="ghost" onClick={() => onAddComment(todo)}>
+        <Button size="sm" variant="ghost" disabled={!canWrite || busy} onClick={() => onAddComment(todo)}>
           Comentar
         </Button>
         {!todo.agendaEventId && (
-          <Button size="sm" variant="ghost" onClick={() => onSchedule(todo)}>
+          <Button size="sm" variant="ghost" disabled={!canWrite || busy} onClick={() => onSchedule(todo)}>
             Agendar
           </Button>
         )}
@@ -235,6 +240,8 @@ export function TodosPage() {
   const [mobileScope, setMobileScope] = useState<'today' | 'week' | 'all'>('all')
   const [showAdd, setShowAdd] = useState(false)
   const [showColumns, setShowColumns] = useState(false)
+  const [dragColumn, setDragColumn] = useState<string | null>(null)
+  const [orderMessage, setOrderMessage] = useState('')
   const [newColName, setNewColName] = useState('')
   const [commentTodo, setCommentTodo] = useState<TodoItem | null>(null)
   const [commentText, setCommentText] = useState('')
@@ -252,12 +259,12 @@ export function TodosPage() {
     boardColumnId: '',
   })
 
-  const { data: columns = [], isLoading: loadingCols } = useQuery({
+  const { data: columns = [], isLoading: loadingCols, error: columnsError } = useQuery({
     queryKey: ['todo-columns'],
     queryFn: () => api.get<BoardColumn[]>('/todo-board/columns'),
   })
 
-  const { data: todos = [], isLoading } = useQuery({
+  const { data: todos = [], isLoading, error: todosError } = useQuery({
     queryKey: ['todos', ownerFilter],
     queryFn: () =>
       api.get<TodoItem[]>(
@@ -360,6 +367,32 @@ export function TodosPage() {
     },
   })
 
+  const reorderColumns = useMutation({
+    mutationFn: (next: BoardColumn[]) => api.post('/todo-board/columns/reorder', { ids: next.map((column) => column.id) }),
+    onMutate: async (next) => {
+      await qc.cancelQueries({ queryKey: ['todo-columns'] })
+      const previous = qc.getQueryData<BoardColumn[]>(['todo-columns'])
+      qc.setQueryData(['todo-columns'], next.map((column, sortOrder) => ({ ...column, sortOrder })))
+      setOrderMessage('Salvando ordem…')
+      return { previous }
+    },
+    onError: (_error, _next, context) => {
+      if (context?.previous) qc.setQueryData(['todo-columns'], context.previous)
+      setOrderMessage('Não foi possível salvar. A ordem anterior foi restaurada.')
+    },
+    onSuccess: () => setOrderMessage('Ordem das colunas salva.'),
+    onSettled: () => qc.invalidateQueries({ queryKey: ['todo-columns'] }),
+  })
+  const columnsBusy = reorderColumns.isPending || createColumn.isPending || renameColumn.isPending || deleteColumn.isPending
+  function reorderTo(id: string, index: number) {
+    if (!canWrite || columnsBusy || index < 0 || index >= columns.length) return
+    const from = columns.findIndex((column) => column.id === id)
+    if (from < 0 || from === index) return
+    const next = [...columns]
+    next.splice(index, 0, next.splice(from, 1)[0])
+    reorderColumns.mutate(next)
+  }
+
   const scheduleMutation = useMutation({
     mutationFn: () =>
       api.post(`/todos/${scheduleTodo!.id}/schedule`, {
@@ -388,18 +421,6 @@ export function TodosPage() {
     },
   })
 
-  const grouped = useMemo(() => {
-    const map = new Map<string, TodoItem[]>()
-    for (const c of columns) map.set(c.id, [])
-    const fallback = columns[0]?.id
-    for (const t of todos) {
-      const key = t.boardColumnId && map.has(t.boardColumnId) ? t.boardColumnId : fallback
-      if (!key) continue
-      map.get(key)!.push(t)
-    }
-    return map
-  }, [todos, columns])
-
   const overdueCount = todos.filter((t) => t.isOverdue).length
   const todayTodos = todos.filter((t) => isSameLocalDay(t.dueAtLocal) || isSameLocalDay(t.dueAtUtc))
   const weekTodos = todos.filter((t) => {
@@ -415,95 +436,25 @@ export function TodosPage() {
     return date >= start && date < end
   })
   const mobileTodos = mobileScope === 'today' ? todayTodos : mobileScope === 'week' ? weekTodos : todos
-  const featured = mobileTodos.find((t) => t.status !== 'Done') || todos.find((t) => t.status !== 'Done')
+
+  const grouped = useMemo(() => {
+    const map = new Map<string, TodoItem[]>()
+    for (const c of columns) map.set(c.id, [])
+    const fallback = columns[0]?.id
+    for (const t of mobileTodos) {
+      const key = t.boardColumnId && map.has(t.boardColumnId) ? t.boardColumnId : fallback
+      if (!key) continue
+      map.get(key)!.push(t)
+    }
+    return map
+  }, [mobileTodos, columns])
 
   if (isLoading || loadingCols) return <LoadingSpinner />
 
   return (
     <div className="min-w-0">
-      <div className="mona-mobile-only mona-m-stack">
-        <MobileHero
-          kicker="Tarefas"
-          title="Organize hoje e um amanhã mais leve"
-          lead="Acompanhe suas tarefas, prazos e o que ainda precisa de você."
-          note="Disciplina também libera"
-        />
-        <MobileChips>
-          <MobileChip active={mobileScope === 'today'} onClick={() => setMobileScope('today')}>
-            Hoje ({todayTodos.length})
-          </MobileChip>
-          <MobileChip active={mobileScope === 'week'} onClick={() => setMobileScope('week')}>
-            Semana ({weekTodos.length})
-          </MobileChip>
-          <MobileChip active={mobileScope === 'all'} onClick={() => setMobileScope('all')}>
-            Todas ({todos.length})
-          </MobileChip>
-        </MobileChips>
-        {featured && (
-          <div className="mona-m-hero">
-            <p className="mona-m-kicker">Tarefa em destaque</p>
-            <h2 className="mona-m-title" style={{ fontSize: '1.2rem' }}>{featured.title}</h2>
-            <p className="mona-m-lead">
-              {featured.clientName || 'Sem cliente'}
-              {featured.dueAtLocal
-                ? ` · ${new Date(featured.dueAtLocal).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })}`
-                : ''}
-            </p>
-            {canWrite && (
-              <button type="button" className="mona-m-cta" onClick={() => setShowAdd(true)}>
-                Continuar tarefa
-              </button>
-            )}
-          </div>
-        )}
-        <div className="mona-m-list">
-          {mobileTodos.map((todo) => {
-            const done = todo.status === 'Done'
-            return (
-              <div key={todo.id} className="mona-m-row">
-                <button
-                  type="button"
-                  className={`mona-m-check${done ? ' is-on' : ''}`}
-                  onClick={() => {
-                    if (!canWrite) return
-                    const completeColumn = columns.find((column) => column.marksComplete)
-                    const openColumn = columns.find((column) => !column.marksComplete)
-                    if (!done) {
-                      if (completeColumn) moveMutation.mutate({ id: todo.id, boardColumnId: completeColumn.id })
-                      else completeMutation.mutate(todo.id)
-                      return
-                    }
-                    if (openColumn) moveMutation.mutate({ id: todo.id, boardColumnId: openColumn.id })
-                    else reopenMutation.mutate(todo.id)
-                  }}
-                >
-                  <Check size={12} />
-                </button>
-                <div className="mona-m-row__body">
-                  <strong>{todo.title}</strong>
-                  <p>{todo.clientName || 'Geral'} · {todo.priority || 'Normal'}</p>
-                </div>
-                <span className="mona-m-badge">
-                  {isSameLocalDay(todo.dueAtLocal)
-                    ? 'Hoje'
-                    : todo.dueAtLocal
-                      ? new Date(todo.dueAtLocal).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })
-                      : 'sem prazo'}
-                </span>
-              </div>
-            )
-          })}
-          {mobileTodos.length === 0 && <EmptyState title="Nenhuma tarefa neste recorte" />}
-        </div>
-        {canWrite && (
-          <button type="button" className="mona-m-fab" onClick={() => setShowAdd(true)} aria-label="Nova tarefa">
-            <Plus size={22} />
-          </button>
-        )}
-        <MobileTip>Menos tarefas abertas, mais conclusão visível no fim do dia.</MobileTip>
-      </div>
-
-      <div className="mona-desktop-only">
+      {reorderColumns.error && !showColumns && <ErrorAlert message={reorderColumns.error.message} />}
+      <div className="mona-tasks">
       <PageHeader
         title="Tarefas e demandas"
         subtitle="Quadro editável da equipe — prazos geram alertas; vincule cliente e agenda quando fizer sentido."
@@ -514,11 +465,22 @@ export function TodosPage() {
                 <Pencil size={14} /> Colunas
               </Button>
             )}
-            {canWrite && <Button onClick={() => setShowAdd(true)}>Nova task</Button>}
+            {canWrite && <Button onClick={() => setShowAdd(true)}>Nova tarefa</Button>}
           </div>
         }
       />
 
+      {(todosError || columnsError || moveMutation.error || completeMutation.error || reopenMutation.error) && (
+        <ErrorAlert message={(todosError || columnsError || moveMutation.error || completeMutation.error || reopenMutation.error)!.message} />
+      )}
+      <div className="mona-task-filters">
+        <MobileChips>
+          <MobileChip active={mobileScope === 'all'} onClick={() => setMobileScope('all')}>Todas ({todos.length})</MobileChip>
+          <MobileChip active={mobileScope === 'today'} onClick={() => setMobileScope('today')}>Hoje ({todayTodos.length})</MobileChip>
+          <MobileChip active={mobileScope === 'week'} onClick={() => setMobileScope('week')}>Semana ({weekTodos.length})</MobileChip>
+        </MobileChips>
+        <p className="mona-board__hint">Organize seu fluxo em colunas. Abra um cartão para ver o contexto.</p>
+      </div>
       {overdueCount > 0 && (
         <div className="mb-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
           {overdueCount} tarefa(s) atrasada(s) — também aparecem em Alertas.
@@ -544,27 +506,38 @@ export function TodosPage() {
       )}
 
       <div
-        className="mona-board grid gap-4"
+        className="mona-board"
         style={{
-          gridTemplateColumns: `repeat(${Math.max(columns.length, 1)}, minmax(220px, 1fr))`,
+          gridTemplateColumns: `repeat(${Math.max(columns.length, 1)}, minmax(260px, 1fr))`,
         }}
       >
-        {columns.map((col) => {
+        {columns.map((col, columnIndex) => {
           const items = grouped.get(col.id) || []
           return (
-            <div key={col.id} className="min-w-0">
-              <h3 className="mb-3 flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-ink-700">
+            <section key={col.id} className={`mona-board__column${dragColumn === col.id ? ' is-dragging' : ''}`}
+              onDragOver={(event) => { if (dragColumn && !columnsBusy) event.preventDefault() }}
+              onDrop={(event) => { event.preventDefault(); if (dragColumn) reorderTo(dragColumn, columnIndex); setDragColumn(null) }}>
+              <header className="mona-board__heading">
+              {canWrite && <button type="button" className="mona-column-handle" draggable={!columnsBusy}
+                aria-label={`Reorganizar ${col.name}`} title="Arraste ou use Colunas para reorganizar"
+                onDragStart={(event) => { event.dataTransfer.setData('text/plain', col.id); setDragColumn(col.id) }}
+                onDragEnd={() => setDragColumn(null)} onClick={() => setShowColumns(true)}><GripVertical size={16} /></button>}
+              <h3>
                 <span className="h-2.5 w-2.5 rounded-full" style={{ background: col.color }} />
-                {col.name} ({items.length})
+                {col.name} <span className="mona-board__count">{items.length}</span>
               </h3>
+              {canWrite && <button type="button" className="mona-column-handle" aria-label={`Nova tarefa em ${col.name}`} onClick={() => { setForm({ ...form, boardColumnId: col.id }); setShowAdd(true) }}><Plus size={16} /></button>}
+              </header>
               <div className="min-h-[200px] space-y-3">
                 {items.length === 0 ? (
-                  <EmptyState title="Vazio" />
+                  <div className="mona-board__empty"><Check size={22} /><strong>Espaço para o próximo passo</strong><p>As tarefas desta etapa aparecem aqui.</p>{canWrite && <Button size="sm" variant="ghost" onClick={() => { setForm({ ...form, boardColumnId: col.id }); setShowAdd(true) }}>Adicionar tarefa</Button>}</div>
                 ) : (
                   items.map((todo) => (
                     <TodoCard
                       key={todo.id}
                       todo={todo}
+                      canWrite={canWrite}
+                      busy={moveMutation.isPending || completeMutation.isPending || reopenMutation.isPending}
                       columns={columns}
                       onMove={(id, boardColumnId) => moveMutation.mutate({ id, boardColumnId })}
                       onToggleDone={(item, done) => {
@@ -584,14 +557,15 @@ export function TodosPage() {
                   ))
                 )}
               </div>
-            </div>
+            </section>
           )
         })}
       </div>
       </div>
 
-      <Modal open={showAdd} onClose={() => setShowAdd(false)} title="Nova task">
+      <Modal open={showAdd} onClose={() => setShowAdd(false)} title="Nova tarefa">
         <div className="space-y-4">
+          {createMutation.error && <ErrorAlert message={createMutation.error.message} />}
           <Input label="Título" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} />
           <Textarea
             label="Descrição"
@@ -656,7 +630,7 @@ export function TodosPage() {
             <Button variant="secondary" onClick={() => setShowAdd(false)}>
               Cancelar
             </Button>
-            <Button disabled={!form.title} onClick={() => createMutation.mutate()}>
+            <Button disabled={!form.title.trim() || createMutation.isPending} onClick={() => createMutation.mutate()}>
               Salvar
             </Button>
           </div>
@@ -664,59 +638,40 @@ export function TodosPage() {
       </Modal>
 
       <Modal open={showColumns} onClose={() => setShowColumns(false)} title="Editar colunas do quadro">
-        <div className="space-y-4">
-          <ul className="space-y-2">
-            {columns.map((c) => (
-              <li
-                key={c.id}
-                className="flex items-center gap-2 rounded-xl border border-ink-100 px-3 py-2"
-              >
-                <span className="h-3 w-3 shrink-0 rounded-full" style={{ background: c.color }} />
-                <Input
-                  className="flex-1"
-                  defaultValue={c.name}
-                  onBlur={(e) => {
-                    const name = e.target.value.trim()
-                    if (name && name !== c.name) renameColumn.mutate({ id: c.id, name })
-                  }}
-                />
-                {c.marksComplete && (
-                  <span className="text-[10px] uppercase text-emerald-700">conclui</span>
-                )}
-                <button
-                  type="button"
-                  className="rounded p-1 text-ink-400 hover:text-red-600"
-                  title="Remover coluna"
-                  onClick={() => {
-                    if (columns.length <= 1) return
-                    if (confirm(`Remover coluna "${c.name}"? Cards vão para a primeira coluna.`))
-                      deleteColumn.mutate(c.id)
-                  }}
-                >
-                  <Trash2 size={14} />
-                </button>
+        <div className="mona-column-editor">
+          <p className="mona-board__hint">Defina a sequência do seu trabalho. Arraste pelo puxador ou use as setas para mover cada etapa.</p>
+          {(createColumn.error || renameColumn.error || deleteColumn.error || reorderColumns.error) && <ErrorAlert message={(createColumn.error || renameColumn.error || deleteColumn.error || reorderColumns.error)!.message} />}
+          <ol className="mona-column-editor__list">
+            {columns.map((c, index) => (
+              <li key={c.id} className={`mona-column-editor__row${dragColumn === c.id ? ' is-dragging' : ''}`}
+                onDragOver={(event) => { if (dragColumn && !columnsBusy) event.preventDefault() }}
+                onDrop={(event) => { event.preventDefault(); if (dragColumn) reorderTo(dragColumn, index); setDragColumn(null) }}>
+                <span className="mona-column-handle" draggable={!columnsBusy} title="Arraste para reorganizar"
+                  onDragStart={(event) => { event.dataTransfer.setData('text/plain', c.id); setDragColumn(c.id) }} onDragEnd={() => setDragColumn(null)}><GripVertical size={18} /></span>
+                <div className="mona-column-editor__name">
+                  <label htmlFor={`column-${c.id}`}><span className="mona-column-dot" style={{ background: c.color }} />Etapa {index + 1}{c.marksComplete && <span className="mona-column-editor__done"><Check size={12} /> Conclui tarefas</span>}</label>
+                  <Input id={`column-${c.id}`} aria-label={`Nome da coluna ${c.name}`} disabled={columnsBusy} defaultValue={c.name}
+                    onBlur={(event) => { const name = event.target.value.trim(); if (name && name !== c.name) renameColumn.mutate({ id: c.id, name }); else event.target.value = c.name }} />
+                </div>
+                <div className="mona-column-editor__actions">
+                  <button type="button" className="mona-column-handle" disabled={columnsBusy || index === 0} aria-label={`Mover ${c.name} para cima`} onClick={() => reorderTo(c.id, index - 1)}><ArrowUp size={16} /></button>
+                  <button type="button" className="mona-column-handle" disabled={columnsBusy || index === columns.length - 1} aria-label={`Mover ${c.name} para baixo`} onClick={() => reorderTo(c.id, index + 1)}><ArrowDown size={16} /></button>
+                  <button type="button" className="mona-column-handle is-danger" disabled={columnsBusy || columns.length <= 1} aria-label={`Remover coluna ${c.name}`} onClick={() => { if (confirm(`Remover coluna "${c.name}"? As tarefas serão movidas para a primeira coluna restante.`)) deleteColumn.mutate(c.id) }}><Trash2 size={16} /></button>
+                </div>
               </li>
             ))}
-          </ul>
-          <div className="flex gap-2">
-            <Input
-              placeholder="Nova coluna…"
-              value={newColName}
-              onChange={(e) => setNewColName(e.target.value)}
-            />
-            <Button
-              size="sm"
-              disabled={!newColName.trim()}
-              onClick={() => createColumn.mutate()}
-            >
-              <Plus size={14} /> Criar
-            </Button>
+          </ol>
+          <div className="mona-column-editor__create">
+            <Input aria-label="Nome da nova coluna" placeholder="Nome da nova etapa" value={newColName} onChange={(event) => setNewColName(event.target.value)} />
+            <Button disabled={!newColName.trim() || columnsBusy} onClick={() => createColumn.mutate()}><Plus size={16} /> Criar coluna</Button>
           </div>
+          <p className="mona-board__hint" role="status">{orderMessage || 'As alterações são salvas automaticamente.'}</p>
         </div>
       </Modal>
 
       <Modal open={!!scheduleTodo} onClose={() => setScheduleTodo(null)} title="Criar evento na agenda">
         <div className="space-y-4">
+          {scheduleMutation.error && <ErrorAlert message={scheduleMutation.error.message} />}
           <p className="text-sm text-ink-600">
             Mantém a tarefa e cria um compromisso vinculado (contextos distintos, mesmo cliente).
           </p>
@@ -730,7 +685,7 @@ export function TodosPage() {
             <Button variant="secondary" onClick={() => setScheduleTodo(null)}>
               Cancelar
             </Button>
-            <Button disabled={!scheduleAt} onClick={() => scheduleMutation.mutate()}>
+            <Button disabled={!scheduleAt || scheduleMutation.isPending} onClick={() => scheduleMutation.mutate()}>
               Agendar
             </Button>
           </div>
@@ -739,6 +694,7 @@ export function TodosPage() {
 
       <Modal open={!!commentTodo} onClose={() => setCommentTodo(null)} title="Adicionar comentário">
         <div className="space-y-4">
+          {commentMutation.error && <ErrorAlert message={commentMutation.error.message} />}
           <Textarea
             label="Comentário"
             value={commentText}
@@ -756,7 +712,7 @@ export function TodosPage() {
             <Button variant="secondary" onClick={() => setCommentTodo(null)}>
               Cancelar
             </Button>
-            <Button disabled={!commentText} onClick={() => commentMutation.mutate()}>
+            <Button disabled={!commentText.trim() || commentMutation.isPending} onClick={() => commentMutation.mutate()}>
               Enviar
             </Button>
           </div>

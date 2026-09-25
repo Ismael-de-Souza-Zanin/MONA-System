@@ -11,11 +11,7 @@ import {
   FileText,
   KeyRound,
   Link2,
-  Mail,
-  MessageCircle,
-  MoreHorizontal,
   Pencil,
-  Phone,
   Plus,
   Trash2,
   Wallet,
@@ -48,10 +44,6 @@ import {
   Modal,
   PageHeader,
   Select,
-  MobileAvatar,
-  MobileProgress,
-  MobileRow,
-  MobileTip,
   StatusBadge,
   Textarea,
 } from '../../shared/ui'
@@ -645,10 +637,6 @@ export function ClientDetailPage() {
   if (isLoading) return <LoadingSpinner />
   if (!client) return <EmptyState title="Cliente não encontrado" />
 
-  const openTodos = (client.todos || client.openTodos || []).filter((t) => t.status !== 'Done').slice(0, 3)
-  const nextMeetings = (client.agenda || []).slice(0, 2)
-  const docs = (client.contracts || []).slice(0, 3)
-  const relation = client.onboardingCompleted ? 80 : client.status === 'Active' ? 72 : 45
   const loginOnlyCandidates = canSettings
     ? sharedUsers.filter(
         (u) =>
@@ -660,106 +648,12 @@ export function ClientDetailPage() {
       )
     : []
 
+
   return (
     <div>
-      <div className="mona-mobile-only mona-m-stack">
-        <Link to="/clientes" className="text-sm font-semibold text-ink-600">← Clientes</Link>
-        <div className="mona-m-profile">
-          <MobileAvatar name={client.name} />
-          <div>
-            <strong>{client.name}</strong>
-            <p>{client.companyName || client.segment || 'Cliente MONA'}</p>
-            <p className="mt-1"><StatusBadge status={client.status} /></p>
-          </div>
-        </div>
-        {client.additionalNotes ? (
-          <p className="text-sm italic text-ink-500">“{client.additionalNotes}”</p>
-        ) : null}
-        <div className="mona-m-actions">
-          {client.phone ? (
-            <a href={`tel:${client.phone}`}>
-              <span><Phone size={16} /></span>
-              Ligar
-            </a>
-          ) : (
-            <span>
-              <span><Phone size={16} /></span>
-              Ligar
-            </span>
-          )}
-          {client.email ? (
-            <a href={`mailto:${client.email}`}>
-              <span><Mail size={16} /></span>
-              E-mail
-            </a>
-          ) : (
-            <span>
-              <span><Mail size={16} /></span>
-              E-mail
-            </span>
-          )}
-          {client.phone ? (
-            <a href={`https://wa.me/${client.phone.replace(/\D/g, '')}`} target="_blank" rel="noreferrer">
-              <span><MessageCircle size={16} /></span>
-              WhatsApp
-            </a>
-          ) : (
-            <span>
-              <span><MessageCircle size={16} /></span>
-              WhatsApp
-            </span>
-          )}
-          <button type="button" onClick={() => setShowEdit(true)}>
-            <span><MoreHorizontal size={16} /></span>
-            Mais
-          </button>
-        </div>
-        <div className="mona-m-row">
-          <div className="mona-m-row__body">
-            <strong>Relacionamento</strong>
-            <p>Cliente {client.status === 'Active' ? 'ativo' : 'em acompanhamento'}</p>
-            <MobileProgress value={relation} />
-          </div>
-          <span className="mona-m-badge">{relation}%</span>
-        </div>
-        <div className="grid grid-cols-2 gap-2">
-          <div className="mona-m-stat is-purple">
-            <p><CheckSquare size={14} /> Tarefas em aberto</p>
-            <strong>{openTodos.length}</strong>
-            <span>pendentes</span>
-          </div>
-          <div className="mona-m-stat is-orange">
-            <p><CalendarDays size={14} /> Próximas reuniões</p>
-            <strong>{nextMeetings.length}</strong>
-            <span>na agenda</span>
-          </div>
-        </div>
-        <div className="mona-m-list">
-          {openTodos.map((todo) => (
-            <MobileRow key={todo.id} to="/todos" title={todo.title} meta="Tarefa" />
-          ))}
-          {nextMeetings.map((event) => (
-            <MobileRow
-              key={event.id}
-              to="/agenda"
-              title={event.title}
-              meta={new Date(event.startAt).toLocaleString('pt-BR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
-            />
-          ))}
-          {docs.map((doc) => (
-            <MobileRow
-              key={doc.id}
-              to="/contratos"
-              icon={<span className="mona-m-icon"><FileText size={15} /></span>}
-              title={doc.name}
-              meta={doc.status}
-            />
-          ))}
-        </div>
-        <MobileTip>Anote o que o cliente prefere e volte no próximo contato com contexto.</MobileTip>
-      </div>
 
-      <div className="mona-desktop-only mb-4 hidden text-sm text-ink-500 md:block">
+
+      <div className="mona-responsive-content mb-4 hidden text-sm text-ink-500 md:block">
         <Link to="/" className="hover:text-brand-800">Dashboard</Link>
         <span className="mx-1.5">›</span>
         <Link to="/clientes" className="hover:text-brand-800">Clientes</Link>
@@ -767,7 +661,7 @@ export function ClientDetailPage() {
         <span className="text-ink-900">{client.name}</span>
       </div>
 
-      <div className="mona-desktop-only">
+      <div className="mona-responsive-content">
       <PageHeader
         title={client.companyName ? `${client.name} – ${client.companyName}` : client.name}
         subtitle="Central do cliente: dados, acessos, financeiro e operações"
@@ -784,7 +678,7 @@ export function ClientDetailPage() {
       />
       </div>
 
-      <Card className="mb-5 mona-desktop-only">
+      <Card className="mb-5 mona-responsive-content">
         <div className="flex flex-wrap items-start gap-4">
           <div className="flex h-14 w-14 items-center justify-center rounded-full bg-brand-100 text-lg font-bold text-brand-900">
             {initials(client.name)}
@@ -1245,7 +1139,7 @@ export function ClientDetailPage() {
           </div>
           {client.credentials?.length ? (
             <div className="overflow-x-auto">
-              <table className="w-full text-left text-sm">
+              <table className="mona-data-table w-full text-left text-sm">
                 <thead>
                   <tr className="border-b border-ink-100 text-ink-500">
                     <th className="px-2 py-2 font-medium">App</th>
@@ -1257,9 +1151,9 @@ export function ClientDetailPage() {
                 <tbody>
                   {client.credentials.map((c) => (
                     <tr key={c.id} className="border-b border-ink-50">
-                      <td className="px-2 py-3 font-medium text-ink-900">{c.appName}</td>
-                      <td className="px-2 py-3 text-ink-700">{c.login}</td>
-                      <td className="px-2 py-3 font-mono text-ink-700">
+                      <td data-label="App" className="px-2 py-3 font-medium text-ink-900">{c.appName}</td>
+                      <td data-label="Login" className="px-2 py-3 text-ink-700">{c.login}</td>
+                      <td data-label="Senha" className="px-2 py-3 font-mono text-ink-700">
                         {showPasswordId === c.id ? c.password : '••••••••'}
                         <button
                           type="button"
@@ -1269,7 +1163,7 @@ export function ClientDetailPage() {
                           {showPasswordId === c.id ? <EyeOff size={14} /> : <Eye size={14} />}
                         </button>
                       </td>
-                      <td className="px-2 py-3 text-right">
+                      <td data-label="Ações" className="px-2 py-3 text-right">
                         {canWrite && (
                           <button type="button" className="text-ink-400 hover:text-red-600" onClick={() => deleteCredMutation.mutate(c.id)}>
                             <Trash2 size={14} />
@@ -1939,7 +1833,7 @@ export function ClientDetailPage() {
           </div>
           {client.invoices?.length ? (
             <div className="overflow-x-auto">
-              <table className="w-full text-left text-sm">
+              <table className="mona-data-table w-full text-left text-sm">
                 <thead>
                   <tr className="border-b border-ink-100 text-ink-500">
                     <th className="px-2 py-2">Referência</th>
@@ -1953,17 +1847,17 @@ export function ClientDetailPage() {
                 <tbody>
                   {client.invoices.map((inv) => (
                     <tr key={inv.id} className="border-b border-ink-50">
-                      <td className="px-2 py-3 font-medium text-ink-900">{inv.reference}</td>
-                      <td className="px-2 py-3 text-ink-700">
+                      <td data-label="Referência" className="px-2 py-3 font-medium text-ink-900">{inv.reference}</td>
+                      <td data-label="Tipo" className="px-2 py-3 text-ink-700">
                         {inv.kind === 'ClientCustomer' ? 'NF cliente→cliente' : 'Honorário Fatto'}
                       </td>
-                      <td className="px-2 py-3 text-ink-700">{inv.counterpartyName || '—'}</td>
-                      <td className="px-2 py-3 text-ink-700">
+                      <td data-label="Terceiro" className="px-2 py-3 text-ink-700">{inv.counterpartyName || '—'}</td>
+                      <td data-label="Período" className="px-2 py-3 text-ink-700">
                         {new Date(inv.periodStart).toLocaleDateString('pt-BR')} –{' '}
                         {new Date(inv.periodEnd).toLocaleDateString('pt-BR')}
                       </td>
-                      <td className="px-2 py-3 text-ink-900">{money(inv.amount)}</td>
-                      <td className="px-2 py-3">
+                      <td data-label="Valor" className="px-2 py-3 text-ink-900">{money(inv.amount)}</td>
+                      <td data-label="Status" className="px-2 py-3">
                         <span className="fv-pill bg-ink-50 text-ink-700">{inv.status}</span>
                       </td>
                     </tr>

@@ -1,4 +1,6 @@
 import { Link } from 'react-router-dom'
+import { Settings, MessagesSquare, Bell } from 'lucide-react'
+import { Permissions } from '../../shared/permissions/constants'
 import { useAuth } from '../../shared/auth/AuthContext'
 import { usePermissions } from '../../shared/permissions/hooks'
 import { NAV_DEFINITIONS, groupedNav, resolveMenu } from '../../shared/nav/navConfig'
@@ -76,6 +78,14 @@ export function MorePage() {
           </div>
         </MobileSection>
       ))}
+
+      <MobileSection title="Seu espaço">
+        <div className="mona-m-apps">
+          <Link to="/chat" className="mona-m-app"><span className="mona-m-icon"><MessagesSquare size={18} /></span><strong>Chat interno</strong><p>Converse com a equipe</p></Link>
+          <Link to="/notificacoes" className="mona-m-app"><span className="mona-m-icon"><Bell size={18} /></span><strong>Alertas</strong><p>Acompanhe suas pendências</p></Link>
+          {hasPermission(Permissions.Settings) && <Link to="/configuracoes" className="mona-m-app"><span className="mona-m-icon"><Settings size={18} /></span><strong>Configurações</strong><p>Pessoas, empresa e aparência</p></Link>}
+        </div>
+      </MobileSection>
 
       <MobileTip to="/sops">Padronize seus processos hoje e garanta um amanhã mais leve e escalável.</MobileTip>
     </div>

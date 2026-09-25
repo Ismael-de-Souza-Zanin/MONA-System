@@ -1,6 +1,6 @@
 # Design system MONA — guia da júnior
 
-A Fatto é o primeiro tenant. O verde que a Ju já conhece **não muda** no preset padrão.
+A Fatto é o primeiro tenant. A identidade atual MONA usa **roxo, rosa e laranja**, conforme `tokens.css` e os presets; o verde de versões antigas não é a referência visual atual.
 O que muda é *onde* a cor vive: tokens e classes semânticas, não hex solto na página.
 A usuária personaliza em **Configurações → Aparência**, por etapas.
 
@@ -74,7 +74,7 @@ O que ainda não é desta etapa: gravar no servidor, white-label da organizaçã
 
 Prefixo sempre `mona-`. Não criar `.fv-*` novo.
 
-**NestCSS:** aninhe `&:hover`, `&:disabled`, `&.is-invalid`.  
+**NestCSS:** aninhe `&:hover`, `&:disabled`, `&.is-invalid`.
 Não use `&__label` nem `&--primary` — o Tailwind 4 quebra isso (`:is(.mona-btn)--primary`). Escreva o nome da classe por extenso.
 
 ## Checklist antes de abrir PR

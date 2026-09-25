@@ -205,6 +205,7 @@ export function MobileChip({
   return (
     <button
       type="button"
+      aria-pressed={active}
       className={`mona-m-chip${active ? ' is-active' : ''}${tone ? ` is-${tone}` : ''}`}
       onClick={onClick}
     >
