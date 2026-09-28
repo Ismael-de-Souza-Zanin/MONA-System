@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { AlertTriangle, BarChart3, CheckSquare, Clock3, FileCheck2, Users, Wallet } from 'lucide-react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { api } from '../../shared/api/client'
 import { useAuth } from '../../shared/auth/AuthContext'
@@ -11,6 +12,8 @@ import {
   ErrorAlert,
   Input,
   LoadingSpinner,
+  MobilePageHeader,
+  MobileStat,
   PageHeader,
   Select,
   Textarea,
@@ -148,18 +151,32 @@ export function ReportsPage() {
   if (lens === 'client' && !clientId) {
     return (
       <div>
-        <PageHeader title="Relatórios operacionais" subtitle="Escolha o cliente para ver o que ele pode validar." />
-        <Button variant="ghost" onClick={() => setLens(canAdm ? 'adm' : 'va')}>
-          Voltar ao meu relatório
-        </Button>
-        <Select label="Cliente" value={clientId} onChange={(e) => setClientId(e.target.value)}>
-          <option value="">— escolha —</option>
-          {clients.map((c) => (
-            <option key={c.id} value={c.id}>
-              {c.name}
-            </option>
-          ))}
-        </Select>
+        <div className="mona-phone mona-m-stack">
+          <MobilePageHeader title="Relatórios" />
+          <Select aria-label="Olhar do relatório" value={lens} onChange={(e) => setLens(e.target.value as Lens)}>
+            {canAdm && <option value="adm">ADM / casa</option>}
+            <option value="va">Minha VA</option>
+            <option value="client">Cliente</option>
+          </Select>
+          <Select aria-label="Cliente" value={clientId} onChange={(e) => setClientId(e.target.value)}>
+            <option value="">Escolha o cliente</option>
+            {clients.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+          </Select>
+        </div>
+        <div className="mona-desk">
+          <PageHeader title="Relatórios operacionais" subtitle="Escolha o cliente para ver o que ele pode validar." />
+          <Button variant="ghost" onClick={() => setLens(canAdm ? 'adm' : 'va')}>
+            Voltar ao meu relatório
+          </Button>
+          <Select label="Cliente" value={clientId} onChange={(e) => setClientId(e.target.value)}>
+            <option value="">— escolha —</option>
+            {clients.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.name}
+              </option>
+            ))}
+          </Select>
+        </div>
       </div>
     )
   }
@@ -191,11 +208,86 @@ export function ReportsPage() {
         : 'O que este cliente pode validar: entregas e decisões visíveis.'
 
 
+  const taskTotal = data.todos.done + data.todos.open
+  const donePct = taskTotal ? Math.round((data.todos.done / taskTotal) * 100) : 0
+  const overduePct = data.todos.open ? Math.round((data.todos.overdue / data.todos.open) * 100) : 0
+  const retainerPct = data.time.retainerHours
+    ? Math.min(100, Math.round((data.time.retainerUsedHours / data.time.retainerHours) * 100))
+    : 0
+  const decisionOpenPct = data.decisions.total ? Math.round((data.decisions.open / data.decisions.total) * 100) : 0
+  const moneyPending =
+    (data.money?.agency?.pending ?? 0) +
+    (data.money?.clientAr?.pending ?? 0) +
+    (data.money?.clientAp?.pending ?? 0) +
+    (data.money?.payout?.pending ?? 0)
+  const maxClientTodos = Math.max(1, ...data.byClient.map((client) => client.todosDone))
+  const maxClientMinutes = Math.max(1, ...data.byClient.map((client) => client.minutes))
+
   return (
     <div>
+      <div className="mona-phone mona-m-stack">
+        <MobilePageHeader title="Relatórios" />
+        <div className="mona-m-segment">
+          <button type="button" className={period === 'day' ? 'is-active' : ''} onClick={() => setPeriod('day')}>Hoje</button>
+          <button type="button" className={period === 'week' ? 'is-active' : ''} onClick={() => setPeriod('week')}>Semana</button>
+          <button type="button" className={period === 'month' ? 'is-active' : ''} onClick={() => setPeriod('month')}>Mês</button>
+        </div>
+        <Select aria-label="Olhar do relatório" value={lens} onChange={(e) => setLens(e.target.value as Lens)}>
+          {canAdm && <option value="adm">ADM / casa</option>}
+          <option value="va">Minha VA</option>
+          <option value="client">Cliente</option>
+        </Select>
+        {lens === 'client' && (
+          <Select aria-label="Cliente" value={clientId} onChange={(e) => setClientId(e.target.value)}>
+            <option value="">Escolha o cliente</option>
+            {clients.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+          </Select>
+        )}
+        <div className="mona-m-stats is-pair">
+          <MobileStat icon={CheckSquare} label="Produtividade" value={`${donePct}%`} hint={`${data.todos.done} de ${taskTotal} tarefas`} tone="purple" />
+          <MobileStat icon={CheckSquare} label="Tarefas concluídas" value={data.todos.done} hint={`${data.todos.open} abertas · ${data.todos.overdue} atrasadas`} tone="mint" />
+        </div>
+        <div className="mona-m-stats is-pair">
+          <MobileStat icon={Users} label="Clientes no período" value={data.byClient.length} hint={`${data.agenda.meetings} reuniões`} tone="orange" />
+          <MobileStat icon={Clock3} label="Horas registradas" value={data.time.hours} hint={`Pacote ${data.time.retainerHours}h · usado ${data.time.retainerUsedHours}h`} tone="rose" />
+        </div>
+        <section className="mona-m-panel">
+          <div className="mona-m-section__head"><h2>Saúde operacional</h2><span>{period === 'day' ? 'Hoje' : period === 'week' ? 'Semana' : 'Mês'}</span></div>
+          <div className="mona-m-kpis">
+            <div><span>Atrasos</span><strong>{data.todos.overdue}</strong><em>{overduePct}% do aberto</em></div>
+            <div><span>Decisões abertas</span><strong>{data.decisions.open}</strong><em>{decisionOpenPct}% do total</em></div>
+            <div><span>SOPs concluídos</span><strong>{data.sops.completedRuns}</strong><em>rotinas fechadas</em></div>
+            <div><span>Financeiro pendente</span><strong>{money(moneyPending)}</strong><em>no período</em></div>
+          </div>
+          <div className="mona-m-progress">
+            <span><strong>Uso do pacote</strong><em>{retainerPct}%</em></span>
+            <i><b style={{ width: `${retainerPct}%` }} /></i>
+          </div>
+        </section>
+        <section className="mona-m-panel">
+          <div className="mona-m-section__head"><h2>Tarefas concluídas</h2></div>
+          <p className="mona-m-sort">Por cliente neste período</p>
+          <div className="mona-m-mini">
+            {data.byClient.length === 0 && <p>Nenhum cliente com movimento neste recorte.</p>}
+            {data.byClient.slice(0, 7).map((client) => (
+              <div key={client.clientId}>
+                <strong>{client.name}</strong>
+                <span className="mona-m-bar"><i style={{ width: `${Math.round((client.todosDone / maxClientTodos) * 100)}%` }} /></span>
+                <span>{client.todosDone} concluídas</span>
+              </div>
+            ))}
+          </div>
+        </section>
+        <div className="mona-m-tip">
+          <span className="mona-m-icon"><BarChart3 size={16} /></span>
+          <div>
+            <strong>Insight da MONA</strong>
+            <p>{data.todos.done} tarefas concluídas, {data.agenda.meetings} reuniões, {data.decisions.open} decisões em aberto e {money(moneyPending)} pendentes no financeiro.</p>
+          </div>
+        </div>
+      </div>
 
-
-      <div className="mona-responsive-content">
+      <div className="mona-responsive-content mona-desk">
       <PageHeader title="Relatórios operacionais" subtitle={subtitle} />
 
       <div className="mb-5 grid gap-3 sm:grid-cols-3">
@@ -241,6 +333,41 @@ export function ReportsPage() {
           <p className="text-xs text-ink-500">
             Pacote {data.time.retainerHours}h · usado {data.time.retainerUsedHours}h
           </p>
+        </Card>
+      </div>
+
+      <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <Card>
+          <div className="flex items-center gap-2">
+            <AlertTriangle size={18} className="text-amber-600" />
+            <p className="text-xs uppercase text-ink-500">Risco de atraso</p>
+          </div>
+          <p className="mt-1 text-2xl font-semibold text-ink-900">{overduePct}%</p>
+          <p className="text-xs text-ink-500">{data.todos.overdue} de {data.todos.open} tarefas abertas atrasadas</p>
+        </Card>
+        <Card>
+          <div className="flex items-center gap-2">
+            <Clock3 size={18} className="text-brand-800" />
+            <p className="text-xs uppercase text-ink-500">Uso de retainer</p>
+          </div>
+          <p className="mt-1 text-2xl font-semibold text-ink-900">{retainerPct}%</p>
+          <p className="text-xs text-ink-500">{data.time.retainerUsedHours}h usadas de {data.time.retainerHours}h contratadas</p>
+        </Card>
+        <Card>
+          <div className="flex items-center gap-2">
+            <FileCheck2 size={18} className="text-emerald-600" />
+            <p className="text-xs uppercase text-ink-500">SOPs executados</p>
+          </div>
+          <p className="mt-1 text-2xl font-semibold text-ink-900">{data.sops.completedRuns}</p>
+          <p className="text-xs text-ink-500">rotinas concluídas no recorte</p>
+        </Card>
+        <Card>
+          <div className="flex items-center gap-2">
+            <Wallet size={18} className="text-pink-600" />
+            <p className="text-xs uppercase text-ink-500">Financeiro pendente</p>
+          </div>
+          <p className="mt-1 text-2xl font-semibold text-ink-900">{money(moneyPending)}</p>
+          <p className="text-xs text-ink-500">somando gavetas visíveis neste olhar</p>
         </Card>
       </div>
 
@@ -322,13 +449,18 @@ export function ReportsPage() {
       <div className="mt-4 grid gap-4 lg:grid-cols-2">
         <Card>
           <h2 className="text-base font-semibold text-ink-900">Por cliente</h2>
-          <ul className="mt-3 space-y-2">
+          <ul className="mt-3 space-y-3">
             {data.byClient.map((c) => (
-              <li key={c.clientId} className="flex justify-between text-sm">
-                <span className="font-medium text-ink-900">{c.name}</span>
-                <span className="text-ink-500">
-                  {c.todosDone} entregas · {Math.round(c.minutes / 60)}h / {c.retainerHours}h
-                </span>
+              <li key={c.clientId} className="grid gap-1 text-sm">
+                <div className="flex justify-between gap-3">
+                  <span className="font-medium text-ink-900">{c.name}</span>
+                  <span className="text-ink-500">
+                    {c.todosDone} entregas · {Math.round(c.minutes / 60)}h / {c.retainerHours}h
+                  </span>
+                </div>
+                <div className="h-2 overflow-hidden rounded-full bg-ink-100">
+                  <div className="h-full rounded-full bg-gradient-to-r from-brand-700 via-pink-500 to-orange-400" style={{ width: `${Math.max(4, Math.round((c.minutes / maxClientMinutes) * 100))}%` }} />
+                </div>
               </li>
             ))}
             {data.byClient.length === 0 && <p className="text-sm text-ink-500">Sem movimento no período.</p>}
@@ -336,7 +468,7 @@ export function ReportsPage() {
         </Card>
 
         <Card>
-          <h2 className="text-base font-semibold text-ink-900">Evidência</h2>
+          <h2 className="text-base font-semibold text-ink-900">Evidência analisável</h2>
           <ul className="mt-3 space-y-2 text-sm">
             {data.evidence.todos.map((t) => (
               <li key={t.id} className="text-ink-800">

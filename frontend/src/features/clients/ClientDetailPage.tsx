@@ -5,13 +5,18 @@ import {
   AppWindow,
   CalendarDays,
   CheckSquare,
+  ChevronLeft,
   CreditCard,
   Eye,
   EyeOff,
   FileText,
   KeyRound,
   Link2,
+  Mail,
+  MessageCircle,
+  MoreHorizontal,
   Pencil,
+  Phone,
   Plus,
   Trash2,
   Wallet,
@@ -41,11 +46,13 @@ import {
   EmptyState,
   Input,
   LoadingSpinner,
+  MobileAvatar,
   Modal,
   PageHeader,
   Select,
   StatusBadge,
   Textarea,
+  getStatusLabel,
 } from '../../shared/ui'
 
 type TabId =
@@ -74,6 +81,12 @@ const TABS: { id: TabId; label: string }[] = [
   { id: 'servicos', label: 'Serviços' },
   { id: 'parceiros', label: 'Parceiros' },
 ]
+
+function monthsSince(iso?: string) {
+  if (!iso) return null
+  const months = Math.floor((Date.now() - new Date(iso).getTime()) / (1000 * 60 * 60 * 24 * 30.44))
+  return Math.max(0, months)
+}
 
 function money(value?: number) {
   return (value ?? 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
@@ -599,7 +612,7 @@ export function ClientDetailPage() {
           createdAt: string
         }[]
       >(`/clients/${id}/documents`),
-    enabled: !!id && tab === 'portal',
+    enabled: !!id,
   })
 
   const portalReplyMutation = useMutation({
@@ -649,11 +662,137 @@ export function ClientDetailPage() {
     : []
 
 
+  const months = monthsSince(client.createdAt)
+  const quote = client.additionalNotes?.trim() || client.crm?.trim() || client.crmEntries?.[0]?.summary
+  const digits = (client.phone || '').replace(/\D/g, '')
+  const openTasks = client.openTodos ?? []
+  const upcoming = client.agenda ?? []
+
   return (
     <div>
+      <div className="mona-phone mona-m-stack">
+        <div className="mona-m-back">
+          <Link to="/clientes"><ChevronLeft size={18} /> Clientes</Link>
+          {canWrite && (
+            <button type="button" className="mona-m-filter" onClick={() => setShowEdit(true)} aria-label="Editar cliente">
+              <Pencil size={16} />
+            </button>
+          )}
+        </div>
+        <section className="mona-m-profile">
+          <MobileAvatar name={client.name} />
+          <div>
+            <strong>{client.name}</strong>
+            <p>{client.segment || client.relationshipStage || 'Cliente'}</p>
+            {client.companyName && <p>{client.companyName}</p>}
+            <span className={`mona-m-badge is-status-${client.status.toLowerCase()}`}>{getStatusLabel(client.status)}</span>
+          </div>
+          {quote && <p className="mona-m-quote">“{quote}”</p>}
+        </section>
+        <div className="mona-m-actions">
+          {digits ? (
+            <a href={`tel:${digits}`}><span><Phone size={16} /></span>Ligar</a>
+          ) : (
+            <button type="button" disabled><span><Phone size={16} /></span>Ligar</button>
+          )}
+          {client.email ? (
+            <a href={`mailto:${client.email}`}><span><Mail size={16} /></span>Enviar e-mail</a>
+          ) : (
+            <button type="button" disabled><span><Mail size={16} /></span>Enviar e-mail</button>
+          )}
+          {digits ? (
+            <a href={`https://wa.me/${digits}`}><span><MessageCircle size={16} /></span>WhatsApp</a>
+          ) : (
+            <Link to="/whatsapp"><span><MessageCircle size={16} /></span>WhatsApp</Link>
+          )}
+          <button type="button" onClick={() => canWrite ? setShowEdit(true) : setTab('crm')}>
+            <span><MoreHorizontal size={16} /></span>Mais opções
+          </button>
+        </div>
+        <section className="mona-m-relate">
+          <div className="mona-m-relate__row">
+            <strong>Relacionamento</strong>
+            <span>{months == null ? 'Sem data de entrada' : `Cliente há ${months} ${months === 1 ? 'mês' : 'meses'}`}</span>
+          </div>
+          <p>{client.relationshipStage || getStatusLabel(client.status)}</p>
+          <p>{[client.clientGroupName, client.segment, client.needsQuickResponse ? 'Atendimento rápido' : null].filter(Boolean).join(' · ') || 'Sem grupo definido'}</p>
+        </section>
+        {tab === 'resumo' && (
+          <>
+            <div className="mona-m-split">
+              <section className="mona-m-panel">
+                <div className="mona-m-section__head">
+                  <h2>Tarefas em aberto</h2>
+                  <Link to="/todos">Ver todas</Link>
+                </div>
+                <p><strong>{openTasks.length}</strong> {openTasks.length === 1 ? 'tarefa pendente' : 'tarefas pendentes'}</p>
+                <div className="mona-m-mini">
+                  {openTasks.slice(0, 3).map((task) => (
+                    <div key={task.id}>
+                      <strong>{task.title}</strong>
+                      {canTodos && (
+                        <button type="button" className="mona-m-inline" onClick={() => completeTodoMutation.mutate(task.id)}>Concluir</button>
+                      )}
+                    </div>
+                  ))}
+                  {openTasks.length === 0 && <p>Nenhuma pendência aberta.</p>}
+                </div>
+              </section>
+              <section className="mona-m-panel">
+                <div className="mona-m-section__head">
+                  <h2>Próximas reuniões</h2>
+                  <Link to="/agenda">Ver agenda</Link>
+                </div>
+                <p><strong>{upcoming.length}</strong> {upcoming.length === 1 ? 'reunião' : 'reuniões'}</p>
+                <div className="mona-m-mini">
+                  {upcoming.slice(0, 3).map((event) => (
+                    <div key={event.id}>
+                      <strong>{new Date(event.startAt).toLocaleString('pt-BR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}</strong>
+                      <span>{event.title}</span>
+                    </div>
+                  ))}
+                  {upcoming.length === 0 && <p>Nenhuma reunião marcada.</p>}
+                </div>
+              </section>
+            </div>
+            <div className="mona-m-split">
+              <section className="mona-m-panel">
+                <div className="mona-m-section__head">
+                  <h2>Notas do cliente</h2>
+                  <button type="button" className="mona-m-inline" onClick={() => setTab('crm')}>Ver todas</button>
+                </div>
+                <p>{client.additionalNotes || client.topics?.[0]?.content || 'Nenhuma nota registrada.'}</p>
+              </section>
+              <section className="mona-m-panel">
+                <div className="mona-m-section__head">
+                  <h2>Documentos</h2>
+                  <button type="button" className="mona-m-inline" onClick={() => setTab('portal')}>Ver todos</button>
+                </div>
+                <div className="mona-m-mini">
+                  {portalDocs.slice(0, 3).map((doc) => (
+                    <div key={doc.id}>
+                      <strong>{doc.title || doc.fileName}</strong>
+                      <span>{new Date(doc.createdAt).toLocaleDateString('pt-BR')}</span>
+                    </div>
+                  ))}
+                  {portalDocs.length === 0 && <p>Nenhum documento no portal.</p>}
+                </div>
+              </section>
+            </div>
+            {client.nextAction && (
+              <div className="mona-m-tip">
+                <span className="mona-m-icon"><FileText size={16} /></span>
+                <div>
+                  <strong>Próximo passo</strong>
+                  <p>{client.nextAction}</p>
+                </div>
+              </div>
+            )}
+          </>
+        )}
+      </div>
 
-
-      <div className="mona-responsive-content mb-4 hidden text-sm text-ink-500 md:block">
+      <div className="mona-responsive-content mona-desk mb-4 hidden text-sm text-ink-500 md:block">
         <Link to="/" className="hover:text-brand-800">Dashboard</Link>
         <span className="mx-1.5">›</span>
         <Link to="/clientes" className="hover:text-brand-800">Clientes</Link>
@@ -661,7 +800,7 @@ export function ClientDetailPage() {
         <span className="text-ink-900">{client.name}</span>
       </div>
 
-      <div className="mona-responsive-content">
+      <div className="mona-responsive-content mona-desk">
       <PageHeader
         title={client.companyName ? `${client.name} – ${client.companyName}` : client.name}
         subtitle="Central do cliente: dados, acessos, financeiro e operações"
@@ -678,7 +817,7 @@ export function ClientDetailPage() {
       />
       </div>
 
-      <Card className="mb-5 mona-responsive-content">
+      <Card className="mona-desk mb-5 mona-responsive-content">
         <div className="flex flex-wrap items-start gap-4">
           <div className="flex h-14 w-14 items-center justify-center rounded-full bg-brand-100 text-lg font-bold text-brand-900">
             {initials(client.name)}
@@ -749,14 +888,14 @@ export function ClientDetailPage() {
         </div>
       </Card>
 
-      <div className="mb-5 flex gap-1 overflow-x-auto rounded-2xl border border-ink-100 bg-white p-1 pr-16">
+      <div className="mona-m-tabs mb-5 flex gap-1 overflow-x-auto rounded-2xl border border-ink-100 bg-white p-1 pr-16">
         {TABS.map((t) => (
           <button
             key={t.id}
             type="button"
             onClick={() => setTab(t.id)}
             className={`whitespace-nowrap rounded-xl px-3.5 py-2 text-sm font-medium transition ${
-              tab === t.id ? 'bg-brand-800 text-white' : 'text-ink-700 hover:bg-ink-50'
+              tab === t.id ? 'is-on bg-brand-800 text-white' : 'text-ink-700 hover:bg-ink-50'
             }`}
           >
             {t.label}
@@ -765,7 +904,7 @@ export function ClientDetailPage() {
       </div>
 
       {tab === 'resumo' && (
-        <div className="space-y-4">
+        <div className="mona-desk space-y-4">
           <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
             <Card>
               <p className="text-sm text-ink-500">Desde</p>
@@ -925,7 +1064,101 @@ export function ClientDetailPage() {
       )}
 
       {tab === 'equipe' && (
-        <div className="space-y-4">
+        <div className="mona-phone mona-m-stack">
+          <section className="mona-m-panel">
+            <div className="mona-m-section__head">
+              <h2>Equipe do cliente</h2>
+              <span>{teamRows.length} vínculos</span>
+            </div>
+            <p className="mona-m-muted">
+              Quem atende precisa ter login liberado. Ao vincular uma pessoa da Minha equipe, o acesso ao cliente também é ativado.
+            </p>
+            <div className="mona-m-team">
+              {teamRows.length === 0 && <p>Ninguém atende este cliente ainda.</p>}
+              {teamRows.map((row) => (
+                <article key={row.key} className="mona-m-team__row">
+                  <span className="mona-m-team__dot" style={{ backgroundColor: row.color || undefined }} />
+                  <div>
+                    <strong>{row.name}</strong>
+                    {row.email && <p>{row.email}</p>}
+                    <div className="mona-m-tags">
+                      <span className="mona-m-badge">{row.atende ? 'Atende' : 'Não atende'}</span>
+                      <span className="mona-m-badge">
+                        {row.user?.isOwner
+                          ? 'Conta principal'
+                          : row.podeEntrar
+                            ? `Pode entrar${row.user?.accessTypeName ? ` · ${row.user.accessTypeName}` : ''}`
+                            : row.atende
+                              ? 'Falta login'
+                              : 'Sem login'}
+                      </span>
+                    </div>
+                  </div>
+                </article>
+              ))}
+            </div>
+          </section>
+
+          {canEmployees && (
+            <section className="mona-m-panel">
+              <div className="mona-m-section__head">
+                <h2>Vincular atendimento</h2>
+                <Link to="/prestadores">Minha equipe</Link>
+              </div>
+              <p className="mona-m-muted">Escolha alguém cadastrado na Minha equipe para atender este cliente.</p>
+              <div className="mona-m-form">
+                <Select
+                  aria-label="Da Minha equipe"
+                  value={employeePick}
+                  onChange={(e) => setEmployeePick(e.target.value)}
+                >
+                  <option value="">Selecione uma pessoa</option>
+                  {employees
+                    .filter((e) => !client.responsibles?.some((r) => r.id === e.id))
+                    .map((e) => (
+                      <option key={e.id} value={e.id}>
+                        {e.name}
+                      </option>
+                    ))}
+                </Select>
+                <Button
+                  disabled={!employeePick || assignEmployee.isPending}
+                  onClick={() => assignEmployee.mutate(employeePick)}
+                >
+                  Vincular atendimento
+                </Button>
+              </div>
+            </section>
+          )}
+
+          {loginOnlyCandidates.length > 0 && (
+            <section className="mona-m-panel">
+              <div className="mona-m-section__head">
+                <h2>Liberar login</h2>
+              </div>
+              <div className="mona-m-mini">
+                {loginOnlyCandidates.map((u) => (
+                  <div key={u.id} className="mona-m-team__login">
+                    <strong>{u.name}</strong>
+                    <span>{u.email}</span>
+                    <Button
+                      size="sm"
+                      variant="secondary"
+                      disabled={toggleSharedAccess.isPending}
+                      onClick={() => toggleSharedAccess.mutate({ user: u, grant: true })}
+                    >
+                      Liberar
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            </section>
+          )}
+        </div>
+      )}
+
+      {tab === 'equipe' && (
+        <div className="mona-desk space-y-4">
           <Card>
             <div className="mb-4">
               <h3 className="font-semibold text-ink-900">Quem está neste cliente</h3>

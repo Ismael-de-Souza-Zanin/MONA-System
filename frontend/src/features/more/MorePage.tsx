@@ -1,11 +1,9 @@
 import { Link } from 'react-router-dom'
-import { Settings, MessagesSquare, Bell } from 'lucide-react'
-import { Permissions } from '../../shared/permissions/constants'
 import { useAuth } from '../../shared/auth/AuthContext'
 import { usePermissions } from '../../shared/permissions/hooks'
 import { NAV_DEFINITIONS, groupedNav, resolveMenu } from '../../shared/nav/navConfig'
 import { useUserPreferences } from '../../shared/hooks/useWorkspaceData'
-import { MobileHero, MobileSection, MobileTip } from '../../shared/ui'
+import { MobilePageHeader, MobileSection, MobileTip } from '../../shared/ui'
 
 const BLURBS: Record<string, string> = {
   operacao: 'Defina como você trabalha',
@@ -22,11 +20,9 @@ const BLURBS: Record<string, string> = {
   apps: 'Integrações e aplicativos',
   faqs: 'Dúvidas frequentes',
   compartilhar: 'Acesso para seus clientes',
-  chat: 'Conversa da equipe',
-  notificacoes: 'O que pede atenção',
 }
 
-const HIDDEN_IN_HUB = new Set(['dashboard', 'tarefas', 'agenda', 'clientes', 'financeiro'])
+const HIDDEN_IN_HUB = new Set(['dashboard', 'tarefas', 'agenda', 'clientes', 'financeiro', 'chat', 'notificacoes'])
 
 export function MorePage() {
   const { user } = useAuth()
@@ -53,12 +49,7 @@ export function MorePage() {
 
   return (
     <div className="mona-m-stack">
-      <MobileHero
-        kicker="Mais"
-        title="Tudo o que você precisa, em um só lugar"
-        lead="Acesse ferramentas, configurações e recursos para tornar a gestão do seu negócio ainda mais simples."
-        note="Mais possibilidade para o seu crescimento"
-      />
+      <MobilePageHeader title="Mais" />
 
       {visibleSections.map((section) => (
         <MobileSection key={section.id} title={section.label}>
@@ -78,14 +69,6 @@ export function MorePage() {
           </div>
         </MobileSection>
       ))}
-
-      <MobileSection title="Seu espaço">
-        <div className="mona-m-apps">
-          <Link to="/chat" className="mona-m-app"><span className="mona-m-icon"><MessagesSquare size={18} /></span><strong>Chat interno</strong><p>Converse com a equipe</p></Link>
-          <Link to="/notificacoes" className="mona-m-app"><span className="mona-m-icon"><Bell size={18} /></span><strong>Alertas</strong><p>Acompanhe suas pendências</p></Link>
-          {hasPermission(Permissions.Settings) && <Link to="/configuracoes" className="mona-m-app"><span className="mona-m-icon"><Settings size={18} /></span><strong>Configurações</strong><p>Pessoas, empresa e aparência</p></Link>}
-        </div>
-      </MobileSection>
 
       <MobileTip to="/sops">Padronize seus processos hoje e garanta um amanhã mais leve e escalável.</MobileTip>
     </div>

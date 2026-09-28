@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useMemo, useState } from 'react'
-import { ChevronLeft, ChevronRight } from 'lucide-react'
+import { CalendarDays, ChevronLeft, ChevronRight, Plus } from 'lucide-react'
 import { api } from '../../shared/api/client'
 import type { AgendaCategory, AgendaEvent } from '../../shared/types'
 import { Permissions } from '../../shared/permissions/constants'
@@ -14,6 +14,8 @@ import {
   ErrorAlert,
   Input,
   LoadingSpinner,
+  MobileChip,
+  MobileChips,
   Modal,
   PageHeader,
   Select,
@@ -37,6 +39,18 @@ function sameDay(a: Date, b: Date) {
 function monthTitle(value: Date) {
   const label = value.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' }).replace(' de ', ' ')
   return label.charAt(0).toUpperCase() + label.slice(1)
+}
+
+function untilLabel(iso: string) {
+  const mins = Math.round((new Date(iso).getTime() - Date.now()) / 60000)
+  if (mins < 0) return 'Em andamento'
+  if (mins < 60) return `Em ${mins} min`
+  const hours = Math.round(mins / 60)
+  return hours < 24 ? `Em ${hours} h` : `Em ${Math.round(hours / 24)} d`
+}
+
+function clock(iso: string) {
+  return new Date(iso).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
 }
 
 function dayHeading(value: Date, today: Date) {
@@ -137,7 +151,7 @@ export function AgendaPage() {
     onSuccess: () => void qc.invalidateQueries({ queryKey: ['agenda-categories'] }),
   })
 
-  const [showAllDays, setShowAllDays] = useState(true)
+  const [showAllDays, setShowAllDays] = useState(false)
   const [selectedDay, setSelectedDay] = useState(() => new Date())
 
   if (isLoading) return <LoadingSpinner />
@@ -162,6 +176,7 @@ export function AgendaPage() {
     <div>
       <div className="mona-responsive-content">
       {eventsError && <ErrorAlert message={eventsError.message} />}
+      <div className="mona-desk">
       <PageHeader
         title="Agenda"
         subtitle={`Compromissos, reuniões e próximos passos. Horários em ${displayTz || 'America/Sao_Paulo'}.`}
@@ -178,8 +193,9 @@ export function AgendaPage() {
           </div>
         }
       />
+      </div>
 
-      <div className="mb-4 flex flex-wrap gap-2">
+      <div className="mona-desk mb-4 flex flex-wrap gap-2">
         {[
           { id: 'individual' as const, label: 'Cores individuais' },
           { id: 'role' as const, label: 'Funcionário vs cliente' },
@@ -227,12 +243,105 @@ export function AgendaPage() {
             >
               {day.toLocaleDateString('pt-BR', { weekday: 'short' }).replace('.', '')}
               <strong>{day.getDate()}</strong>
+              {filteredEvents.some((event) => isSameLocalDay(event.startAt, day)) ? <i /> : null}
             </button>
           ))}
         </div>
-        <div className="mona-m-dayhead"><h2>{showAllDays ? 'Todos os compromissos' : dayHeading(selectedDay, today)}</h2><Button size="sm" variant="ghost" onClick={() => setShowAllDays((value) => !value)}>{showAllDays ? 'Ver este dia' : 'Ver todos'}</Button></div>
+        <div className="mona-desk mona-m-dayhead"><h2>{showAllDays ? 'Todos os compromissos' : dayHeading(selectedDay, today)}</h2><Button size="sm" variant="ghost" onClick={() => setShowAllDays((value) => !value)}>{showAllDays ? 'Ver este dia' : 'Ver todos'}</Button></div>
       </div>
 
+      <div className="mona-phone">
+        <MobileChips>
+          {[
+            { id: 'individual' as const, label: 'Cores individuais' },
+            { id: 'role' as const, label: 'Funcionário vs cliente' },
+            { id: 'mine' as const, label: 'Minhas reuniões' },
+            ...(canSeeOthers ? [{ id: 'others' as const, label: 'Reuniões alheias' }] : []),
+          ].map((v) => (
+            <MobileChip key={v.id} active={colorView === v.id} onClick={() => setColorView(v.id)}>{v.label}</MobileChip>
+          ))}
+        </MobileChips>
+      </div>
+
+      {(() => {
+        const nextEvent = [...filteredEvents]
+          .sort((a, b) => +new Date(a.startAt) - +new Date(b.startAt))
+          .find((event) => new Date(event.endAt || event.startAt).getTime() >= Date.now())
+        if (!nextEvent) return null
+        return (
+          <article className="mona-phone mona-m-next">
+            <span className="mona-m-next__icon"><CalendarDays size={16} /></span>
+            <div>
+              <p className="mona-m-kicker">Próxima reunião</p>
+              <strong>{nextEvent.clientName || nextEvent.title}</strong>
+              <p>{nextEvent.clientName ? nextEvent.title : nextEvent.categoryName || 'Compromisso'} · {clock(nextEvent.startAt)}</p>
+            </div>
+            <em>{untilLabel(nextEvent.startAt)}</em>
+          </article>
+        )
+      })()}
+
+      <div className="mona-phone mona-m-list">
+        <div className="mona-m-dayhead">
+          <h2>{showAllDays ? 'Todos os compromissos' : dayHeading(selectedDay, today)}</h2>
+          <span>
+            {canWrite && <button type="button" className="mona-m-inline" onClick={() => setShowCategory(true)}>Categorias</button>}
+            <button type="button" className="mona-m-inline" onClick={() => setShowAllDays((value) => !value)}>{showAllDays ? 'Ver este dia' : 'Ver todos'}</button>
+          </span>
+        </div>
+        {visibleEvents.length === 0 ? (
+          <EmptyState title="Nenhum evento na agenda" />
+        ) : visibleEvents.map((event) => (
+          <article key={event.id} className="mona-m-event" style={{ borderLeftColor: getEventColor(event) }}>
+            <time>
+              {clock(event.startAt)}
+              {event.endAt ? <i>{clock(event.endAt)}</i> : null}
+            </time>
+            <div>
+              <strong>{event.title}</strong>
+              <p>
+                {[event.clientName, event.description, event.responsibleUserName && `Responsável: ${event.responsibleUserName}`].filter(Boolean).join(' · ')}
+              </p>
+              <div className="mona-m-tags">
+              {canWrite && (
+                <button type="button" className="mona-m-inline" onClick={() => void api.post(`/agenda/events/${event.id}/todos`, {}).then(() => qc.invalidateQueries({ queryKey: ['agenda-events'] }))}>
+                  + Criar follow-up
+                </button>
+              )}
+              {canWrite && event.kind === 'Meeting' && (
+                <button
+                  type="button"
+                  className="mona-m-inline"
+                  onClick={() => {
+                    const title = window.prompt('O que ficou combinado?')
+                    if (!title?.trim()) return
+                    void api.post('/decisions', {
+                      title: title.trim(),
+                      agendaEventId: event.id,
+                      clientId: event.clientId || null,
+                      visibleToClient: window.confirm('O cliente pode ver esta decisão no portal?'),
+                      createTodo: window.confirm('Abrir uma tarefa a partir desta decisão?'),
+                    }).then(() => qc.invalidateQueries({ queryKey: ['agenda-events'] }))
+                  }}
+                >
+                  + Registrar decisão
+                </button>
+              )}
+              </div>
+            </div>
+            <div className="mona-m-event__tags">
+              {event.categoryName ? <span className="mona-m-badge">{event.categoryName}</span> : event.kind === 'Meeting' ? <span className="mona-m-badge">Reunião</span> : null}
+            </div>
+          </article>
+        ))}
+        {canWrite && (
+          <button type="button" className="mona-m-fab" aria-label="Adicionar evento" onClick={() => setShowEvent(true)}>
+            <Plus size={22} />
+          </button>
+        )}
+      </div>
+
+      <div className="mona-desk">
       {Object.keys(groupedByDate).length === 0 ? (
         <EmptyState title="Nenhum evento na agenda" />
       ) : (
@@ -348,6 +457,7 @@ export function AgendaPage() {
           ))}
         </div>
       )}
+      </div>
       </div>
 
       <Modal open={showEvent} onClose={() => setShowEvent(false)} title="Novo evento">

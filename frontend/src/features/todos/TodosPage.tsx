@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useMemo, useState } from 'react'
-import { ArrowDown, ArrowUp, GripVertical, Check, ChevronDown, ChevronRight, Clock3, Pencil, Plus, ShieldCheck, Trash2 } from 'lucide-react'
+import { ArrowDown, ArrowRight, ArrowUp, GripVertical, Check, ChevronDown, ChevronRight, Clock3, Pencil, Plus, ShieldCheck, SlidersHorizontal, Star, Trash2 } from 'lucide-react'
 import { api } from '../../shared/api/client'
 import type { TodoItem } from '../../shared/types'
 import { Permissions } from '../../shared/permissions/constants'
@@ -14,6 +14,7 @@ import {
   LoadingSpinner,
   MobileChip,
   MobileChips,
+  MobilePageHeader,
   Modal,
   PageHeader,
   Select,
@@ -237,7 +238,11 @@ export function TodosPage() {
   const qc = useQueryClient()
 
   const [ownerFilter, setOwnerFilter] = useState('all')
-  const [mobileScope, setMobileScope] = useState<'today' | 'week' | 'all'>('all')
+  const [mobileScope, setMobileScope] = useState<'today' | 'week' | 'all'>(() =>
+    typeof window !== 'undefined' && window.innerWidth < 768 ? 'today' : 'all',
+  )
+  const [phoneSort, setPhoneSort] = useState<'due' | 'priority'>('due')
+  const [focusTodo, setFocusTodo] = useState<string | null>(null)
   const [showAdd, setShowAdd] = useState(false)
   const [showColumns, setShowColumns] = useState(false)
   const [dragColumn, setDragColumn] = useState<string | null>(null)
@@ -451,10 +456,139 @@ export function TodosPage() {
 
   if (isLoading || loadingCols) return <LoadingSpinner />
 
+  const priorityRank: Record<string, number> = { Urgent: 0, High: 1, Normal: 2, Low: 3 }
+  const priorityLabel: Record<string, string> = { Urgent: 'Urgente', High: 'Alta', Normal: 'Média', Low: 'Baixa' }
+  const sortedPhone = [...mobileTodos].sort((a, b) => {
+    if (phoneSort === 'priority') return (priorityRank[a.priority || 'Normal'] ?? 2) - (priorityRank[b.priority || 'Normal'] ?? 2)
+    return (a.dueAtLocal || a.dueAtUtc || '9999').localeCompare(b.dueAtLocal || b.dueAtUtc || '9999')
+  })
+  const phoneList = [
+    ...sortedPhone.filter((todo) => todo.status !== 'Done'),
+    ...sortedPhone.filter((todo) => todo.status === 'Done'),
+  ]
+  const featured = phoneList.find((todo) => todo.status !== 'Done')
+  const phoneRows = phoneList.filter((todo) => todo.id !== featured?.id)
+  const dueClock = (todo: TodoItem) => {
+    const value = todo.dueAtLocal || todo.dueAtUtc
+    if (!value) return 'Sem prazo'
+    const date = new Date(value)
+    return isSameLocalDay(value)
+      ? date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+      : date.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })
+  }
+  const toggleTodo = (todo: TodoItem, done: boolean) => {
+    const completeColumn = columns.find((column) => column.marksComplete)
+    const openColumn = columns.find((column) => !column.marksComplete)
+    if (done) {
+      if (completeColumn) moveMutation.mutate({ id: todo.id, boardColumnId: completeColumn.id })
+      else completeMutation.mutate(todo.id)
+      return
+    }
+    if (openColumn) moveMutation.mutate({ id: todo.id, boardColumnId: openColumn.id })
+    else reopenMutation.mutate(todo.id)
+  }
+
   return (
     <div className="min-w-0">
       {reorderColumns.error && !showColumns && <ErrorAlert message={reorderColumns.error.message} />}
-      <div className="mona-tasks">
+      <div className="mona-phone mona-m-stack">
+        <MobilePageHeader title="Tarefas" />
+        {(todosError || columnsError || moveMutation.error || completeMutation.error || reopenMutation.error) && (
+          <ErrorAlert message={(todosError || columnsError || moveMutation.error || completeMutation.error || reopenMutation.error)!.message} />
+        )}
+        <div className="mona-m-segment">
+          <button type="button" className={mobileScope === 'today' ? 'is-active' : ''} onClick={() => setMobileScope('today')}>Hoje ({todayTodos.length})</button>
+          <button type="button" className={mobileScope === 'week' ? 'is-active' : ''} onClick={() => setMobileScope('week')}>Semana ({weekTodos.length})</button>
+          <button type="button" className={mobileScope === 'all' ? 'is-active' : ''} onClick={() => setMobileScope('all')}>Todas ({todos.length})</button>
+          {canWrite && (
+            <button type="button" className="is-icon" aria-label="Colunas" onClick={() => setShowColumns(true)}>
+              <SlidersHorizontal size={16} />
+            </button>
+          )}
+        </div>
+        {featured && (
+          <article className="mona-m-feature">
+            <p><Star size={12} /> Tarefa em destaque</p>
+            <h2 className="mona-m-title">{featured.title}</h2>
+            <p>{featured.clientName || (featured.isGeneral ? 'Geral' : 'Sem cliente')}</p>
+            <p>{featured.dueAtLocal || featured.dueAtUtc ? new Date(featured.dueAtLocal || featured.dueAtUtc!).toLocaleString('pt-BR', { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' }) : 'Sem prazo'}</p>
+            <button type="button" className="mona-m-cta" onClick={() => setFocusTodo((id) => id === featured.id ? null : featured.id)}>
+              Continuar tarefa <ArrowRight size={16} />
+            </button>
+            {focusTodo === featured.id && (
+              <div className="grid gap-2">
+                <Select aria-label="Mover tarefa" value={featured.boardColumnId || ''} disabled={!canWrite} onChange={(e) => moveMutation.mutate({ id: featured.id, boardColumnId: e.target.value })}>
+                  {columns.map((column) => <option key={column.id} value={column.id}>{column.name}</option>)}
+                </Select>
+                <div className="flex gap-2">
+                  <Button size="sm" variant="secondary" disabled={!canWrite} onClick={() => setCommentTodo(featured)}>Comentar</Button>
+                  {!featured.agendaEventId && <Button size="sm" variant="ghost" disabled={!canWrite} onClick={() => setScheduleTodo(featured)}>Agendar</Button>}
+                </div>
+              </div>
+            )}
+          </article>
+        )}
+        {phoneRows.length > 0 && (
+        <div className="mona-m-section__head">
+          <h2>Suas tarefas {mobileScope === 'today' ? 'de hoje' : mobileScope === 'week' ? 'da semana' : ''}<span className="mona-m-badge">{phoneRows.length}</span></h2>
+        </div>
+        )}
+        <label className="mona-m-sort">
+          Ordenar por
+          <select value={phoneSort} onChange={(e) => setPhoneSort(e.target.value as 'due' | 'priority')}>
+            <option value="due">Data de vencimento</option>
+            <option value="priority">Prioridade</option>
+          </select>
+        </label>
+        {canSeeAll && (
+          <Select label="Filtrar por responsável" value={ownerFilter} onChange={(e) => setOwnerFilter(e.target.value)}>
+            <option value="all">Todos (equipe)</option>
+            {users.map((u) => <option key={u.id} value={u.id}>{u.name}</option>)}
+          </Select>
+        )}
+        {overdueCount > 0 && <ErrorAlert message={`${overdueCount} tarefa(s) atrasada(s) — também aparecem em Alertas.`} />}
+        <div className="mona-m-list">
+          {phoneList.length === 0 && <p className="mona-m-sort">Nenhuma tarefa neste recorte.</p>}
+          {phoneRows.map((todo) => {
+            const done = todo.status === 'Done'
+            return (
+              <div key={todo.id} className="mona-m-row">
+                <button type="button" className={`mona-m-check${done ? ' is-on' : ''}`} aria-label={done ? 'Reabrir tarefa' : 'Concluir tarefa'} disabled={!canWrite} onClick={() => toggleTodo(todo, !done)}>
+                  <Check size={12} />
+                </button>
+                <div className="mona-m-row__body">
+                  <strong>{todo.title}</strong>
+                  <p>{todo.clientName || (todo.isGeneral ? 'Geral' : 'Sem cliente')}</p>
+                  <div className="mona-m-tags">
+                    {todo.tags?.slice(0, 1).map((tag) => <span key={tag} className="mona-m-badge">{tag}</span>)}
+                    {todo.priority && <span className={`mona-m-badge is-${todo.priority.toLowerCase()}`}>{priorityLabel[todo.priority] || todo.priority}</span>}
+                  </div>
+                  {focusTodo === todo.id && (
+                    <div className="mt-2 grid gap-2">
+                      <Select aria-label="Mover tarefa" value={todo.boardColumnId || ''} disabled={!canWrite} onChange={(e) => moveMutation.mutate({ id: todo.id, boardColumnId: e.target.value })}>
+                        {columns.map((column) => <option key={column.id} value={column.id}>{column.name}</option>)}
+                      </Select>
+                      <div className="flex gap-2">
+                        <Button size="sm" variant="ghost" disabled={!canWrite} onClick={() => setCommentTodo(todo)}>Comentar</Button>
+                        {!todo.agendaEventId && <Button size="sm" variant="ghost" disabled={!canWrite} onClick={() => setScheduleTodo(todo)}>Agendar</Button>}
+                      </div>
+                    </div>
+                  )}
+                </div>
+                <button type="button" className="mona-m-inline" onClick={() => setFocusTodo((id) => id === todo.id ? null : todo.id)}>
+                  {dueClock(todo)}
+                </button>
+              </div>
+            )
+          })}
+        </div>
+        {canWrite && (
+          <button type="button" className="mona-m-fab" aria-label="Nova tarefa" onClick={() => setShowAdd(true)}>
+            <Plus size={22} />
+          </button>
+        )}
+      </div>
+      <div className="mona-tasks mona-desk">
       <PageHeader
         title="Tarefas e demandas"
         subtitle="Quadro editável da equipe — prazos geram alertas; vincule cliente e agenda quando fizer sentido."

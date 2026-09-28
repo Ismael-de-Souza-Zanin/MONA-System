@@ -32,13 +32,13 @@ export function MobileHero({
   title,
   lead,
   cta,
-  note = 'Mais para o que importa',
+  note,
   art = 'mark',
 }: {
   kicker?: string
   title: string
   lead?: string
-  cta?: { to: string; label: string }
+  cta?: { to?: string; label: string; onClick?: () => void }
   note?: string
   art?: 'mark' | 'none'
 }) {
@@ -49,7 +49,12 @@ export function MobileHero({
         {kicker ? <p className="mona-m-kicker">{kicker}</p> : null}
         <h1 className="mona-m-title">{title}</h1>
         {lead ? <p className="mona-m-lead">{lead}</p> : null}
-        {cta ? (
+        {cta?.onClick ? (
+          <button type="button" className="mona-m-cta" onClick={cta.onClick}>
+            {cta.label}
+            <ArrowRight size={16} />
+          </button>
+        ) : cta?.to ? (
           <Link to={cta.to} className="mona-m-cta">
             {cta.label}
             <ArrowRight size={16} />
@@ -63,6 +68,29 @@ export function MobileHero({
       ) : null}
       {note ? <p className="mona-m-note">{note}</p> : null}
     </section>
+  )
+}
+
+export function MobilePageHeader({
+  title,
+  action,
+}: {
+  title: string
+  action?: { label: string; to?: string; onClick?: () => void }
+}) {
+  return (
+    <header className="mona-m-page-header">
+      <h1>{title}</h1>
+      {action?.onClick ? (
+        <button type="button" className="mona-m-page-header__action" onClick={action.onClick}>
+          {action.label}<ArrowRight size={15} />
+        </button>
+      ) : action?.to ? (
+        <Link to={action.to} className="mona-m-page-header__action">
+          {action.label}<ArrowRight size={15} />
+        </Link>
+      ) : null}
+    </header>
   )
 }
 

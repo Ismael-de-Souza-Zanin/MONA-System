@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
+import { Calendar, ChevronRight, MessageCircle, Search, SlidersHorizontal, UserPlus, Users } from 'lucide-react'
 import { api } from '../../shared/api/client'
 import type { Client, ClientStatus, ClientStatusChangeRequest, ClientStatusCounts } from '../../shared/types'
 import { Permissions } from '../../shared/permissions/constants'
@@ -14,6 +15,11 @@ import {
   ErrorAlert,
   Input,
   LoadingSpinner,
+  MobileAvatar,
+  MobileChip,
+  MobileChips,
+  MobilePageHeader,
+  MobileStat,
   Modal,
   PageHeader,
   Select,
@@ -29,13 +35,17 @@ const STATUS_COUNT_KEYS: Record<Exclude<ClientStatus | 'all', 'all'>, keyof Clie
   Hold: 'hold',
 }
 
-const STATUS_FILTERS: { value: ClientStatus | 'all'; label: string }[] = [
+const STATUS_FILTERS: { value: ClientStatus | 'all'; label: string; tone?: 'purple' | 'rose' | 'orange' | 'mint' }[] = [
   { value: 'all', label: 'Todos' },
-  { value: 'Active', label: 'Ativos' },
+  { value: 'Active', label: 'Ativos', tone: 'mint' },
   { value: 'Inactive', label: 'Inativos' },
-  { value: 'Notice', label: 'Aviso prévio' },
-  { value: 'Hold', label: 'Em hold' },
+  { value: 'Notice', label: 'Aviso prévio', tone: 'rose' },
+  { value: 'Hold', label: 'Em hold', tone: 'orange' },
 ]
+
+function phoneDigits(phone?: string) {
+  return (phone || '').replace(/\D/g, '')
+}
 
 function ClientStatusModal({
   client,
@@ -227,6 +237,7 @@ export function ClientsPage() {
   const [groupFilter, setGroupFilter] = useState('all')
   const [statusClient, setStatusClient] = useState<Client | null>(null)
   const [showAdd, setShowAdd] = useState(false)
+  const [showGroupFilter, setShowGroupFilter] = useState(false)
   const qc = useQueryClient()
 
   useEffect(() => {
@@ -280,12 +291,97 @@ export function ClientsPage() {
 
   if (isLoading) return <LoadingSpinner />
 
+  const attention = clients.filter(
+    (client) => client.status === 'Notice' || client.status === 'Hold' || client.needsQuickResponse,
+  ).length
 
   return (
     <div className="min-w-0">
+      <div className="mona-phone mona-m-stack">
+        <MobilePageHeader title="Clientes" />
+        <div className="mona-m-stats is-pair">
+          <MobileStat icon={Users} label="Clientes ativos" value={counts?.active ?? clients.filter((c) => c.status === 'Active').length} hint={`${counts?.total ?? clients.length} na carteira`} tone="purple" />
+          <MobileStat icon={Calendar} label="Em atenção" value={attention} hint="aviso, hold ou resposta rápida" tone="orange" />
+        </div>
+        {isError && (
+          <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
+            Não foi possível carregar a lista ({(error as Error)?.message || 'erro'}).
+            <button type="button" className="ml-2 font-medium underline" onClick={() => void refetch()}>Tentar de novo</button>
+          </div>
+        )}
+        <div className="mona-m-toolbar">
+          <label className="mona-m-search">
+            <Search size={16} />
+            <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Buscar cliente ou empresa..." />
+          </label>
+          <button type="button" className="mona-m-filter" aria-expanded={showGroupFilter} onClick={() => setShowGroupFilter((open) => !open)}>
+            <SlidersHorizontal size={16} /> Filtros
+          </button>
+        </div>
+        {showGroupFilter && (
+          <Select value={groupFilter} onChange={(e) => setGroupFilter(e.target.value)} aria-label="Grupo">
+            <option value="all">Todos os grupos</option>
+            {groups.map((g) => (
+              <option key={g.id} value={g.id}>{g.name}</option>
+            ))}
+          </Select>
+        )}
+        <MobileChips>
+          {STATUS_FILTERS.map((f) => (
+            <MobileChip key={f.value} active={statusFilter === f.value} tone={f.tone} onClick={() => setStatusFilter(f.value)}>
+              {f.label}
+              {f.value === 'all' ? ` (${counts?.total ?? clients.length})` : counts ? ` (${counts[STATUS_COUNT_KEYS[f.value]] ?? 0})` : ''}
+            </MobileChip>
+          ))}
+        </MobileChips>
+        {filtered.length === 0 ? (
+          <EmptyState title="Nenhum cliente encontrado" />
+        ) : (
+          <div className="mona-m-list">
+            {filtered.map((client) => {
+              const digits = phoneDigits(client.phone)
+              return (
+                <article key={client.id} className="mona-m-person">
+                  <Link to={`/clientes/${client.id}`} className="mona-m-person__main">
+                    <MobileAvatar name={client.name} />
+                    <div>
+                      <strong>{client.name}</strong>
+                      <p>{client.companyName || client.clientGroupName || 'Sem empresa'}</p>
+                      <span className={`mona-m-badge is-status-${client.status.toLowerCase()}`}>{getStatusLabel(client.status)}</span>
+                    </div>
+                  </Link>
+                  <div className="mona-m-person__tools">
+                    {digits ? (
+                      <a href={`https://wa.me/${digits}`} aria-label={`Mensagem para ${client.name}`}><MessageCircle size={18} /></a>
+                    ) : (
+                      <Link to="/whatsapp" aria-label={`Mensagem para ${client.name}`}><MessageCircle size={18} /></Link>
+                    )}
+                    <Link to="/agenda" aria-label={`Agenda de ${client.name}`}><Calendar size={18} /></Link>
+                    {canWrite && (
+                      <DropdownMenu trigger={<span aria-label={`Ações de ${client.name}`}>⋯</span>}>
+                        <DropdownItem onClick={() => setStatusClient(client)}>Alterar status</DropdownItem>
+                        <DropdownItem danger onClick={() => { if (confirm('Excluir este cliente?')) deleteMutation.mutate(client.id) }}>Excluir</DropdownItem>
+                      </DropdownMenu>
+                    )}
+                  </div>
+                </article>
+              )
+            })}
+          </div>
+        )}
+        {canWrite && (
+          <button type="button" className="mona-m-banner" onClick={() => setShowAdd(true)}>
+            <span className="mona-m-icon"><UserPlus size={18} /></span>
+            <span>
+              <strong>Novo cliente</strong>
+              <p>Cadastre um novo cliente e amplie suas oportunidades.</p>
+            </span>
+            <ChevronRight size={18} />
+          </button>
+        )}
+      </div>
 
-
-      <div className="mona-responsive-content">
+      <div className="mona-responsive-content mona-desk">
       <PageHeader
         title="Clientes totais"
         subtitle={`${counts?.total ?? clients.length} clientes · agrupe como a equipe definir`}

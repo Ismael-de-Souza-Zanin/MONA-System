@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useEffect, useState } from 'react'
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
+import { ChevronRight, ClipboardList, Search } from 'lucide-react'
 import { api } from '../../shared/api/client'
 import type { Client, Sop, SopRun, SopScript, SopStep } from '../../shared/types'
 import { Permissions } from '../../shared/permissions/constants'
@@ -12,6 +13,9 @@ import {
   EmptyState,
   Input,
   LoadingSpinner,
+  MobileChip,
+  MobileChips,
+  MobilePageHeader,
   PageHeader,
   Select,
   Textarea,
@@ -76,17 +80,85 @@ export function SopsListPage() {
       if (area) params.set('category', area)
       return api.get<Sop[]>(`/sops?${params}`)
     },
-    enabled: showLibrary || !!q || !!area,
+    enabled: true,
   })
 
   if (hubLoading) return <LoadingSpinner />
 
 
+  const areaTotal = (hub?.areas ?? []).reduce((sum, item) => sum + item.count, 0)
+
   return (
     <div className="mx-auto max-w-3xl">
+      <div className="mona-phone mona-m-stack">
+        <MobilePageHeader
+          title="Procedimentos"
+          action={canWrite ? { label: 'Novo procedimento', onClick: () => navigate('/sops/nova') } : undefined}
+        />
+        <label className="mona-m-search">
+          <Search size={16} />
+          <input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Buscar procedimentos..."
+          />
+        </label>
+        <MobileChips>
+          <MobileChip active={!area} onClick={() => setArea('')}>Todos ({areaTotal || results.length})</MobileChip>
+          {(hub?.areas ?? []).map((item) => (
+            <MobileChip key={item.area} active={area === item.area} onClick={() => setArea(area === item.area ? '' : item.area)}>
+              {item.area} ({item.count})
+            </MobileChip>
+          ))}
+        </MobileChips>
+        {(hub?.continueRuns?.length ?? 0) > 0 && !q && !area && (
+          <section>
+            <div className="mona-m-section__head"><h2>Continue de onde parou</h2></div>
+            <div className="mona-m-list">
+              {hub!.continueRuns.map((run) => (
+                <Link key={run.id} to={`/sops/${run.sopId}?run=${run.id}&mode=quick`} className="mona-m-person">
+                  <span className="mona-m-person__main">
+                    <span className="mona-m-icon"><ClipboardList size={18} /></span>
+                    <span>
+                      <strong>{run.sopName}</strong>
+                      <p>{run.clientName || 'Sem cliente'} · {run.progress}%</p>
+                    </span>
+                  </span>
+                  <ChevronRight size={18} />
+                </Link>
+              ))}
+            </div>
+          </section>
+        )}
+        {isFetching && results.length === 0 ? <p className="mona-m-sort">Carregando procedimentos…</p> : results.length === 0 ? (
+          <EmptyState title="Nenhum procedimento neste filtro" />
+        ) : (
+          <div className="mona-m-list">
+            {results.map((sop) => (
+              <Link key={sop.id} to={`/sops/${sop.id}?mode=quick`} className="mona-m-person">
+                <span className="mona-m-person__main">
+                  <span className="mona-m-icon"><ClipboardList size={18} /></span>
+                  <span>
+                    <strong>{sop.name}</strong>
+                    <p>{sop.category || sop.procedureType || 'Procedimento'}{typeof sop.stepCount === 'number' ? ` · ${sop.stepCount} etapas` : ''}</p>
+                    <span className="mona-m-badge is-status-active">{sop.isTemplate ? 'Modelo' : 'Procedimento'}</span>
+                  </span>
+                </span>
+                <ChevronRight size={18} />
+              </Link>
+            ))}
+          </div>
+        )}
+        <div className="mona-m-tip">
+          <span className="mona-m-icon"><ClipboardList size={16} /></span>
+          <div>
+            <strong>Dica da MONA</strong>
+            <p>Documente o processo e reduza erro operacional. Abra um procedimento para executar o passo a passo.</p>
+          </div>
+        </div>
+      </div>
 
-
-      <div className="mona-responsive-content">
+      <div className="mona-responsive-content mona-desk">
       <PageHeader
         title="Procedimentos"
         subtitle="Chegue com um problema e saia com o próximo passo — não uma biblioteca de documentos."

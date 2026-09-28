@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
+import { ChevronRight, Handshake, Target, Users } from 'lucide-react'
 import { api } from '../../shared/api/client'
 import type { Client, Partner } from '../../shared/types'
 import { Permissions } from '../../shared/permissions/constants'
@@ -10,6 +11,9 @@ import {
   EmptyState,
   Input,
   LoadingSpinner,
+  MobileAvatar,
+  MobilePageHeader,
+  MobileStat,
   Modal,
   PageHeader,
   Select,
@@ -134,11 +138,46 @@ export function PartnersPage() {
 
   if (isLoading) return <LoadingSpinner />
 
+  const linkedClients = partners.reduce((sum, partner) => sum + (partner.clients?.length ?? 0), 0)
+
   return (
     <div>
+      <div className="mona-phone mona-m-stack">
+        <MobilePageHeader title="Parcerias" />
+        <div className="mona-m-stats is-pair">
+          <MobileStat icon={Users} label="Parceiras" value={partners.length} hint="cadastradas" tone="purple" />
+          <MobileStat icon={Target} label="Vínculos" value={linkedClients} hint="clientes associados" tone="rose" />
+        </div>
+        <h2 className="mona-m-sort" style={{ justifyContent: 'flex-start' }}>Nossas parcerias</h2>
+        {partners.length === 0 ? <EmptyState title="Nenhuma parceira cadastrada" /> : (
+          <div className="mona-m-list" id="mona-mobile-partners-list">
+            {partners.map((partner) => (
+              <button key={partner.id} type="button" className="mona-m-person" onClick={() => setSelected(partner)}>
+                <span className="mona-m-person__main">
+                  <MobileAvatar name={partner.name} />
+                  <span>
+                    <strong>{partner.name}</strong>
+                    <p>{partner.service || 'Serviço não informado'}</p>
+                    <span className={`mona-m-badge ${(partner.clients?.length ?? 0) > 0 ? 'is-status-active' : 'is-status-hold'}`}>
+                      {(partner.clients?.length ?? 0) > 0 ? `${partner.clients!.length} clientes` : 'Sem clientes'}
+                    </span>
+                  </span>
+                </span>
+                <ChevronRight size={18} />
+              </button>
+            ))}
+          </div>
+        )}
+        {canWrite && (
+          <button type="button" className="mona-m-banner" onClick={() => setShowAdd(true)}>
+            <span className="mona-m-icon"><Handshake size={18} /></span>
+            <span><strong>Nova parceria</strong><p>Indique uma empresa ou cadastre uma nova parceira.</p></span>
+            <ChevronRight size={18} />
+          </button>
+        )}
+      </div>
 
-
-      <div className="mona-responsive-content">
+      <div className="mona-responsive-content mona-desk">
       <PageHeader
         title="Empresas parceiras"
         subtitle="Catálogo da organização — vincule aos clientes quando fizer sentido"

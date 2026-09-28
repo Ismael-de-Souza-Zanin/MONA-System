@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
+import { ChevronRight, Eye, FileText, Search } from 'lucide-react'
 import { api } from '../../shared/api/client'
 import type { Client, Contract, Employee } from '../../shared/types'
 import { Permissions } from '../../shared/permissions/constants'
@@ -10,6 +11,11 @@ import {
   EmptyState,
   Input,
   LoadingSpinner,
+  MobileAvatar,
+  MobileChip,
+  MobileChips,
+  MobilePageHeader,
+  MobileStat,
   Modal,
   PageHeader,
   PdfViewer,
@@ -199,11 +205,58 @@ export function ContractsPage() {
   if (isLoading) return <LoadingSpinner />
 
 
+  const countStatus = (status: string) => contracts.filter((c) => c.status === status).length
+  const statusLabel = (status: string) => ({ Active: 'Ativo', Draft: 'Rascunho', Expired: 'Vencido', Cancelled: 'Cancelado' }[status] || status)
+  const providerCount = contracts.filter((c) => c.type === 'Provider').length
+
   return (
     <div>
+      <div className="mona-phone mona-m-stack">
+        <MobilePageHeader title="Contratos" />
+        {canWrite && (
+          <button type="button" className="mona-m-cta" onClick={() => setShowForm(true)}>
+            Novo contrato
+          </button>
+        )}
+        <div className="mona-m-stats">
+          <MobileStat icon={FileText} label="Assinados" value={countStatus('Active')} tone="mint" />
+          <MobileStat icon={FileText} label="Pendentes" value={countStatus('Draft')} tone="orange" />
+          <MobileStat icon={FileText} label="Total" value={contracts.length} tone="purple" />
+        </div>
+        <label className="mona-m-search">
+          <Search size={16} />
+          <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Buscar contrato ou parte..." />
+        </label>
+        <MobileChips>
+          <MobileChip active={statusFilter === 'all' && typeFilter === 'all'} onClick={() => { setStatusFilter('all'); setTypeFilter('all') }}>Todos ({contracts.length})</MobileChip>
+          <MobileChip active={statusFilter === 'Active'} tone="mint" onClick={() => setStatusFilter('Active')}>Assinados ({countStatus('Active')})</MobileChip>
+          <MobileChip active={typeFilter === 'Provider'} tone="purple" onClick={() => setTypeFilter(typeFilter === 'Provider' ? 'all' : 'Provider')}>Prestadores ({providerCount})</MobileChip>
+        </MobileChips>
+        {filtered.length === 0 ? <EmptyState title="Nenhum contrato neste filtro" /> : (
+          <div className="mona-m-list">
+            {filtered.map((contract) => (
+              <article key={contract.id} className="mona-m-person">
+                <div className="mona-m-person__main">
+                  <MobileAvatar name={contract.partyName || contract.name} />
+                  <div>
+                    <strong>{contract.partyName || contract.name}</strong>
+                    <p>{contract.name} · {contract.type === 'Client' ? 'Cliente' : 'Prestador'}</p>
+                    <span className={`mona-m-badge ${contract.status === 'Active' ? 'is-status-active' : contract.status === 'Expired' ? 'is-status-notice' : 'is-status-hold'}`}>{statusLabel(contract.status)}</span>
+                  </div>
+                </div>
+                <div className="mona-m-person__tools">
+                  {contract.pdfUrl && (
+                    <button type="button" aria-label="Ver PDF" onClick={() => setPreview(contract)}><Eye size={18} /></button>
+                  )}
+                  {contract.partyPath && <Link to={contract.partyPath} aria-label="Abrir ficha"><ChevronRight size={18} /></Link>}
+                </div>
+              </article>
+            ))}
+          </div>
+        )}
+      </div>
 
-
-      <div className="mona-responsive-content">
+      <div className="mona-responsive-content mona-desk">
       <PageHeader
         title="Contratos"
         subtitle="Clientes e prestadores — PDF, ficha e vínculo com financeiro"

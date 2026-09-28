@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { ArrowUpRight, Bolt, CalendarDays, CheckSquare, Bell, Users, Plus } from 'lucide-react'
+import { ArrowUpRight, Bolt, CalendarDays, CheckSquare, Bell, Users, Plus, BarChart3 } from 'lucide-react'
 import { api } from '../../shared/api/client'
 import { Permissions } from '../../shared/permissions/constants'
 import { usePermissions } from '../../shared/permissions/hooks'
@@ -11,6 +11,9 @@ import {
   ErrorAlert,
   Input,
   LoadingSpinner,
+  MobilePageHeader,
+  MobileSection,
+  MobileStat,
   PageHeader,
   Select,
 } from '../../shared/ui'
@@ -78,6 +81,7 @@ export function OperationsPage() {
   const [search, setSearch] = useState('')
   const [clientFilter, setClientFilter] = useState('')
   const [kindFilter, setKindFilter] = useState('')
+  const [focusOn, setFocusOn] = useState(false)
 
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: ['operations-queue'],
@@ -164,18 +168,89 @@ export function OperationsPage() {
         }))
 
 
+  const preview = focusOn
+    ? visibleQueue.filter((item) => item.priority === 'Urgent' || item.kind === 'todo_overdue' || item.kind === 'quick_response' || item.kind === 'client_attention')
+    : visibleQueue
+  const priorityTodos = preview.filter((item) => item.kind.startsWith('todo'))
+  const meetings = preview.filter((item) => item.kind === 'agenda')
+  const attention = preview.filter((item) => item.kind === 'client_attention' || item.kind === 'quick_response')
+  const todayLabel = new Date().toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' })
+
   return (
     <div className="min-w-0">
-
+      <div className="mona-phone mona-m-stack">
+        <MobilePageHeader
+          title="Modo operação"
+          action={{ label: focusOn ? 'Ver a fila completa' : 'Entrar no modo foco', onClick: () => setFocusOn((on) => !on) }}
+        />
+        <section className="mona-m-panel">
+          <div className="mona-m-section__head">
+            <h2>Hoje</h2>
+            <Link to="/agenda">Ver agenda <ArrowUpRight size={14} /></Link>
+          </div>
+          <p className="mona-m-title" style={{ fontSize: '1.05rem', textTransform: 'capitalize' }}>{todayLabel}</p>
+          <div className="mona-m-stats">
+            <MobileStat to="/todos" icon={CheckSquare} label="Tarefas na fila" value={summary.todos} tone="purple" />
+            <MobileStat to="/agenda" icon={CalendarDays} label="Agenda 24h" value={summary.agenda} tone="orange" />
+            <MobileStat to="/clientes" icon={Users} label="Em atenção" value={summary.clientsAttention} tone="mint" />
+          </div>
+        </section>
+        <div className="mona-m-split">
+          <MobileSection title="Tarefas prioritárias" action={{ to: '/todos', label: 'Ver todas' }}>
+            <div className="mona-m-panel mona-m-mini">
+              {priorityTodos.length === 0 && <p className="mona-m-sort">Nenhuma tarefa neste recorte.</p>}
+              {priorityTodos.slice(0, 4).map((item) => (
+                <Link key={item.id} to={item.link}>
+                  <strong>{item.title}</strong>
+                  <span>{item.clientName || KIND_LABEL[item.kind]}{item.priority === 'Urgent' ? ' · Urgente' : ''}</span>
+                </Link>
+              ))}
+            </div>
+          </MobileSection>
+          <MobileSection title="Próximas reuniões" action={{ to: '/agenda', label: 'Ver todas' }}>
+            <div className="mona-m-panel mona-m-mini">
+              {meetings.length === 0 && <p className="mona-m-sort">Nenhuma reunião na fila.</p>}
+              {meetings.slice(0, 4).map((item) => (
+                <Link key={item.id} to={item.link}>
+                  <strong>{item.dueAtUtc ? new Date(item.dueAtUtc).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : '—'}</strong>
+                  <span>{item.title}{item.clientName ? ` · ${item.clientName}` : ''}</span>
+                </Link>
+              ))}
+            </div>
+          </MobileSection>
+        </div>
+        <div className="mona-m-split">
+          <MobileSection title="Clientes em atenção" action={{ to: '/clientes', label: 'Ver todos' }}>
+            <div className="mona-m-panel mona-m-mini">
+              {attention.length === 0 && <p className="mona-m-sort">Nenhum cliente em atenção.</p>}
+              {attention.slice(0, 4).map((item) => (
+                <Link key={item.id} to={item.link}>
+                  <strong>{item.clientName || item.title}</strong>
+                  <span>{item.priority === 'Urgent' ? 'Urgente' : KIND_LABEL[item.kind]}</span>
+                </Link>
+              ))}
+            </div>
+          </MobileSection>
+          <section className="mona-m-panel">
+            <h2 className="mona-m-section__head">Meu dia em números</h2>
+            <div className="mona-m-mini">
+              <p><BarChart3 size={16} /> <strong>{summary.total}</strong> na fila</p>
+              <p><Bell size={16} /> <strong>{summary.alerts}</strong> alertas</p>
+              <p><CheckSquare size={16} /> <strong>{summary.todos}</strong> tarefas</p>
+            </div>
+          </section>
+        </div>
+      </div>
 
       <div className="mona-responsive-content">
+      {error && (
+        <ErrorAlert message={`A atualização falhou. Exibindo a última fila carregada: ${error.message}`} />
+      )}
+      <div className="mona-desk">
       <PageHeader
         title="Modo operação"
         subtitle={`${data.organization?.name ?? 'Org'}. Fila do dia para a equipe — organize clientes em grupos que vocês mesmos definem. Fuso ${data.effectiveTimeZoneId ?? '—'}.`}
       />
-      {error && (
-        <ErrorAlert message={`A atualização falhou. Exibindo a última fila carregada: ${error.message}`} />
-      )}
 
       <div className="mb-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
         {[
@@ -192,6 +267,7 @@ export function OperationsPage() {
             </Card>
           </Link>
         ))}
+      </div>
       </div>
 
       <div className="mb-5 grid gap-4 lg:grid-cols-[1.2fr_1fr]">
@@ -245,7 +321,7 @@ export function OperationsPage() {
           )}
         </Card>
 
-        <Card className="bg-brand-50/40">
+        <Card className="mona-desk bg-brand-50/40">
           <h2 className="font-semibold text-ink-900">Foco operacional (Ju / Fatto)</h2>
           <ul className="mt-3 space-y-2 text-sm text-ink-700">
             <li>Fila do dia: alertas, tarefas, agenda e clientes marcados para resposta rápida.</li>

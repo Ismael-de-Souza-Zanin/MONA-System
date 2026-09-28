@@ -155,16 +155,8 @@ export const MOBILE_TAB_DEFS: MobileTabDef[] = [
   { id: 'agenda', label: 'Agenda', icon: CalendarDays, key: 'agenda', to: '/agenda' },
   { id: 'clientes', label: 'Clientes', icon: Users, key: 'clientes', to: '/clientes' },
   { id: 'financeiro', label: 'Financeiro', icon: Wallet, key: 'financeiro', to: '/financeiro' },
+  { id: 'chat', label: 'Chat', icon: MessagesSquare, key: 'chat', to: '/chat' },
 ]
-
-function usedMobileKeys() {
-  const used = new Set<string>(['chat', 'notificacoes'])
-  for (const tab of MOBILE_TAB_DEFS) {
-    if ('to' in tab) used.add(tab.key)
-    else tab.keys.forEach((key) => used.add(key))
-  }
-  return used
-}
 
 export function mobileTabs(visible: NavDefinition[]) {
   const byKey = new Map(visible.map((item) => [item.key, item]))
@@ -183,23 +175,7 @@ export function mobileTabs(visible: NavDefinition[]) {
 }
 
 export function mobileMoreSections(visible: NavDefinition[]) {
-  const byKey = new Map(visible.map((item) => [item.key, item]))
-  const used = usedMobileKeys()
-  const sections = NAV_GROUPS.map((group) => ({
-    ...group,
-    collapsible: true,
-    items: group.keys
-      .filter((key) => !used.has(key))
-      .map((key) => byKey.get(key))
-      .filter((item): item is NavDefinition => Boolean(item)),
-  }))
-  const principal = sections.find((group) => group.id === 'principal')
-  const operacao = sections.find((group) => group.id === 'operacao-group')
-  if (principal && operacao && principal.items.length) {
-    operacao.items = [...principal.items, ...operacao.items]
-    principal.items = []
-  }
-  return sections.filter((group) => group.items.length > 0)
+  return groupedNav(visible)
 }
 
 export function groupedNav(visible: NavDefinition[]) {

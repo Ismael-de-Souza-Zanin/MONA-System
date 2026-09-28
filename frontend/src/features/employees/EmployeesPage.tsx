@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
+import { Calendar, ChevronRight, Search, UserPlus, Users } from 'lucide-react'
 import { api } from '../../shared/api/client'
 import type { AccessType, Client, Employee, SharedUser } from '../../shared/types'
 import { Permissions } from '../../shared/permissions/constants'
@@ -12,6 +13,9 @@ import {
   EmptyState,
   Input,
   LoadingSpinner,
+  MobileAvatar,
+  MobilePageHeader,
+  MobileStat,
   Modal,
   PageHeader,
   Select,
@@ -89,9 +93,49 @@ export function EmployeesPage() {
         .includes(search.toLowerCase()),
   )
 
+  const withClients = employees.filter((emp) => (emp.assignedClientIds?.length ?? 0) > 0).length
+
   return (
     <div>
-      <div className="mona-responsive-content">
+      <div className="mona-phone mona-m-stack">
+        <MobilePageHeader title="Minha equipe" />
+        <div className="mona-m-stats is-pair">
+          <MobileStat icon={Users} label="Na equipe" value={employees.length} hint="com login na MONA" tone="mint" />
+          <MobileStat icon={UserPlus} label="Com clientes" value={withClients} hint="atribuição direta" tone="orange" />
+        </div>
+        <label className="mona-m-search">
+          <Search size={16} />
+          <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Buscar prestador..." />
+        </label>
+        {filtered.length === 0 ? <EmptyState title="Ninguém com login ainda" /> : (
+          <div className="mona-m-list">
+            {filtered.map((emp) => (
+              <article key={emp.id} className="mona-m-person">
+                <Link to={`/prestadores/${emp.id}`} className="mona-m-person__main">
+                  <MobileAvatar name={emp.name} />
+                  <div>
+                    <strong>{emp.name}</strong>
+                    <p>{emp.accessTypeName || 'Equipe'}{emp.email ? ` · ${emp.email}` : ''}</p>
+                    <span className={`mona-m-badge ${emp.isOwner ? 'is-status-notice' : 'is-status-active'}`}>{emp.isOwner ? 'Principal' : 'Ativo'}</span>
+                  </div>
+                </Link>
+                <div className="mona-m-person__tools">
+                  <Link to="/agenda" aria-label="Agenda"><Calendar size={18} /></Link>
+                  <Link to={`/prestadores/${emp.id}`} aria-label="Abrir ficha"><ChevronRight size={18} /></Link>
+                </div>
+              </article>
+            ))}
+          </div>
+        )}
+        {canCreateLogin && (
+          <button type="button" className="mona-m-banner" onClick={() => setOpen(true)}>
+            <span className="mona-m-icon"><UserPlus size={18} /></span>
+            <span><strong>Novo prestador</strong><p>Crie um login para a pessoa entrar na equipe.</p></span>
+            <ChevronRight size={18} />
+          </button>
+        )}
+      </div>
+      <div className="mona-responsive-content mona-desk">
         <PageHeader
           title="Minha equipe"
           subtitle="Somente quem tem usuário (login) na MONA"

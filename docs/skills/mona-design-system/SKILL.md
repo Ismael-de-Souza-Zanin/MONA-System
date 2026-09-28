@@ -5,7 +5,9 @@ description: Evoluir a interface MONA no projeto FattoVirtual, preservando sua i
 
 # Design system MONA
 
-No repositório FattoVirtual, leia `frontend/src/styles/README.md`, `tokens.css` e as classes relevantes de `semantic.css` antes de alterar a aparência. A identidade atual é roxo, rosa e laranja sobre superfícies claras ou escuras; referências antigas ao verde não são a fonte de verdade.
+A skill que o Cursor carrega está em `.cursor/skills/mona-design-edit/` (mapa em `surfaces.md`, verificação em `mona-design-verify`, mobile em `mona-responsive-parity`). Este arquivo é o resumo.
+
+No repositório, leia `frontend/src/styles/README.md`, `tokens.css` e as classes relevantes de `semantic.css` antes de alterar a aparência. A identidade atual é roxo, rosa e laranja sobre superfícies claras ou escuras; referências antigas ao verde não são a fonte de verdade.
 
 - Tokens `--mona-color-*`, `--mona-type-*`, `--mona-radius-*` e `--mona-space-*` alimentam os componentes. Os presets e overrides de `shared/theme` precisam continuar funcionando.
 - Use `shared/ui` para botões, campos, cartões, modais e cabeçalhos. Tailwind organiza layout; classes semânticas `.mona-*` definem aparência nova em `semantic.css`. `compat.css` é uma ponte legada, não um padrão para copiar.

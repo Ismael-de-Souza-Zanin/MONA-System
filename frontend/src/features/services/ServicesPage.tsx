@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
+import { Briefcase, ChevronRight, Gift } from 'lucide-react'
 import { api } from '../../shared/api/client'
 import type { ServiceItem } from '../../shared/types'
 import { Permissions } from '../../shared/permissions/constants'
@@ -11,6 +12,9 @@ import {
   EmptyState,
   Input,
   LoadingSpinner,
+  MobileChip,
+  MobileChips,
+  MobilePageHeader,
   Modal,
   PageHeader,
   Select,
@@ -99,11 +103,53 @@ export function ServicesPage() {
   if (isLoading) return <LoadingSpinner />
 
 
+  const activeCount = services.filter((service) => service.isActive !== false).length
+  const runningCount = services.filter((service) => service.clients?.some((client) => client.status === 'Active')).length
+
   return (
     <div className="min-w-0">
+      <div className="mona-phone mona-m-stack">
+        <MobilePageHeader title="Serviços" />
+        <MobileChips>
+          <MobileChip active={svcFilter === 'active'} tone="mint" onClick={() => setSvcFilter('active')}>Ativos ({activeCount})</MobileChip>
+          <MobileChip active={svcFilter === 'all'} tone="purple" onClick={() => setSvcFilter('all')}>Catálogo ({services.length})</MobileChip>
+          <MobileChip active={svcFilter === 'running'} tone="orange" onClick={() => setSvcFilter('running')}>Em execução ({runningCount})</MobileChip>
+        </MobileChips>
+        {filteredServices.length === 0 ? <EmptyState title="Nenhum serviço neste filtro" /> : (
+          <div className="mona-m-list">
+            {filteredServices.map((service) => {
+              const running = service.clients?.some((client) => client.status === 'Active')
+              const clientCount = service.clients?.length ?? 0
+              return (
+                <article key={service.id} className="mona-m-person">
+                  <div className="mona-m-person__main">
+                    <span className="mona-m-icon"><Briefcase size={18} /></span>
+                    <div>
+                      <strong>{service.title}</strong>
+                      <p>{service.description || service.category || 'Serviço'}</p>
+                      <span className="mona-m-badge">{service.category || 'Geral'}</span>
+                      <span className={`mona-m-badge ${running ? 'is-status-hold' : service.isActive === false ? 'is-status-inactive' : 'is-status-active'}`}>
+                        {running ? 'Em execução' : service.isActive === false ? 'Inativo' : 'Ativo'}
+                      </span>
+                      <p>{clientCount} {clientCount === 1 ? 'cliente' : 'clientes'}</p>
+                    </div>
+                  </div>
+                  {canWrite && (
+                    <button type="button" className="mona-m-inline" onClick={() => setAssignServiceId(service.id)}>Vincular</button>
+                  )}
+                </article>
+              )
+            })}
+          </div>
+        )}
+        <button type="button" className="mona-m-banner" onClick={() => canWrite ? setShowAdd(true) : setSvcFilter('all')}>
+          <span className="mona-m-icon"><Gift size={18} /></span>
+          <span><strong>Explore nosso catálogo</strong><p>{canWrite ? 'Cadastre um serviço e amplie as oportunidades.' : 'Veja todos os serviços cadastrados e amplie as entregas.'}</p></span>
+          <ChevronRight size={18} />
+        </button>
+      </div>
 
-
-      <div className="mona-responsive-content">
+      <div className="mona-responsive-content mona-desk">
       <PageHeader
         title="Base de serviços"
         subtitle="Cadastre o que a equipe entrega, as especificidades e vincule por cliente — base para chat e comunicação."

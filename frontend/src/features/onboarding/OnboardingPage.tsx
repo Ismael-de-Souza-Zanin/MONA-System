@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { CheckCircle2, ClipboardCheck, PlayCircle, Sparkles } from 'lucide-react'
+import { Check, CheckCircle2, ClipboardCheck, PlayCircle, Sparkles } from 'lucide-react'
 import { api } from '../../shared/api/client'
 import type { ChecklistTemplate, Client, Employee, OnboardingClient, Organization, ServiceItem } from '../../shared/types'
 import { Permissions } from '../../shared/permissions/constants'
@@ -13,6 +13,9 @@ import {
   EmptyState,
   Input,
   LoadingSpinner,
+  MobileAvatar,
+  MobilePageHeader,
+  MobileProgress,
   Modal,
   PageHeader,
   Select,
@@ -343,11 +346,111 @@ export function OnboardingPage() {
   if (isLoading) return <LoadingSpinner />
 
 
+  const featured = [...clients].sort((a, b) => {
+    const left = a.totalCount ? a.completedCount / a.totalCount : 1
+    const right = b.totalCount ? b.completedCount / b.totalCount : 1
+    return left - right
+  })[0]
+  const otherClients = featured ? clients.filter((client) => client.clientId !== featured.clientId) : []
+  const featuredPct = featured?.totalCount ? Math.round((featured.completedCount / featured.totalCount) * 100) : 0
+
   return (
     <div className="min-w-0">
+      <div className="mona-phone mona-m-stack">
+        <MobilePageHeader title="Onboarding" />
+        {canWrite && (
+          <button type="button" className="mona-m-cta" onClick={openGuidedSetup}>
+            Novo onboarding
+          </button>
+        )}
+        {setupResult && (
+          <div className="mona-m-tip">
+            <span className="mona-m-icon"><CheckCircle2 size={16} /></span>
+            <div><strong>Operação criada</strong><p>{setupResult}</p></div>
+          </div>
+        )}
+        {isError && (
+          <div className="mona-m-tip">
+            <div>
+              <strong>Não foi possível carregar</strong>
+              <p>{(error as Error)?.message || 'Erro ao buscar o onboarding.'}</p>
+              <button type="button" className="mona-m-inline" onClick={() => void refetch()}>Tentar de novo</button>
+            </div>
+          </div>
+        )}
+        {!isError && !featured && <EmptyState title="Todos os clientes concluíram o onboarding" />}
+        {featured && (
+          <>
+            <article className="mona-m-person">
+              <div className="mona-m-person__main">
+                <MobileAvatar name={featured.clientName} />
+                <div>
+                  <Link to={`/clientes/${featured.clientId}`} className="mona-m-title">{featured.clientName}</Link>
+                  <p>{featured.completedCount} de {featured.totalCount} etapas</p>
+                  <MobileProgress value={featuredPct} />
+                </div>
+              </div>
+              <span className="mona-m-badge">{featuredPct}%</span>
+            </article>
+            <section>
+              <div className="mona-m-section__head"><h2>Etapas do onboarding</h2></div>
+              <div className="mona-m-list">
+                {featured.items.map((item) => (
+                  <div key={item.id} className="mona-m-row">
+                    <button
+                      type="button"
+                      className={`mona-m-check${item.isCompleted ? ' is-on' : ''}`}
+                      aria-label={item.isCompleted ? 'Reabrir etapa' : 'Concluir etapa'}
+                      disabled={!canWrite}
+                      onClick={() => toggleMutation.mutate({ clientId: featured.clientId, itemId: item.id, isCompleted: !item.isCompleted })}
+                    >
+                      <Check size={12} />
+                    </button>
+                    <div className="mona-m-row__body">
+                      <strong>{item.title}</strong>
+                      <span className={`mona-m-badge ${item.isCompleted ? 'is-status-active' : 'is-status-hold'}`}>
+                        {item.isCompleted ? 'Concluída' : 'Pendente'}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </section>
+            {otherClients.length > 0 && (
+              <section>
+                <div className="mona-m-section__head"><h2>Outros clientes</h2></div>
+                <div className="mona-m-list">
+                  {otherClients.map((client) => {
+                    const pct = client.totalCount ? Math.round((client.completedCount / client.totalCount) * 100) : 0
+                    return (
+                      <article key={client.clientId} className="mona-m-person">
+                        <div className="mona-m-person__main">
+                          <MobileAvatar name={client.clientName} />
+                          <div>
+                            <strong>{client.clientName}</strong>
+                            <p>{client.completedCount} de {client.totalCount} etapas</p>
+                            <MobileProgress value={pct} />
+                          </div>
+                        </div>
+                        <Link to={`/clientes/${client.clientId}`} className="mona-m-inline">Abrir</Link>
+                      </article>
+                    )
+                  })}
+                </div>
+              </section>
+            )}
+            <div className="mona-m-tip">
+              <span className="mona-m-icon"><Sparkles size={16} /></span>
+              <div>
+                <strong>Dica da MONA</strong>
+                <p>Um onboarding bem feito reduz retrabalho. Marque cada etapa conforme ela acontece.</p>
+              </div>
+            </div>
+          </>
+        )}
+      </div>
 
-
-      <div className="mona-responsive-content">
+      <div className="mona-responsive-content mona-desk">
       <PageHeader
         title="Onboarding"
         subtitle="Setup operacional guiado para tirar uma agência de AVs do zero até uma operação real configurada."

@@ -5,6 +5,8 @@ description: Implementar e verificar paridade entre celular e desktop na aplica�
 
 # Paridade responsiva MONA
 
+A skill que o Cursor carrega está em `.cursor/skills/mona-responsive-parity/SKILL.md`. Este arquivo é o resumo.
+
 Use no frontend deste repositório. Consulte `docs/MOBILE-PARITY.md`, `app/router.tsx`, `shared/nav/navConfig.ts` e os componentes de cada fluxo afetado.
 
 - O shell troca para mobile abaixo de 768px. Mantenha esse limite consistente com CSS. Teste também 767/768px, 320/390px e desktop com várias abas abertas.

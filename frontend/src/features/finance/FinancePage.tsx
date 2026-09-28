@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
+import { Search, Wallet } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { api } from '../../shared/api/client'
 import type { ActiveClientPaymentTask, Payment } from '../../shared/types'
@@ -12,6 +13,11 @@ import {
   EmptyState,
   Input,
   LoadingSpinner,
+  MobileAvatar,
+  MobileChip,
+  MobileChips,
+  MobilePageHeader,
+  MobileStat,
   Modal,
   PageHeader,
   Select,
@@ -254,11 +260,53 @@ export function FinancePage() {
   if (isLoading) return <LoadingSpinner />
 
 
+  const paidSum = payments.filter((p) => p.status === 'Paid').reduce((sum, p) => sum + p.amount, 0)
+  const pendingSum = payments.filter((p) => p.status === 'Pending').reduce((sum, p) => sum + p.amount, 0)
+  const pendingCount = payments.filter((p) => p.status === 'Pending').length
+  const expenseSum = totals.apPaid + totals.payoutPaid
+  const profitSum = paidSum - expenseSum
+
   return (
     <div>
+      <div className="mona-phone mona-m-stack">
+        <MobilePageHeader title="Financeiro" action={{ to: '/relatorios', label: 'Ver relatório' }} />
+        <div className="mona-m-stats is-pair">
+          <MobileStat icon={Wallet} label="Receitas" value={money(paidSum)} hint="baixado" tone="mint" />
+          <MobileStat icon={Wallet} label="Despesas" value={money(expenseSum)} hint="baixado" tone="rose" />
+          <MobileStat icon={Wallet} label="Lucro" value={money(profitSum)} hint="no recorte" tone="purple" />
+          <MobileStat icon={Wallet} label="A receber" value={money(pendingSum)} hint="pendente" tone="orange" />
+        </div>
+        <label className="mona-m-search">
+          <Search size={16} />
+          <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Buscar lançamento ou cliente..." />
+        </label>
+        <MobileChips>
+          <MobileChip active={statusFilter === 'all'} onClick={() => setStatusFilter('all')}>Todos ({payments.length})</MobileChip>
+          <MobileChip active={statusFilter === 'Paid'} tone="mint" onClick={() => setStatusFilter('Paid')}>Pagos ({payments.filter((p) => p.status === 'Paid').length})</MobileChip>
+          <MobileChip active={statusFilter === 'Pending'} tone="orange" onClick={() => setStatusFilter('Pending')}>Pendentes ({pendingCount})</MobileChip>
+        </MobileChips>
+        {filtered.length === 0 ? <EmptyState title="Nenhum lançamento neste filtro" /> : (
+          <div className="mona-m-list">
+            {filtered.map((payment) => (
+              <article key={payment.id} className="mona-m-person">
+                <div className="mona-m-person__main">
+                  <MobileAvatar name={payment.clientName || payment.counterpartyName || payment.description || '?'} />
+                  <div>
+                    <strong>{payment.clientName || payment.counterpartyName || 'Sem cliente'}</strong>
+                    <p>{payment.description || ledgerLabel(payment.ledger)} · {money(payment.amount)}</p>
+                    <span className={`mona-m-badge ${payment.status === 'Paid' ? 'is-status-active' : 'is-status-hold'}`}>{payment.status === 'Paid' ? 'Pago' : 'Pendente'}</span>
+                  </div>
+                </div>
+                {canManageAll && payment.status === 'Pending' && (
+                  <button type="button" className="mona-m-inline" onClick={() => setSettleId(payment.id)}>Baixar</button>
+                )}
+              </article>
+            ))}
+          </div>
+        )}
+      </div>
 
-
-      <div className="mona-responsive-content">
+      <div className="mona-responsive-content mona-desk">
       <PageHeader
         title={canManageAll ? 'Financeiro' : 'Meu financeiro'}
         subtitle="Gavetas separadas: negócio do cliente, mensalidade da Fatto e repasse da VA."

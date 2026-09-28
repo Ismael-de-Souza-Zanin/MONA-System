@@ -27,21 +27,22 @@ import {
   ChevronDown,
   CalendarDays,
   CheckSquare,
+  ChevronsRight,
+  Maximize2,
   SquareStack,
-  LayoutGrid,
+  Users,
 } from 'lucide-react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { api } from '../shared/api/client'
-import type { AgendaEvent, TodoItem } from '../shared/types'
+import type { AgendaEvent, Client, TodoItem } from '../shared/types'
 import { useAuth } from '../shared/auth/AuthContext'
 import { useTheme } from '../shared/theme/ThemeContext'
 import { iconForPath } from '../shared/theme/tabIcon'
 import { usePermissions } from '../shared/permissions/hooks'
+import { Permissions } from '../shared/permissions/constants'
 import {
   NAV_DEFINITIONS,
   groupedNav,
-  mobileMoreSections,
-  mobileTabs,
   navGroupIdForPath,
   resolveMenu,
   type NavDefinition,
@@ -51,13 +52,17 @@ import { WorkspaceTabsProvider, useWorkspaceTabs } from './WorkspaceTabsContext'
 import { FloatingTabsLayer } from './FloatingTabsLayer'
 import { ChatWidget } from '../features/chat/ChatWidget'
 import type { LucideIcon } from 'lucide-react'
-import { BrandLogo, MonaFolder } from '../shared/ui'
+import { BrandLogo, MonaFolder, StatusDot, getStatusLabel } from '../shared/ui'
 import { PageTutorialHost, reopenPageTutorial } from '../shared/tutorial/PageTutorial'
 
 const WHATSAPP_URL = 'https://wa.me/5511999999999'
 const SIDEBAR_KEY = 'fatto_sidebar_collapsed'
 const NAV_GROUPS_KEY = 'mona_nav_groups_v1'
+const QUICK_PANEL_OPEN_KEY = 'mona_quick_panel_open_v1'
+const QUICK_PANEL_WIDTH_KEY = 'mona_quick_panel_width_v1'
+const QUICK_PANEL_TAB_KEY = 'mona_quick_panel_tab_v1'
 const FAN_COLORS = ['#F54D7D', '#582B86', '#8B4BB8', '#FF7A33', '#C45BA8']
+type QuickPanelTab = 'todos' | 'agenda' | 'clients'
 
 function hintOffset(index: number, count: number, upward = false) {
   if (count <= 1) return { x: 0, y: 0 }
@@ -76,6 +81,16 @@ function fanOffset(index: number, count: number, radius = 128, upward = false) {
   const end = mid + span / 2
   const t = start + ((end - start) * index) / (count - 1)
   return { x: Math.round(Math.cos(t) * radius), y: Math.round(Math.sin(t) * radius) }
+}
+
+function dockFanOffset(index: number, count: number, viewportWidth: number) {
+  if (count <= 1) return { x: 0, y: -112 }
+  const spacing = Math.min(76, (viewportWidth - 80) / (count - 1))
+  const progress = (index / (count - 1)) * 2 - 1
+  return {
+    x: Math.round((index - (count - 1) / 2) * spacing),
+    y: Math.round(-126 + 36 * progress * progress),
+  }
 }
 
 function BrandMark({ compact }: { compact?: boolean }) {
@@ -99,11 +114,13 @@ function SidebarLink({
   caption?: boolean
   forceActive?: boolean
 }) {
+  const [iconCycle, setIconCycle] = useState(0)
   return (
     <div className={compact ? 'group relative' : undefined}>
       <NavLink
         to={to}
         end={end}
+        onClick={() => setIconCycle((cycle) => cycle + 1)}
         aria-label={compact && !caption ? label : undefined}
         className={({ isActive }) =>
           `mona-sidebar__link ${compact ? 'is-compact' : ''} ${caption ? 'is-labeled' : ''} ${isActive || forceActive ? 'is-active' : ''}`
@@ -113,7 +130,7 @@ function SidebarLink({
           <>
             <span className="mona-sidebar__link-inner">
               <Icon
-                key={isActive ? `${to}-on` : `${to}-off`}
+                key={`${to}-${isActive ? 'on' : 'off'}-${iconCycle}`}
                 size={compact ? 18 : 16}
                 strokeWidth={1.8}
               />
@@ -158,9 +175,19 @@ function CompactGroupFan({
   const triggerRef = useRef<HTMLButtonElement>(null)
   const [origin, setOrigin] = useState({ top: 0, left: 0 })
   const [from, setFrom] = useState<{ x: number; y: number }[]>([])
+  const [iconCycle, setIconCycle] = useState(0)
   const childActive = items.some((item) =>
     item.to === '/' ? location.pathname === '/' : location.pathname === item.to || location.pathname.startsWith(`${item.to}/`),
   )
+  const fanPositions = items.map((_, index) =>
+    upward ? dockFanOffset(index, items.length, window.innerWidth) : fanOffset(index, items.length),
+  )
+  const leftEdge = origin.left + Math.min(...fanPositions.map((pos) => pos.x))
+  const rightEdge = origin.left + Math.max(...fanPositions.map((pos) => pos.x))
+  const edgeInset = 40
+  const fanShiftX = upward
+    ? leftEdge < edgeInset ? edgeInset - leftEdge : rightEdge > window.innerWidth - edgeInset ? window.innerWidth - edgeInset - rightEdge : 0
+    : 0
 
   useLayoutEffect(() => {
     const node = triggerRef.current
@@ -211,10 +238,14 @@ function CompactGroupFan({
         className={`mona-sidebar__link is-compact ${caption ? 'is-labeled' : ''} ${childActive || open ? 'is-active' : ''}`}
         aria-expanded={open}
         aria-label={`${label}, grupo com ${items.length} itens`}
-        onClick={onToggle}
+        onClick={() => {
+          if (upward) triggerRef.current?.scrollIntoView({ inline: 'center', block: 'nearest', behavior: 'smooth' })
+          setIconCycle((cycle) => cycle + 1)
+          onToggle()
+        }}
       >
         <span className="mona-sidebar__link-inner">
-          <Icon key={childActive || open ? `${label}-on` : `${label}-off`} size={18} strokeWidth={1.8} />
+          <Icon key={`${label}-${childActive || open ? 'on' : 'off'}-${iconCycle}`} size={18} strokeWidth={1.8} />
         </span>
         {caption && <span className="mona-sidebar__link-caption">{label}</span>}
       </button>
@@ -234,15 +265,10 @@ function CompactGroupFan({
         >
           {items.map((item, index) => {
             const ItemIcon = item.icon
-            let pos = fanOffset(index, items.length, upward ? (items.length > 6 ? 126 : 104) : 128, upward)
+            let pos = { ...fanPositions[index], x: fanPositions[index].x + fanShiftX }
             if (upward) {
-              const absX = origin.left + pos.x
               const absY = origin.top + pos.y
-              const xMin = 30
-              const xMax = window.innerWidth - 30
               const yMin = 72
-              if (absX < xMin) pos = { ...pos, x: pos.x + (xMin - absX) }
-              if (absX > xMax) pos = { ...pos, x: pos.x - (absX - xMax) }
               if (absY < yMin) pos = { ...pos, y: pos.y + (yMin - absY) }
             }
             const start = from[index] ?? (upward ? { x: 0, y: 8 } : { x: -12, y: 10 })
@@ -270,6 +296,7 @@ function CompactGroupFan({
                   } as CSSProperties
                 }
                 aria-label={item.label}
+                title={item.label}
                 onClick={onNavigate}
               >
                 <ItemIcon size={18} strokeWidth={1.8} />
@@ -281,94 +308,6 @@ function CompactGroupFan({
         document.body,
       )}
     </div>
-  )
-}
-
-function pathMatches(pathname: string, to: string) {
-  if (to === '/') return pathname === '/'
-  return pathname === to || pathname.startsWith(`${to}/`)
-}
-
-function MobileMoreSheet({
-  sections,
-  openGroups,
-  onToggleGroup,
-  onClose,
-}: {
-  sections: ReturnType<typeof mobileMoreSections>
-  openGroups: string[]
-  onToggleGroup: (id: string) => void
-  onClose: () => void
-}) {
-  const location = useLocation()
-  return createPortal(
-    <>
-      <button type="button" className="mona-more-backdrop" aria-label="Fechar menu" onClick={onClose} />
-      <nav className="mona-more-sheet" aria-label="Menu">
-        <header className="mona-more-sheet__head">
-          <p>Menu</p>
-          <button type="button" className="mona-more-sheet__close" aria-label="Fechar" onClick={onClose}>
-            <X size={16} />
-          </button>
-        </header>
-        {sections.map((section) => {
-          const open = !section.collapsible || openGroups.includes(section.id)
-          const GroupIcon = section.icon
-          return (
-            <div key={section.id} className="mona-sidebar__group">
-              {section.collapsible ? (
-                <button
-                  type="button"
-                  className="mona-sidebar__group-toggle"
-                  aria-expanded={open}
-                  onClick={() => onToggleGroup(section.id)}
-                >
-                  <span className="flex min-w-0 items-center gap-2">
-                    <GroupIcon size={14} strokeWidth={2} />
-                    {section.label}
-                  </span>
-                  <span className="mona-sidebar__group-meta">
-                    <span className="mona-sidebar__group-count">{section.items.length}</span>
-                    <ChevronDown size={14} className={open ? 'rotate-180' : ''} />
-                  </span>
-                </button>
-              ) : (
-                <p className="mona-sidebar__group-label">
-                  <span className="flex min-w-0 items-center gap-2">
-                    <GroupIcon size={14} strokeWidth={2} />
-                    {section.label}
-                  </span>
-                </p>
-              )}
-              <div className={`mona-sidebar__group-panel ${open ? 'is-open' : ''}`}>
-                <ul>
-                  {section.items.map((item) => {
-                    const ItemIcon = item.icon
-                    const active = pathMatches(location.pathname, item.to)
-                    return (
-                      <li key={item.key}>
-                        <NavLink
-                          to={item.to}
-                          end={item.to === '/'}
-                          className={`mona-more-sheet__link ${active ? 'is-active' : ''}`}
-                          onClick={onClose}
-                        >
-                          <span className="mona-more-sheet__icon">
-                            <ItemIcon size={16} strokeWidth={1.8} />
-                          </span>
-                          {item.label}
-                        </NavLink>
-                      </li>
-                    )
-                  })}
-                </ul>
-              </div>
-            </div>
-          )
-        })}
-      </nav>
-    </>,
-    document.body,
   )
 }
 
@@ -486,7 +425,7 @@ function SidebarIndicator({
       host.querySelectorAll('.is-notch-item').forEach((el) => {
         if (el !== item) el.classList.remove('is-notch-item')
       })
-      item?.classList.add('is-notch-item')
+      if (item && !item.classList.contains('is-notch-item')) item.classList.add('is-notch-item')
     }
 
     const update = () => {
@@ -499,7 +438,7 @@ function SidebarIndicator({
       markNotch(item)
       const hostRect = host.getBoundingClientRect()
       const bubble = item.querySelector<HTMLElement>('.mona-sidebar__link-inner') ?? item
-      const itemRect = bubble.getBoundingClientRect()
+      const itemRect = (orientation === 'horizontal' ? item : bubble).getBoundingClientRect()
       const scoop = metrics.scoop
       const y = Math.max(0, Math.round(itemRect.top - hostRect.top + (itemRect.height - metrics.size) / 2 - scoop))
       const rawX = Math.round(itemRect.left - hostRect.left + (itemRect.width - metrics.size) / 2 - scoop)
@@ -526,12 +465,20 @@ function SidebarIndicator({
     ro?.observe(host)
     if (nav) ro?.observe(nav)
     if (dock) ro?.observe(dock)
+    const observer = new MutationObserver((changes) => {
+      if (changes.some((change) => change.type === 'childList' ||
+        (change.target instanceof HTMLElement && change.target.classList.contains('mona-sidebar__link')))) {
+        update()
+      }
+    })
+    observer.observe(host, { childList: true, attributes: true, attributeFilter: ['class', 'aria-current'], subtree: true })
     return () => {
       cancelAnimationFrame(frame)
       window.clearTimeout(later)
       nav?.removeEventListener('scroll', update)
       window.removeEventListener('resize', update)
       ro?.disconnect()
+      observer.disconnect()
     }
   }, [enabled, layout, location.pathname, tick, metrics.size, metrics.depth, metrics.scoop, appearance.chrome.notchCircle, appearance.chrome.notchPop, orientation])
 
@@ -1139,12 +1086,33 @@ function dayKey(value: string | undefined, tz: string) {
   return new Date(value).toLocaleDateString('en-CA', { timeZone: tz })
 }
 
-function DockDayPanel() {
+function clampQuickPanelWidth(value: number) {
+  return Math.min(420, Math.max(236, value))
+}
+
+function readQuickPanelTab(): QuickPanelTab {
+  if (typeof window === 'undefined') return 'todos'
+  const value = window.localStorage.getItem(QUICK_PANEL_TAB_KEY)
+  return value === 'agenda' || value === 'clients' || value === 'todos' ? value : 'todos'
+}
+
+function QuickAccessPanel({
+  width,
+  onWidthChange,
+  onClose,
+}: {
+  width: number
+  onWidthChange: (width: number) => void
+  onClose: () => void
+}) {
   const navigate = useNavigate()
   const qc = useQueryClient()
+  const { hasPermission } = usePermissions()
   const { preferences, saveTravel, browserTimeZone } = useUserPreferences()
   const [now, setNow] = useState(() => new Date())
   const [doneIds, setDoneIds] = useState<string[]>([])
+  const [activeTab, setActiveTab] = useState<QuickPanelTab>(() => readQuickPanelTab())
+  const canSeeClients = hasPermission(Permissions.ClientsRead)
   const tz = preferences?.effectiveTimeZoneId || preferences?.timeZoneId || 'America/Sao_Paulo'
   const homeTz = preferences?.homeTimeZoneId || preferences?.timeZoneId || 'America/Sao_Paulo'
   const away =
@@ -1159,6 +1127,11 @@ function DockDayPanel() {
     queryKey: ['agenda-events', tz],
     queryFn: () =>
       api.get<AgendaEvent[]>(`/agenda/events?displayTimeZoneId=${encodeURIComponent(tz)}`),
+  })
+  const { data: clients = [] } = useQuery({
+    queryKey: ['clients'],
+    queryFn: () => api.get<Client[]>('/clients'),
+    enabled: canSeeClients,
   })
 
   useEffect(() => {
@@ -1182,73 +1155,140 @@ function DockDayPanel() {
   const todayEvents = events
     .filter((event) => dayKey(event.startAtUtc || event.startAt, tz) === today)
     .slice(0, 5)
+  const priorityClients = clients
+    .filter((client) => client.status === 'Notice' || client.status === 'Hold' || client.needsQuickResponse)
+    .concat(clients.filter((client) => client.status === 'Active' && !client.needsQuickResponse))
+    .filter((client, index, list) => list.findIndex((item) => item.id === client.id) === index)
+    .slice(0, 6)
 
   const time = now.toLocaleTimeString('pt-BR', { timeZone: tz, hour: '2-digit', minute: '2-digit' })
+  const tabs: { id: QuickPanelTab; label: string; icon: LucideIcon; count: number }[] = [
+    { id: 'todos', label: 'Tarefas', icon: CheckSquare, count: openTodos.length },
+    { id: 'agenda', label: 'Agenda', icon: CalendarDays, count: todayEvents.length },
+    { id: 'clients', label: 'Clientes', icon: Users, count: canSeeClients ? priorityClients.length : 0 },
+  ]
+
+  const activateTab = (tab: QuickPanelTab) => {
+    setActiveTab(tab)
+    window.localStorage.setItem(QUICK_PANEL_TAB_KEY, tab)
+  }
 
   return (
-    <div className="mona-dock__stack">
-      <div className="mona-stack__card">
-        <i className="mona-stack__handle" aria-hidden />
-        <button type="button" className="mona-day__head" onClick={() => navigate('/todos')}>
-          <span className="flex items-center gap-1.5 text-sm font-semibold text-ink-900">
-            <CheckSquare size={14} strokeWidth={2} />
-            Tarefas do dia
-          </span>
-          <span className="text-[11px] text-ink-500">{openTodos.length} abertas</span>
-        </button>
-        <ul className="mona-day__list">
-          {openTodos.length === 0 && <li className="mona-day__empty">Nada pendente para hoje</li>}
-          {openTodos.map((todo) => (
-            <li key={todo.id} className="mona-day__task">
-              <div className="mona-checklist">
-                <input
-                  id={`dock-todo-${todo.id}`}
-                  type="checkbox"
-                  checked={doneIds.includes(todo.id) || todo.status === 'Done'}
-                  onChange={(event) => {
-                    if (!event.target.checked || doneIds.includes(todo.id)) return
-                    setDoneIds((ids) => [...ids, todo.id])
-                    window.setTimeout(() => completeTodo.mutate(todo.id), 520)
-                  }}
-                />
-                <label htmlFor={`dock-todo-${todo.id}`}>{todo.title}</label>
-              </div>
-              {todo.isOverdue && !doneIds.includes(todo.id) && <em>atrasada</em>}
-            </li>
-          ))}
-        </ul>
+    <section className="mona-quick" style={{ '--mona-quick-w': `${width}px` } as CSSProperties}>
+      <header className="mona-quick__header">
+        <div>
+          <p className="mona-quick__eyebrow">Acesso rápido</p>
+          <h2>Painel lateral</h2>
+        </div>
+        <div className="mona-quick__actions">
+          <button type="button" className="mona-icon-btn" aria-label="Fechar painel rápido" title="Fechar" onClick={onClose}>
+            <ChevronsRight size={17} />
+          </button>
+        </div>
+      </header>
+
+      <div className="mona-quick__tabs" role="tablist" aria-label="Painel rápido">
+        {tabs.map((tab) => {
+          const TabIcon = tab.icon
+          const active = activeTab === tab.id
+          return (
+            <button
+              key={tab.id}
+              type="button"
+              role="tab"
+              aria-selected={active}
+              className={`mona-quick__tab ${active ? 'is-active' : ''}`}
+              onClick={() => activateTab(tab.id)}
+            >
+              <TabIcon size={15} />
+              <span>{tab.label}</span>
+              <em>{tab.count}</em>
+            </button>
+          )
+        })}
       </div>
 
-      <div className="mona-stack__card is-front">
-        <i className="mona-stack__handle" aria-hidden />
-        <button type="button" className="mona-day__head" onClick={() => navigate('/agenda')}>
-          <span className="flex items-center gap-1.5 text-sm font-semibold text-ink-900">
-            <CalendarDays size={14} strokeWidth={2} />
-            Agenda do dia
-          </span>
-          <span className="text-[11px] text-ink-500">{todayEvents.length} hoje</span>
-        </button>
-        <div className="mona-day__clock">
-          <strong>{time}</strong>
-          <span>{tzCity(tz)}</span>
-        </div>
-        <ul className="mona-day__list">
-          {todayEvents.length === 0 && <li className="mona-day__empty">Sem compromissos hoje</li>}
-          {todayEvents.map((event) => (
-            <li key={event.id}>
-              <button type="button" className="mona-day__row" onClick={() => navigate('/agenda')}>
-                <span className="truncate">{event.title}</span>
-                <em>
-                  {new Date(event.startAtUtc || event.startAt).toLocaleTimeString('pt-BR', {
-                    timeZone: tz,
-                    hour: '2-digit',
-                    minute: '2-digit',
-                  })}
-                </em>
-              </button>
-            </li>
-          ))}
-        </ul>
+      <div className="mona-quick__resize">
+        <Maximize2 size={14} />
+        <input
+          type="range"
+          min={236}
+          max={420}
+          step={4}
+          value={width}
+          aria-label="Largura do painel rápido"
+          onChange={(event) => onWidthChange(clampQuickPanelWidth(Number(event.target.value)))}
+        />
+      </div>
+
+      <div className="mona-quick__body">
+        {activeTab === 'todos' && (
+          <section className="mona-quick__screen" aria-label="Tarefas do dia">
+            <button type="button" className="mona-day__head" onClick={() => navigate('/todos')}>
+              <span>
+                <CheckSquare size={15} strokeWidth={2} />
+                Tarefas do dia
+              </span>
+              <em>{openTodos.length} abertas</em>
+            </button>
+            <ul className="mona-day__list">
+              {openTodos.length === 0 && <li className="mona-day__empty">Nada pendente para hoje</li>}
+              {openTodos.map((todo) => (
+                <li key={todo.id} className="mona-day__task">
+                  <div className="mona-checklist">
+                    <input
+                      id={`dock-todo-${todo.id}`}
+                      type="checkbox"
+                      checked={doneIds.includes(todo.id) || todo.status === 'Done'}
+                      onChange={(event) => {
+                        if (!event.target.checked || doneIds.includes(todo.id)) return
+                        setDoneIds((ids) => [...ids, todo.id])
+                        window.setTimeout(() => completeTodo.mutate(todo.id), 520)
+                      }}
+                    />
+                    <label htmlFor={`dock-todo-${todo.id}`}>{todo.title}</label>
+                  </div>
+                  {todo.isOverdue && !doneIds.includes(todo.id) && <em>atrasada</em>}
+                </li>
+              ))}
+            </ul>
+            <button type="button" className="mona-quick__cta" onClick={() => navigate('/todos')}>
+              <Plus size={15} />
+              Nova tarefa
+            </button>
+          </section>
+        )}
+
+        {activeTab === 'agenda' && (
+          <section className="mona-quick__screen" aria-label="Agenda do dia">
+            <button type="button" className="mona-day__head" onClick={() => navigate('/agenda')}>
+              <span>
+                <CalendarDays size={15} strokeWidth={2} />
+                Agenda do dia
+              </span>
+              <em>{todayEvents.length} hoje</em>
+            </button>
+            <div className="mona-day__clock">
+              <strong>{time}</strong>
+              <span>{tzCity(tz)}</span>
+            </div>
+            <ul className="mona-day__list">
+              {todayEvents.length === 0 && <li className="mona-day__empty">Sem compromissos hoje</li>}
+              {todayEvents.map((event) => (
+                <li key={event.id}>
+                  <button type="button" className="mona-day__row" onClick={() => navigate('/agenda')}>
+                    <span className="truncate">{event.title}</span>
+                    <em>
+                      {new Date(event.startAtUtc || event.startAt).toLocaleTimeString('pt-BR', {
+                        timeZone: tz,
+                        hour: '2-digit',
+                        minute: '2-digit',
+                      })}
+                    </em>
+                  </button>
+                </li>
+              ))}
+            </ul>
         {preferences?.travelModeEnabled ? (
           <button
             type="button"
@@ -1273,8 +1313,44 @@ function DockDayPanel() {
             Usar fuso local
           </button>
         ) : null}
+          </section>
+        )}
+
+        {activeTab === 'clients' && (
+          <section className="mona-quick__screen" aria-label="Clientes">
+            <button type="button" className="mona-day__head" onClick={() => navigate('/clientes')}>
+              <span>
+                <Users size={15} strokeWidth={2} />
+                Clientes
+              </span>
+              <em>{canSeeClients ? `${clients.length} total` : 'sem acesso'}</em>
+            </button>
+            <ul className="mona-day__list">
+              {!canSeeClients && <li className="mona-day__empty">Seu acesso atual não inclui clientes.</li>}
+              {canSeeClients && priorityClients.length === 0 && <li className="mona-day__empty">Nenhum cliente em destaque.</li>}
+              {priorityClients.map((client) => (
+                <li key={client.id}>
+                  <button type="button" className="mona-client-peek" onClick={() => navigate(`/clientes/${client.id}`)}>
+                    <span className="mona-client-peek__main">
+                      <strong>{client.name}</strong>
+                      <small>{client.companyName || client.segment || client.email || 'Cliente'}</small>
+                    </span>
+                    <span className="mona-client-peek__meta">
+                      <StatusDot status={client.status} />
+                      {client.needsQuickResponse ? 'Atenção' : getStatusLabel(client.status)}
+                    </span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+            <button type="button" className="mona-quick__cta" onClick={() => navigate('/clientes')}>
+              <Users size={15} />
+              Ver clientes
+            </button>
+          </section>
+        )}
       </div>
-    </div>
+    </section>
   )
 }
 
@@ -1507,6 +1583,14 @@ function AppShell() {
     if (typeof window !== 'undefined' && window.innerWidth < 768) return true
     return localStorage.getItem(SIDEBAR_KEY) === '1'
   })
+  const [quickPanelOpen, setQuickPanelOpen] = useState(() => {
+    if (typeof window === 'undefined') return true
+    return window.localStorage.getItem(QUICK_PANEL_OPEN_KEY) !== '0'
+  })
+  const [quickPanelWidth, setQuickPanelWidth] = useState(() => {
+    if (typeof window === 'undefined') return 280
+    return clampQuickPanelWidth(Number(window.localStorage.getItem(QUICK_PANEL_WIDTH_KEY)) || 280)
+  })
   const [openGroups, setOpenGroups] = useState<string[]>(() => {
     try {
       const raw = localStorage.getItem(NAV_GROUPS_KEY)
@@ -1520,13 +1604,19 @@ function AppShell() {
     return []
   })
   const [fanGroupId, setFanGroupId] = useState<string | null>(null)
-  const [moreOpen, setMoreOpen] = useState(false)
-  const [sheetGroups, setSheetGroups] = useState<string[]>([])
   const sidebarRef = useRef<HTMLElement>(null)
 
   useEffect(() => {
     if (!isMobile) localStorage.setItem(SIDEBAR_KEY, collapsed ? '1' : '0')
   }, [collapsed, isMobile])
+
+  useEffect(() => {
+    if (!isMobile) window.localStorage.setItem(QUICK_PANEL_OPEN_KEY, quickPanelOpen ? '1' : '0')
+  }, [quickPanelOpen, isMobile])
+
+  useEffect(() => {
+    if (!isMobile) window.localStorage.setItem(QUICK_PANEL_WIDTH_KEY, String(quickPanelWidth))
+  }, [quickPanelWidth, isMobile])
 
   useEffect(() => {
     const onResize = () => {
@@ -1554,13 +1644,7 @@ function AppShell() {
   )
 
   const sections = useMemo(() => groupedNav(visibleNav), [visibleNav])
-  const dockTabs = useMemo(() => mobileTabs(visibleNav), [visibleNav])
-  const moreSections = useMemo(() => mobileMoreSections(visibleNav), [visibleNav])
-  const moreActive =
-    location.pathname === '/mais' ||
-    moreSections.some((section) =>
-      section.items.some((item) => pathMatches(location.pathname, item.to)),
-    )
+  const chatNav = visibleNav.find((item) => item.key === 'chat')
   const activeGroupId = navGroupIdForPath(location.pathname)
 
   useEffect(() => {
@@ -1578,7 +1662,7 @@ function AppShell() {
     const frame = window.requestAnimationFrame(() => {
       document
         .querySelector('.mona-sidebar.is-mobile-dock .is-notch-item')
-        ?.closest('.group, .mona-fan')
+        ?.closest('.group, .mona-fan, li')
         ?.scrollIntoView({ inline: 'center', block: 'nearest', behavior: 'smooth' })
     })
     return () => window.cancelAnimationFrame(frame)
@@ -1599,26 +1683,23 @@ function AppShell() {
 
   useEffect(() => {
     setFanGroupId(null)
-    setMoreOpen(false)
   }, [location.pathname, collapsed])
 
   useEffect(() => {
-    if (!fanGroupId && !moreOpen) return
+    if (!fanGroupId) return
     const onDoc = (event: MouseEvent) => {
       const target = event.target as Node
       if (
         target instanceof Element &&
-        target.closest('.mona-fan, .mona-fan__list, .mona-more-sheet, .mona-sidebar__more')
+        target.closest('.mona-fan, .mona-fan__list, .mona-sidebar__more')
       ) {
         return
       }
       setFanGroupId(null)
-      setMoreOpen(false)
     }
     const onKey = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
         setFanGroupId(null)
-        setMoreOpen(false)
       }
     }
     document.addEventListener('mousedown', onDoc)
@@ -1627,7 +1708,7 @@ function AppShell() {
       document.removeEventListener('mousedown', onDoc)
       document.removeEventListener('keydown', onKey)
     }
-  }, [fanGroupId, moreOpen])
+  }, [fanGroupId])
 
   const handleLogout = async () => {
     await logout()
@@ -1656,6 +1737,7 @@ function AppShell() {
   const brandH = isMobile ? 0 : compactRail ? 80 : 72
   const menuTop = 12 + brandH + 10
   const mobileDockH = 72
+  const dockColumnW = quickPanelWidth
 
   return (
     <div className={`mona-shell ${isMobile ? 'is-mobile' : ''}`}>
@@ -1691,7 +1773,7 @@ function AppShell() {
           enabled
           layout={compactRail ? 'compact' : 'full'}
           orientation={isMobile ? 'horizontal' : 'vertical'}
-          tick={`${openGroups.join(',')}|${fanGroupId ?? ''}|${isMobile ? 'm' : 'd'}|${moreOpen ? 'more' : ''}`}
+          tick={`${openGroups.join(',')}|${fanGroupId ?? ''}|${isMobile ? 'm' : 'd'}`}
         />
         {!isMobile && (
           <div className={`relative z-[3] flex shrink-0 items-center ${compactRail ? 'justify-center pt-3' : 'justify-end px-3 pt-3'}`}>
@@ -1736,28 +1818,39 @@ function AppShell() {
             <div className="mona-sidebar__compact">
               {isMobile ? (
                 <>
-                  {dockTabs.map((tab) => (
-                    <div key={tab.id} className="group" onClick={() => setMoreOpen(false)}>
-                      <SidebarLink
-                        to={tab.to}
-                        end={tab.end}
-                        icon={tab.icon}
-                        label={tab.label}
-                        compact
+                  {sections.map((section) =>
+                    section.collapsible ? (
+                      <CompactGroupFan
+                        key={section.id}
+                        label={section.label}
+                        icon={section.icon}
+                        items={section.items}
+                        open={fanGroupId === section.id}
+                        onToggle={() => setFanGroupId((id) => (id === section.id ? null : section.id))}
+                        onNavigate={() => setFanGroupId(null)}
+                        upward
                         caption
                       />
-                    </div>
-                  ))}
-                  {moreSections.length > 0 && (
-                    <div className={`group ${moreActive ? 'is-more-active' : ''}`}>
-                      <SidebarLink
-                        to="/mais"
-                        icon={LayoutGrid}
-                        label="Mais"
-                        compact
-                        caption
-                        forceActive={moreActive}
-                      />
+                    ) : (
+                      <ul key={section.id}>
+                        {section.items.map((item) => (
+                          <li key={item.key} onClick={() => setFanGroupId(null)}>
+                            <SidebarLink
+                              to={item.to}
+                              end={item.to === '/'}
+                              icon={item.icon}
+                              label={item.label}
+                              compact
+                              caption
+                            />
+                          </li>
+                        ))}
+                      </ul>
+                    ),
+                  )}
+                  {chatNav && (
+                    <div className="group" onClick={() => setFanGroupId(null)}>
+                      <SidebarLink to={chatNav.to} icon={chatNav.icon} label="Chat" compact caption />
                     </div>
                   )}
                 </>
@@ -1844,24 +1937,14 @@ function AppShell() {
             )}
         </nav>
       </aside>
-      {isMobile && moreOpen && (
-        <MobileMoreSheet
-          sections={moreSections}
-          openGroups={sheetGroups}
-          onToggleGroup={(id) =>
-            setSheetGroups((prev) => (prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]))
-          }
-          onClose={() => setMoreOpen(false)}
-        />
-      )}
-
       <div
-        className={`mona-canvas min-w-0 flex-1 transition-[margin] ${isMobile ? '' : 'my-3 mr-3'}`}
+        className={`mona-canvas min-w-0 flex-1 transition-[margin] ${quickPanelOpen ? 'has-quick-panel' : 'is-quick-closed'} ${isMobile ? '' : 'my-3 mr-3'}`}
         style={{
           marginLeft: contentMargin,
           marginRight: isMobile ? 0 : undefined,
           marginTop: isMobile ? 0 : undefined,
-        }}
+          '--mona-dock-w': `${dockColumnW}px`,
+        } as CSSProperties}
       >
         <section className="mona-workspace">
           <header className="mona-topbar">
@@ -1969,7 +2052,20 @@ function AppShell() {
           </main>
         </section>
 
-        {!isMobile && (
+        {!isMobile && !quickPanelOpen && (
+          <button
+            type="button"
+            className="mona-quick-float"
+            aria-label="Abrir painel rápido"
+            title="Abrir painel rápido"
+            onClick={() => setQuickPanelOpen(true)}
+          >
+            <LayoutPanelTop size={18} />
+            <span>Painel</span>
+          </button>
+        )}
+
+        {!isMobile && quickPanelOpen && (
         <aside className="mona-dock">
           <div className="mona-panel mona-panel--tools">
               <button
@@ -2049,7 +2145,11 @@ function AppShell() {
               onLogout={() => void handleLogout()}
             />
                 </div>
-          <DockDayPanel />
+            <QuickAccessPanel
+              width={quickPanelWidth}
+              onWidthChange={setQuickPanelWidth}
+              onClose={() => setQuickPanelOpen(false)}
+            />
         </aside>
         )}
       </div>

@@ -10,7 +10,7 @@ import {
   EmptyState,
   Input,
   LoadingSpinner,
-  MobileHero,
+  MobilePageHeader,
   MobileSection,
   MobileTip,
   Modal,
@@ -41,12 +41,7 @@ export function AppsPage() {
 
   return (
     <div className="mona-m-stack">
-      <MobileHero
-        kicker="Apps"
-        title="Ferramentas do dia a dia"
-        lead="Acesse os aplicativos que a equipe usa no trabalho, em um só lugar."
-        note="Menos abas, mais foco"
-      />
+      <MobilePageHeader title="Apps" />
 
       {canWrite && (
         <div className="flex justify-end">
