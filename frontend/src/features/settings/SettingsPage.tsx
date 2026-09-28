@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
-import { Building2, Monitor, Palette, Shield, User, UserPlus } from 'lucide-react'
+import { Building2, Monitor, Palette, Pencil, Shield, Trash2, User, UserPlus } from 'lucide-react'
 import { AppearanceStudio } from '../../shared/theme/AppearanceStudio'
 import { api, getApiBase, setApiBaseOverride } from '../../shared/api/client'
 import { isDesktopApp } from '../../shared/desktop'
@@ -17,6 +17,7 @@ import {
   Card,
   Checkbox,
   EmptyState,
+  ErrorAlert,
   Input,
   LoadingSpinner,
   Modal,
@@ -25,6 +26,22 @@ import {
 } from '../../shared/ui'
 
 type TabId = 'people' | 'access' | 'org' | 'user' | 'appearance' | 'desktop'
+
+type TeamUserForm = {
+  name: string
+  email: string
+  password: string
+  accessTypeId: string
+  assignedClientIds: string[]
+}
+
+const emptyTeamUserForm = (): TeamUserForm => ({
+  name: '',
+  email: '',
+  password: '',
+  accessTypeId: '',
+  assignedClientIds: [],
+})
 
 export function SettingsPage() {
   const qc = useQueryClient()
@@ -40,15 +57,12 @@ export function SettingsPage() {
   )
   const [showAccessType, setShowAccessType] = useState(false)
   const [showSharedUser, setShowSharedUser] = useState(false)
+  const [editingUser, setEditingUser] = useState<SharedUser | null>(null)
+  const [deletingUser, setDeletingUser] = useState<SharedUser | null>(null)
   const [createdCreds, setCreatedCreds] = useState<{ email: string; password: string } | null>(null)
   const [accessForm, setAccessForm] = useState({ name: '', permissions: [] as Permission[] })
-  const [sharedForm, setSharedForm] = useState({
-    name: '',
-    email: '',
-    password: '',
-    accessTypeId: '',
-    assignedClientIds: [] as string[],
-  })
+  const [sharedForm, setSharedForm] = useState<TeamUserForm>(emptyTeamUserForm)
+  const [editForm, setEditForm] = useState<TeamUserForm>(emptyTeamUserForm)
   const [orgForm, setOrgForm] = useState<Partial<Organization>>({})
   const [userForm, setUserForm] = useState<Partial<UserProfile>>({})
   const [apiBaseDraft, setApiBaseDraft] = useState(() => getApiBase())
@@ -133,11 +147,59 @@ export function SettingsPage() {
       void qc.invalidateQueries({ queryKey: ['employees'] })
       setCreatedCreds({ email: sharedForm.email, password: sharedForm.password })
       setShowSharedUser(false)
-      setSharedForm({ name: '', email: '', password: '', accessTypeId: '', assignedClientIds: [] })
+      setSharedForm(emptyTeamUserForm())
     },
   })
 
+  const selectedEditAccessType = accessTypes.find((a) => a.id === editForm.accessTypeId)
+  const editIsEqualHierarchy =
+    Boolean(selectedEditAccessType?.isOwnerType) || selectedEditAccessType?.name === 'Co-admin'
+
+  const editSharedUserMutation = useMutation({
+    mutationFn: () => {
+      if (!editingUser) throw new Error('Selecione um usuário para editar.')
+      return api.patch(`/shared-users/${editingUser.id}`, {
+        name: editForm.name,
+        email: editForm.email,
+        password: editForm.password || null,
+        accessTypeId: editForm.accessTypeId,
+        assignedClientIds: editIsEqualHierarchy ? [] : editForm.assignedClientIds,
+      })
+    },
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ['shared-users'] })
+      void qc.invalidateQueries({ queryKey: ['employees'] })
+      setEditingUser(null)
+      setEditForm(emptyTeamUserForm())
+    },
+  })
+
+  const deleteSharedUserMutation = useMutation({
+    mutationFn: () => {
+      if (!deletingUser) throw new Error('Selecione um usuário para excluir.')
+      return api.delete(`/shared-users/${deletingUser.id}`)
+    },
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ['shared-users'] })
+      void qc.invalidateQueries({ queryKey: ['employees'] })
+      setDeletingUser(null)
+    },
+  })
+
+  const openEditUser = (sharedUser: SharedUser) => {
+    setEditForm({
+      name: sharedUser.name,
+      email: sharedUser.email,
+      password: '',
+      accessTypeId: sharedUser.accessTypeId,
+      assignedClientIds: [...sharedUser.assignedClientIds],
+    })
+    editSharedUserMutation.reset()
+    setEditingUser(sharedUser)
+  }
+
   const canCreatePeople = Boolean(user?.isOwner)
+  const canManagePeople = Boolean(user?.isOwner)
   const tabs = useMemo(() => {
     const list: { id: TabId; label: string; icon: typeof UserPlus }[] = [
       { id: 'people', label: 'Pessoas e acessos', icon: UserPlus },
@@ -276,6 +338,7 @@ export function SettingsPage() {
                     <th className="px-4 py-3 font-medium">E-mail / login</th>
                     <th className="px-4 py-3 font-medium">Tipo</th>
                     <th className="px-4 py-3 font-medium">Clientes</th>
+                    <th className="px-4 py-3 text-right font-medium">Ações</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -296,6 +359,24 @@ export function SettingsPage() {
                       <td data-label="Tipo" className="px-4 py-3">{su.accessTypeName || '—'}</td>
                       <td data-label="Clientes" className="px-4 py-3">
                         {su.isOwner ? 'Todos' : `${su.assignedClientIds.length} atribuído(s)`}
+                      </td>
+                      <td data-label="Ações" className="px-4 py-3">
+                        <div className="flex justify-end gap-2">
+                          {canManagePeople && !su.isCurrentUser ? (
+                            <>
+                              <Button size="sm" variant="secondary" onClick={() => openEditUser(su)}>
+                                <Pencil size={14} aria-hidden /> Editar
+                              </Button>
+                              <Button size="sm" variant="danger" onClick={() => setDeletingUser(su)}>
+                                <Trash2 size={14} aria-hidden /> Excluir
+                              </Button>
+                            </>
+                          ) : (
+                            <span className="text-xs text-ink-500">
+                              {su.isCurrentUser ? 'Conta em uso' : 'Sem permissão'}
+                            </span>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -566,11 +647,7 @@ export function SettingsPage() {
               </div>
             </div>
           )}
-          {sharedUserMutation.isError && (
-            <p className="text-sm text-red-600">
-              {(sharedUserMutation.error as Error).message}
-            </p>
-          )}
+          {sharedUserMutation.isError && <ErrorAlert message={sharedUserMutation.error.message} />}
           <Button
             disabled={
               !sharedForm.name ||
@@ -583,6 +660,128 @@ export function SettingsPage() {
           >
             {sharedUserMutation.isPending ? 'Salvando...' : 'Criar login e liberar acesso'}
           </Button>
+        </div>
+      </Modal>
+
+      <Modal
+        open={editingUser !== null}
+        onClose={() => setEditingUser(null)}
+        title="Editar usuário da equipe"
+        size="lg"
+      >
+        <div className="space-y-4">
+          <p className="text-sm text-ink-600">
+            Atualize os dados de acesso. Deixe a nova senha vazia para manter a senha atual.
+          </p>
+          <Input
+            label="Nome"
+            value={editForm.name}
+            onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
+          />
+          <Input
+            label="E-mail (login)"
+            type="email"
+            value={editForm.email}
+            onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
+          />
+          <Input
+            label="Nova senha (opcional)"
+            type="password"
+            value={editForm.password}
+            onChange={(e) => setEditForm({ ...editForm, password: e.target.value })}
+            autoComplete="new-password"
+          />
+          <Select
+            label="Tipo de acesso"
+            value={editForm.accessTypeId}
+            onChange={(e) => setEditForm({ ...editForm, accessTypeId: e.target.value })}
+          >
+            <option value="">Selecione...</option>
+            {accessTypes.map((at) => (
+              <option key={at.id} value={at.id}>
+                {at.name}
+              </option>
+            ))}
+          </Select>
+          {editIsEqualHierarchy ? (
+            <p className="rounded-xl bg-brand-50 px-3 py-2 text-sm text-brand-900">
+              Este tipo possui acesso total a todos os clientes.
+            </p>
+          ) : (
+            <div>
+              <p className="mb-2 text-sm font-medium text-ink-900">Clientes que ela poderá ver</p>
+              <div className="max-h-40 space-y-1 overflow-y-auto rounded-lg border border-ink-100 p-3">
+                {clients.length === 0 ? (
+                  <p className="text-xs text-ink-500">Nenhum cliente cadastrado ainda.</p>
+                ) : (
+                  clients.map((client) => (
+                    <Checkbox
+                      key={client.id}
+                      label={client.name}
+                      checked={editForm.assignedClientIds.includes(client.id)}
+                      onChange={(event) => {
+                        setEditForm((current) => ({
+                          ...current,
+                          assignedClientIds: event.target.checked
+                            ? [...current.assignedClientIds, client.id]
+                            : current.assignedClientIds.filter((id) => id !== client.id),
+                        }))
+                      }}
+                    />
+                  ))
+                )}
+              </div>
+            </div>
+          )}
+          {editSharedUserMutation.isError && (
+            <ErrorAlert message={editSharedUserMutation.error.message} />
+          )}
+          <div className="flex flex-wrap justify-end gap-2">
+            <Button variant="secondary" onClick={() => setEditingUser(null)}>
+              Cancelar
+            </Button>
+            <Button
+              disabled={
+                !editForm.name ||
+                !editForm.email ||
+                !editForm.accessTypeId ||
+                editSharedUserMutation.isPending
+              }
+              onClick={() => editSharedUserMutation.mutate()}
+            >
+              {editSharedUserMutation.isPending ? 'Salvando...' : 'Salvar alterações'}
+            </Button>
+          </div>
+        </div>
+      </Modal>
+
+      <Modal
+        open={deletingUser !== null}
+        onClose={() => setDeletingUser(null)}
+        title="Excluir acesso da equipe"
+        size="sm"
+      >
+        <div className="space-y-4">
+          <p className="text-sm text-ink-700">
+            Excluir o login de <strong>{deletingUser?.name}</strong> ({deletingUser?.email})? O acesso
+            será revogado e o histórico operacional permanecerá preservado.
+          </p>
+          {deleteSharedUserMutation.isError && (
+            <ErrorAlert message={deleteSharedUserMutation.error.message} />
+          )}
+          <div className="flex flex-wrap justify-end gap-2">
+            <Button variant="secondary" onClick={() => setDeletingUser(null)}>
+              Cancelar
+            </Button>
+            <Button
+              variant="danger"
+              disabled={deleteSharedUserMutation.isPending}
+              onClick={() => deleteSharedUserMutation.mutate()}
+            >
+              <Trash2 size={16} aria-hidden />
+              {deleteSharedUserMutation.isPending ? 'Excluindo...' : 'Excluir acesso'}
+            </Button>
+          </div>
         </div>
       </Modal>
     </div>

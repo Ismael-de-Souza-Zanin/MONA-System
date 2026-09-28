@@ -239,10 +239,64 @@ public class SettingsController : ControllerBase
         if (user is null || user.OrganizationId != orgId)
             return NotFound();
 
-        if (user.IsOrganizationOwner)
-            return BadRequest(new { detail = "A conta principal já tem acesso a todos os clientes." });
+        var changesIdentity = body.Name is not null || body.FullName is not null || body.Email is not null ||
+                              body.Password is not null || body.AccessTypeId is not null;
+        if (changesIdentity && !User.IsOwner())
+            return StatusCode(403, new { detail = "Somente a conta principal pode editar logins." });
+        if (changesIdentity && user.Id == User.GetUserId())
+            return BadRequest(new { detail = "Edite sua própria conta pela aba Meu perfil." });
 
-        if (body.AssignedClientIds is not null)
+        Domain.Entities.AccessType? accessType = null;
+        if (body.AccessTypeId is not null)
+        {
+            accessType = await _db.AccessTypes.FirstOrDefaultAsync(x =>
+                x.Id == body.AccessTypeId.Value && x.OrganizationId == orgId);
+            if (accessType is null)
+                return BadRequest(new { detail = "Tipo de acesso inválido." });
+        }
+
+        var newEmail = body.Email?.Trim();
+        if (newEmail is not null)
+        {
+            if (string.IsNullOrWhiteSpace(newEmail))
+                return BadRequest(new { detail = "E-mail é obrigatório." });
+            var existing = await _users.FindByEmailAsync(newEmail);
+            if (existing is not null && existing.Id != user.Id)
+                return BadRequest(new { detail = "Já existe um usuário com este e-mail." });
+        }
+
+        if (!string.IsNullOrWhiteSpace(body.Password))
+        {
+            foreach (var validator in _users.PasswordValidators)
+            {
+                var validation = await validator.ValidateAsync(_users, user, body.Password);
+                if (!validation.Succeeded)
+                    return BadRequest(new { detail = string.Join("; ", validation.Errors.Select(e => e.Description)) });
+            }
+        }
+
+        user.FullName = body.Name?.Trim() ?? body.FullName?.Trim() ?? user.FullName;
+        if (newEmail is not null && !string.Equals(user.Email, newEmail, StringComparison.OrdinalIgnoreCase))
+        {
+            var emailResult = await _users.SetEmailAsync(user, newEmail);
+            if (!emailResult.Succeeded)
+                return BadRequest(new { detail = string.Join("; ", emailResult.Errors.Select(e => e.Description)) });
+            var userNameResult = await _users.SetUserNameAsync(user, newEmail);
+            if (!userNameResult.Succeeded)
+                return BadRequest(new { detail = string.Join("; ", userNameResult.Errors.Select(e => e.Description)) });
+        }
+
+        if (accessType is not null)
+        {
+            user.AccessTypeId = accessType.Id;
+            user.IsOrganizationOwner = accessType.IsOwnerType;
+        }
+
+        if (user.IsOrganizationOwner)
+        {
+            user.AssignedClientIds = [];
+        }
+        else if (body.AssignedClientIds is not null)
         {
             var allowed = await _db.Clients
                 .Where(c => c.OrganizationId == orgId)
@@ -252,16 +306,114 @@ public class SettingsController : ControllerBase
             user.AssignedClientIds = body.AssignedClientIds.Where(allowedSet.Contains).Distinct().ToList();
         }
 
-        await _users.UpdateAsync(user);
+        var updateResult = await _users.UpdateAsync(user);
+        if (!updateResult.Succeeded)
+            return BadRequest(new { detail = string.Join("; ", updateResult.Errors.Select(e => e.Description)) });
+
+        if (!string.IsNullOrWhiteSpace(body.Password))
+        {
+            var token = await _users.GeneratePasswordResetTokenAsync(user);
+            var passwordResult = await _users.ResetPasswordAsync(user, token, body.Password);
+            if (!passwordResult.Succeeded)
+                return BadRequest(new { detail = string.Join("; ", passwordResult.Errors.Select(e => e.Description)) });
+            var activeTokens = await _db.RefreshTokens.Where(x => x.UserId == user.Id).ToListAsync();
+            _db.RefreshTokens.RemoveRange(activeTokens);
+        }
+
+        await SyncEmployeeAsync(user, orgId);
+        var accessTypeName = user.AccessTypeId is null
+            ? null
+            : await _db.AccessTypes.Where(x => x.Id == user.AccessTypeId.Value).Select(x => x.Name).FirstOrDefaultAsync();
         return Ok(new
         {
             id = user.Id,
             name = user.FullName,
             email = user.Email,
             accessTypeId = user.AccessTypeId,
+            accessTypeName,
             assignedClientIds = user.AssignedClientIds.Select(x => x.ToString()).ToList(),
             isOwner = user.IsOrganizationOwner
         });
+    }
+
+    [HttpDelete("shared-users/{id}")]
+    [RequirePermission(Permissions.Settings)]
+    public async Task<IActionResult> DeleteSharedUser(string id)
+    {
+        if (!User.IsOwner())
+            return StatusCode(403, new { detail = "Somente a conta principal pode excluir logins." });
+        if (id == User.GetUserId())
+            return BadRequest(new { detail = "A conta em uso não pode ser excluída." });
+
+        var orgId = User.GetOrganizationId();
+        var user = await _users.FindByIdAsync(id);
+        if (user is null || user.OrganizationId != orgId)
+            return NotFound();
+
+        await using var transaction = _db.Database.IsRelational()
+            ? await _db.Database.BeginTransactionAsync()
+            : null;
+        var employee = await _db.Employees.FirstOrDefaultAsync(x => x.OrganizationId == orgId && x.UserId == user.Id);
+        if (employee is not null)
+        {
+            var links = await _db.EmployeeClients.Where(x => x.EmployeeId == employee.Id).ToListAsync();
+            _db.EmployeeClients.RemoveRange(links);
+            employee.UserId = null;
+            employee.Status = "Inactive";
+            employee.UpdatedAt = DateTime.UtcNow;
+        }
+
+        var refreshTokens = await _db.RefreshTokens.Where(x => x.UserId == user.Id).ToListAsync();
+        _db.RefreshTokens.RemoveRange(refreshTokens);
+        await _db.SaveChangesAsync();
+
+        var deleteResult = await _users.DeleteAsync(user);
+        if (!deleteResult.Succeeded)
+        {
+            if (transaction is not null) await transaction.RollbackAsync();
+            return BadRequest(new { detail = string.Join("; ", deleteResult.Errors.Select(e => e.Description)) });
+        }
+
+        if (transaction is not null) await transaction.CommitAsync();
+
+        return NoContent();
+    }
+
+    private async Task SyncEmployeeAsync(AppUser user, Guid orgId)
+    {
+        var employee = await _db.Employees.FirstOrDefaultAsync(x => x.OrganizationId == orgId && x.UserId == user.Id);
+        if (employee is null)
+        {
+            employee = new Domain.Entities.Employee
+            {
+                OrganizationId = orgId,
+                UserId = user.Id,
+                Color = "#0F4C5C",
+                Status = "Active"
+            };
+            _db.Employees.Add(employee);
+        }
+
+        employee.Name = user.FullName;
+        employee.Email = user.Email;
+        employee.Status = "Active";
+        employee.UpdatedAt = DateTime.UtcNow;
+
+        var existingLinks = await _db.EmployeeClients.Where(x => x.EmployeeId == employee.Id).ToListAsync();
+        _db.EmployeeClients.RemoveRange(existingLinks);
+        if (!user.IsOrganizationOwner)
+        {
+            foreach (var clientId in user.AssignedClientIds.Distinct())
+            {
+                _db.EmployeeClients.Add(new Domain.Entities.EmployeeClient
+                {
+                    EmployeeId = employee.Id,
+                    ClientId = clientId
+                });
+            }
+        }
+
+        await _db.SaveChangesAsync();
     }
 
     public record OrgBody(string Name, string? Document, string? Phone, string? Email, string? Address, string? WhatsAppSupportUrl, string? SupportWhatsAppUrl);
@@ -275,5 +427,11 @@ public class SettingsController : ControllerBase
         string? FullName,
         List<Guid>? AssignedClientIds,
         bool? IsOwner);
-    public record SharedUserUpdateBody(List<Guid>? AssignedClientIds);
+    public record SharedUserUpdateBody(
+        List<Guid>? AssignedClientIds,
+        string? Email,
+        string? Password,
+        Guid? AccessTypeId,
+        string? Name,
+        string? FullName);
 }
