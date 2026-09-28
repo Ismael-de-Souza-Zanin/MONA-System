@@ -135,6 +135,7 @@ type SharedUserRow = {
   isOwner?: boolean
   isCurrentUser?: boolean
   password?: string
+  mustChangePassword?: boolean
 }
 
 function toAuthUser(u: SharedUserRow) {
@@ -146,6 +147,7 @@ function toAuthUser(u: SharedUserRow) {
     email: u.email,
     organizationId: 'org-fatto',
     isOwner,
+    mustChangePassword: !!u.mustChangePassword,
     permissions: isOwner ? PERMISSIONS : (accessType?.permissions ?? []),
     assignedClientIds: isOwner
       ? db.clients.map((c) => c.id)
@@ -883,6 +885,7 @@ function seed() {
       isOwner: true,
       isCurrentUser: true,
       password: 'Admin123!',
+      mustChangePassword: false,
     },
     {
       id: 'u-marina',
@@ -893,6 +896,7 @@ function seed() {
       assignedClientIds: ['c-ana'],
       isOwner: false,
       password: 'Admin123!',
+      mustChangePassword: false,
     },
   ]
 
@@ -1316,6 +1320,26 @@ const routes: Route[] = [
   },
   { method: 'POST', pattern: '/auth/logout', handle: () => undefined },
   { method: 'GET', pattern: '/auth/me', handle: ({ authHeader }) => currentUser(authHeader) },
+  {
+    method: 'POST',
+    pattern: '/auth/change-password',
+    handle: ({ body, authHeader }) => {
+      const row = resolveSharedUser(authHeader)
+      const currentPassword = String(body.currentPassword ?? '')
+      const newPassword = String(body.newPassword ?? '')
+      if (row.password !== currentPassword) httpError(400, 'Senha atual incorreta.')
+      if (newPassword.length < 6) httpError(400, 'A nova senha deve ter pelo menos 6 caracteres.')
+      if (newPassword === currentPassword) httpError(400, 'A nova senha deve ser diferente da senha atual.')
+      row.password = newPassword
+      row.mustChangePassword = false
+      return {
+        accessToken: `fake-access-${row.id}`,
+        refreshToken: `fake-refresh-${row.id}`,
+        expiresAt: iso(24),
+        user: toAuthUser(row),
+      }
+    },
+  },
   { method: 'POST', pattern: '/auth/verify-admin-password', handle: () => ({ ok: true }) },
 
   { method: 'GET', pattern: '/preferences/me', handle: () => db.prefs },
@@ -2185,6 +2209,7 @@ const routes: Route[] = [
         assignedClientIds: u.assignedClientIds,
         isOwner: u.isOwner,
         isCurrentUser: u.id === me.id,
+        mustChangePassword: !!u.mustChangePassword,
       }))
     },
   },
@@ -2208,6 +2233,7 @@ const routes: Route[] = [
         assignedClientIds: equalHierarchy ? [] : ((body.assignedClientIds as string[]) ?? []),
         isOwner: equalHierarchy,
         password: String(body.password ?? ''),
+        mustChangePassword: true,
       }
       db.sharedUsers.push(row)
       syncEmployeeClientsFromUser(row)
@@ -2239,7 +2265,10 @@ const routes: Route[] = [
       row.email = email
     }
     if (typeof body.name === 'string' && body.name.trim()) row.name = body.name.trim()
-    if (typeof body.password === 'string' && body.password) row.password = body.password
+    if (typeof body.password === 'string' && body.password) {
+      row.password = body.password
+      row.mustChangePassword = true
+    }
     if (typeof body.accessTypeId === 'string') {
       const accessType = db.accessTypes.find((type) => type.id === body.accessTypeId)
       if (!accessType) httpError(400, 'Tipo de acesso inválido.')

@@ -8,5 +8,6 @@ public class AppUser : IdentityUser
     public Guid OrganizationId { get; set; }
     public Guid? AccessTypeId { get; set; }
     public bool IsOrganizationOwner { get; set; }
+    public bool MustChangePassword { get; set; }
     public List<Guid> AssignedClientIds { get; set; } = [];
 }

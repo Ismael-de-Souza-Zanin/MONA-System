@@ -4,6 +4,7 @@ using FattoVirtual.Domain.Entities;
 using FattoVirtual.Domain.Enums;
 using FattoVirtual.Infrastructure.Identity;
 using FattoVirtual.Infrastructure.Persistence;
+using FattoVirtual.Infrastructure.Security;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
@@ -38,12 +39,33 @@ public sealed class SettingsUsersTests
         Assert.Equal("novo@fattovirtual.com", updated.Email);
         Assert.Equal([test.Client.Id], updated.AssignedClientIds);
         Assert.True(await test.Users.CheckPasswordAsync(updated, "SenhaNova!2026"));
+        Assert.True(updated.MustChangePassword);
 
         var employee = await test.Db.Employees.SingleAsync(x => x.UserId == test.Member.Id);
         Assert.Equal("Nome atualizado", employee.Name);
         Assert.Equal("novo@fattovirtual.com", employee.Email);
         Assert.True(await test.Db.EmployeeClients.AnyAsync(x =>
             x.EmployeeId == employee.Id && x.ClientId == test.Client.Id));
+    }
+
+    [Fact]
+    public async Task NewTeamLoginRequiresPasswordChangeOnFirstAccess()
+    {
+        await using var test = await TestContext.CreateAsync();
+
+        var result = await test.Controller().CreateSharedUser(new(
+            "nova@fattovirtual.com",
+            "Temporaria!2026",
+            test.AgentType.Id,
+            "Nova pessoa",
+            null,
+            [test.Client.Id],
+            false));
+
+        Assert.IsType<OkObjectResult>(result);
+        var created = await test.Users.FindByEmailAsync("nova@fattovirtual.com");
+        Assert.NotNull(created);
+        Assert.True(created.MustChangePassword);
     }
 
     [Fact]
@@ -80,6 +102,32 @@ public sealed class SettingsUsersTests
 
         Assert.IsType<BadRequestObjectResult>(result);
         Assert.NotNull(await test.Users.FindByIdAsync(test.Owner.Id));
+    }
+
+    [Fact]
+    public async Task UserCanReplaceTemporaryPasswordAndClearRequirement()
+    {
+        await using var test = await TestContext.CreateAsync();
+        test.Member.MustChangePassword = true;
+        await test.Users.UpdateAsync(test.Member);
+        test.Db.RefreshTokens.Add(new RefreshToken
+        {
+            UserId = test.Member.Id,
+            Token = "old-refresh",
+            ExpiresAt = DateTime.UtcNow.AddDays(1)
+        });
+        await test.Db.SaveChangesAsync();
+
+        var result = await test.AuthController(test.Member).ChangePassword(new(
+            "Member!2026",
+            "Pessoal!2026"));
+
+        Assert.IsType<OkObjectResult>(result);
+        var updated = await test.Users.FindByIdAsync(test.Member.Id);
+        Assert.NotNull(updated);
+        Assert.False(updated.MustChangePassword);
+        Assert.True(await test.Users.CheckPasswordAsync(updated, "Pessoal!2026"));
+        Assert.False(await test.Db.RefreshTokens.AnyAsync(x => x.UserId == test.Member.Id));
     }
 
     private sealed class TestContext : IAsyncDisposable
@@ -200,6 +248,34 @@ public sealed class SettingsUsersTests
             }
         };
 
+        public AuthController AuthController(AppUser currentUser) => new(Users, new FakeJwtTokenService(), Db)
+        {
+            ControllerContext = new ControllerContext
+            {
+                HttpContext = new DefaultHttpContext
+                {
+                    User = new ClaimsPrincipal(new ClaimsIdentity(
+                    [
+                        new Claim(ClaimTypes.NameIdentifier, currentUser.Id),
+                        new Claim("org_id", OrganizationId.ToString())
+                    ], "test"))
+                }
+            }
+        };
+
         public ValueTask DisposeAsync() => provider.DisposeAsync();
+    }
+
+    private sealed class FakeJwtTokenService : IJwtTokenService
+    {
+        public Task<(string AccessToken, string RefreshToken, DateTime ExpiresAt)> CreateTokensAsync(
+            AppUser user,
+            IEnumerable<string> permissions) =>
+            Task.FromResult(("access", "refresh", DateTime.UtcNow.AddHours(1)));
+
+        public Task<(string AccessToken, string RefreshToken, DateTime ExpiresAt)?> RefreshAsync(
+            string refreshToken) => Task.FromResult<(string, string, DateTime)?>(null);
+
+        public Task RevokeAsync(string refreshToken) => Task.CompletedTask;
     }
 }

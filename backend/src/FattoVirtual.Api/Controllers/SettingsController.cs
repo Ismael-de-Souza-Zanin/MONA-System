@@ -147,6 +147,7 @@ public class SettingsController : ControllerBase
             accessTypeName = u.AccessTypeId is null ? null : types.GetValueOrDefault(u.AccessTypeId.Value),
             assignedClientIds = u.AssignedClientIds.Select(x => x.ToString()).ToList(),
             isOwner = u.IsOrganizationOwner,
+            mustChangePassword = u.MustChangePassword,
             isCurrentUser = u.Id == currentUserId
         }));
     }
@@ -182,6 +183,7 @@ public class SettingsController : ControllerBase
             AccessTypeId = accessType.Id,
             AssignedClientIds = equalHierarchy ? [] : (body.AssignedClientIds ?? []),
             IsOrganizationOwner = equalHierarchy,
+            MustChangePassword = true,
             EmailConfirmed = true
         };
         var result = await _users.CreateAsync(user, body.Password);
@@ -223,6 +225,7 @@ public class SettingsController : ControllerBase
             accessTypeId = user.AccessTypeId,
             assignedClientIds = user.AssignedClientIds.Select(x => x.ToString()).ToList(),
             isOwner = user.IsOrganizationOwner,
+            mustChangePassword = user.MustChangePassword,
             employeeId = employee.Id.ToString()
         });
     }
@@ -316,6 +319,10 @@ public class SettingsController : ControllerBase
             var passwordResult = await _users.ResetPasswordAsync(user, token, body.Password);
             if (!passwordResult.Succeeded)
                 return BadRequest(new { detail = string.Join("; ", passwordResult.Errors.Select(e => e.Description)) });
+            user.MustChangePassword = true;
+            var flagResult = await _users.UpdateAsync(user);
+            if (!flagResult.Succeeded)
+                return BadRequest(new { detail = string.Join("; ", flagResult.Errors.Select(e => e.Description)) });
             var activeTokens = await _db.RefreshTokens.Where(x => x.UserId == user.Id).ToListAsync();
             _db.RefreshTokens.RemoveRange(activeTokens);
         }
@@ -332,7 +339,8 @@ public class SettingsController : ControllerBase
             accessTypeId = user.AccessTypeId,
             accessTypeName,
             assignedClientIds = user.AssignedClientIds.Select(x => x.ToString()).ToList(),
-            isOwner = user.IsOrganizationOwner
+            isOwner = user.IsOrganizationOwner,
+            mustChangePassword = user.MustChangePassword
         });
     }
 

@@ -64,6 +64,7 @@ public static class Mapping
         email = user.Email,
         organizationId = user.OrganizationId.ToString(),
         isOwner = user.IsOrganizationOwner,
+        mustChangePassword = user.MustChangePassword,
         permissions = permissions.ToList(),
         assignedClientIds = user.AssignedClientIds.Select(x => x.ToString()).ToList()
     };

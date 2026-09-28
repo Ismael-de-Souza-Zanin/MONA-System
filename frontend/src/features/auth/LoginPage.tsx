@@ -6,7 +6,7 @@ import { useAuth } from '../../shared/auth/AuthContext'
 import { BrandLogo, Button, ErrorAlert, Input, LoadingSpinner, MonaArrow, MonaWave } from '../../shared/ui'
 
 export function LoginPage() {
-  const { login, isAuthenticated, isLoading } = useAuth()
+  const { user, login, isAuthenticated, isLoading } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
   const from = (location.state as { from?: { pathname: string } })?.from?.pathname || '/'
@@ -22,7 +22,7 @@ export function LoginPage() {
   })
 
   if (isLoading) return <LoadingSpinner />
-  if (isAuthenticated) return <Navigate to="/" replace />
+  if (isAuthenticated) return <Navigate to={user?.mustChangePassword ? '/trocar-senha' : '/'} replace />
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault()

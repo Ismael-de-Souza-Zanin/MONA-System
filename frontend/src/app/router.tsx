@@ -3,6 +3,7 @@ import { AppLayout } from './AppLayout'
 import { RequireAuth } from './RequireAuth'
 import { RequirePermission, RequirePermissionRedirect } from './RequirePermission'
 import { LoginPage } from '../features/auth/LoginPage'
+import { ChangePasswordPage } from '../features/auth/ChangePasswordPage'
 import { DashboardPage } from '../features/dashboard/DashboardPage'
 import { ClientsPage } from '../features/clients/ClientsPage'
 import { ClientDetailPage } from '../features/clients/ClientDetailPage'
@@ -49,6 +50,7 @@ export function AppRouter() {
         <Route path="/s/:token" element={<ContractorPortalPage />} />
 
         <Route element={<RequireAuth />}>
+          <Route path="trocar-senha" element={<ChangePasswordPage />} />
           <Route element={<AppLayout />}>
             <Route index element={<DashboardPage />} />
 

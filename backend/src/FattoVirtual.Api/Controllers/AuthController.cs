@@ -65,6 +65,42 @@ public class AuthController : ControllerBase
         return NoContent();
     }
 
+    [HttpPost("change-password")]
+    [Authorize]
+    public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordBody body)
+    {
+        if (string.IsNullOrWhiteSpace(body.CurrentPassword) || string.IsNullOrWhiteSpace(body.NewPassword))
+            return BadRequest(new { detail = "Informe a senha atual e a nova senha." });
+        if (body.CurrentPassword == body.NewPassword)
+            return BadRequest(new { detail = "A nova senha deve ser diferente da senha atual." });
+
+        var user = await _users.FindByIdAsync(User.GetUserId());
+        if (user is null) return Unauthorized();
+
+        var result = await _users.ChangePasswordAsync(user, body.CurrentPassword, body.NewPassword);
+        if (!result.Succeeded)
+            return BadRequest(new { detail = string.Join("; ", result.Errors.Select(e => e.Description)) });
+
+        user.MustChangePassword = false;
+        var updateResult = await _users.UpdateAsync(user);
+        if (!updateResult.Succeeded)
+            return BadRequest(new { detail = string.Join("; ", updateResult.Errors.Select(e => e.Description)) });
+
+        var previousTokens = await _db.RefreshTokens.Where(x => x.UserId == user.Id).ToListAsync();
+        _db.RefreshTokens.RemoveRange(previousTokens);
+        await _db.SaveChangesAsync();
+
+        var permissions = await ResolvePermissions(user);
+        var tokens = await _jwt.CreateTokensAsync(user, permissions);
+        return Ok(new
+        {
+            accessToken = tokens.AccessToken,
+            refreshToken = tokens.RefreshToken,
+            expiresAt = tokens.ExpiresAt,
+            user = Mapping.MapUser(user, permissions)
+        });
+    }
+
     [HttpGet("me")]
     [Authorize]
     public async Task<IActionResult> Me()
@@ -113,4 +149,5 @@ public class AuthController : ControllerBase
     public record LoginBody(string Email, string Password);
     public record RefreshBody(string RefreshToken);
     public record AdminPasswordBody(string Password);
+    public record ChangePasswordBody(string CurrentPassword, string NewPassword);
 }

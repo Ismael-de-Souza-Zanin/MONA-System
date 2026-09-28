@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
-import { Building2, Monitor, Palette, Pencil, Shield, Trash2, User, UserPlus } from 'lucide-react'
+import { Building2, KeyRound, Monitor, Palette, Pencil, Shield, Trash2, User, UserPlus } from 'lucide-react'
 import { AppearanceStudio } from '../../shared/theme/AppearanceStudio'
 import { api, getApiBase, setApiBaseOverride } from '../../shared/api/client'
 import { isDesktopApp } from '../../shared/desktop'
@@ -45,7 +45,7 @@ const emptyTeamUserForm = (): TeamUserForm => ({
 
 export function SettingsPage() {
   const qc = useQueryClient()
-  const { user } = useAuth()
+  const { user, changePassword } = useAuth()
   const [searchParams, setSearchParams] = useSearchParams()
   const desktop = isDesktopApp()
 
@@ -65,6 +65,8 @@ export function SettingsPage() {
   const [editForm, setEditForm] = useState<TeamUserForm>(emptyTeamUserForm)
   const [orgForm, setOrgForm] = useState<Partial<Organization>>({})
   const [userForm, setUserForm] = useState<Partial<UserProfile>>({})
+  const [passwordForm, setPasswordForm] = useState({ current: '', next: '', confirmation: '' })
+  const [passwordChanged, setPasswordChanged] = useState(false)
   const [apiBaseDraft, setApiBaseDraft] = useState(() => getApiBase())
   const [apiBaseSaved, setApiBaseSaved] = useState(false)
 
@@ -148,6 +150,14 @@ export function SettingsPage() {
       setCreatedCreds({ email: sharedForm.email, password: sharedForm.password })
       setShowSharedUser(false)
       setSharedForm(emptyTeamUserForm())
+    },
+  })
+
+  const passwordMutation = useMutation({
+    mutationFn: () => changePassword(passwordForm.current, passwordForm.next),
+    onSuccess: () => {
+      setPasswordForm({ current: '', next: '', confirmation: '' })
+      setPasswordChanged(true)
     },
   })
 
@@ -354,6 +364,11 @@ export function SettingsPage() {
                         {su.isCurrentUser && (
                           <span className="ml-1 text-[11px] text-ink-500">(você)</span>
                         )}
+                        {su.mustChangePassword && (
+                          <span className="ml-2 rounded-full bg-orange-100 px-2 py-0.5 text-[11px] font-semibold text-orange-700">
+                            Troca de senha pendente
+                          </span>
+                        )}
                       </td>
                       <td data-label="E-mail / login" className="px-4 py-3 font-mono text-xs text-ink-700">{su.email}</td>
                       <td data-label="Tipo" className="px-4 py-3">{su.accessTypeName || '—'}</td>
@@ -463,8 +478,13 @@ export function SettingsPage() {
       )}
 
       {tab === 'user' && (
-        <Card className="max-w-xl">
-          <div className="space-y-4">
+        <div className="grid max-w-5xl gap-4 lg:grid-cols-2">
+          <Card>
+            <div className="mb-4 flex items-center gap-2">
+              <User size={18} className="text-brand-800" aria-hidden />
+              <h2 className="font-semibold text-ink-900">Dados pessoais</h2>
+            </div>
+            <div className="space-y-4">
             <Input
               label="Nome"
               value={userForm.name || ''}
@@ -484,8 +504,71 @@ export function SettingsPage() {
             <Button onClick={() => userMutation.mutate()} disabled={userMutation.isPending}>
               Salvar
             </Button>
-          </div>
-        </Card>
+            </div>
+          </Card>
+
+          <Card>
+            <div className="mb-4 flex items-center gap-2">
+              <KeyRound size={18} className="text-brand-800" aria-hidden />
+              <div>
+                <h2 className="font-semibold text-ink-900">Senha e segurança</h2>
+                <p className="text-xs text-ink-500">Ao trocar, as outras sessões serão encerradas.</p>
+              </div>
+            </div>
+            <div className="space-y-4">
+              <Input
+                label="Senha atual"
+                type="password"
+                value={passwordForm.current}
+                onChange={(event) => {
+                  setPasswordChanged(false)
+                  setPasswordForm({ ...passwordForm, current: event.target.value })
+                }}
+                autoComplete="current-password"
+              />
+              <Input
+                label="Nova senha"
+                type="password"
+                value={passwordForm.next}
+                onChange={(event) => {
+                  setPasswordChanged(false)
+                  setPasswordForm({ ...passwordForm, next: event.target.value })
+                }}
+                autoComplete="new-password"
+                minLength={6}
+              />
+              <Input
+                label="Confirmar nova senha"
+                type="password"
+                value={passwordForm.confirmation}
+                onChange={(event) => {
+                  setPasswordChanged(false)
+                  setPasswordForm({ ...passwordForm, confirmation: event.target.value })
+                }}
+                autoComplete="new-password"
+                minLength={6}
+              />
+              {passwordForm.confirmation && passwordForm.next !== passwordForm.confirmation && (
+                <ErrorAlert message="A confirmação não corresponde à nova senha." />
+              )}
+              {passwordMutation.isError && <ErrorAlert message={passwordMutation.error.message} />}
+              {passwordChanged && (
+                <div className="mona-alert mona-alert--success">Senha alterada com segurança.</div>
+              )}
+              <Button
+                disabled={
+                  !passwordForm.current ||
+                  passwordForm.next.length < 6 ||
+                  passwordForm.next !== passwordForm.confirmation ||
+                  passwordMutation.isPending
+                }
+                onClick={() => passwordMutation.mutate()}
+              >
+                {passwordMutation.isPending ? 'Alterando...' : 'Alterar minha senha'}
+              </Button>
+            </div>
+          </Card>
+        </div>
       )}
 
       {tab === 'appearance' && <AppearanceStudio />}

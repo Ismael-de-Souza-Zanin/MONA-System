@@ -563,6 +563,12 @@
     color: var(--mona-color-info-ink);
   }
 
+  .mona-alert--success {
+    border-color: color-mix(in srgb, var(--mona-color-success) 35%, var(--mona-color-border));
+    background: var(--mona-color-success-soft);
+    color: var(--mona-color-success-ink);
+  }
+
   .mona-brand {
     position: fixed;
     z-index: 31;
