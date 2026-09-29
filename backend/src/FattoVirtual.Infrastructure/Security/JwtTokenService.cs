@@ -38,7 +38,8 @@ public class JwtTokenService : IJwtTokenService
             new(JwtRegisteredClaimNames.Email, user.Email ?? string.Empty),
             new("name", user.FullName),
             new("org_id", user.OrganizationId.ToString()),
-            new("is_owner", user.IsOrganizationOwner.ToString().ToLowerInvariant())
+            new("is_owner", user.IsOrganizationOwner.ToString().ToLowerInvariant()),
+            new("must_change_password", user.MustChangePassword.ToString().ToLowerInvariant())
         };
 
         foreach (var permission in permissions.Distinct())

@@ -51,12 +51,15 @@ async function refreshTokens(): Promise<boolean> {
   }
 }
 
-async function parseError(res: Response): Promise<string> {
+async function parseError(res: Response): Promise<{ message: string; code?: string }> {
   try {
     const data = await res.json()
-    return data.detail || data.message || data.title || `Erro ${res.status}`
+    return {
+      message: data.detail || data.message || data.title || `Erro ${res.status}`,
+      code: data.code,
+    }
   } catch {
-    return `Erro ${res.status}`
+    return { message: `Erro ${res.status}` }
   }
 }
 
@@ -94,7 +97,11 @@ export async function apiRequest<T>(
   }
 
   if (!res.ok) {
-    throw new Error(await parseError(res))
+    const error = await parseError(res)
+    if (error.code === 'PASSWORD_CHANGE_REQUIRED' && typeof window !== 'undefined') {
+      window.dispatchEvent(new Event('mona:password-change-required'))
+    }
+    throw new Error(error.message)
   }
 
   if (raw) return undefined as T

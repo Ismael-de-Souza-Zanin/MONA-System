@@ -8,6 +8,7 @@ export interface AuthUser {
   email: string
   organizationId: string
   isOwner: boolean
+  mustChangePassword: boolean
   permissions: Permission[]
   assignedClientIds: string[]
 }
@@ -57,6 +58,7 @@ export interface SharedUser {
   assignedClientIds: string[]
   isOwner?: boolean
   isCurrentUser?: boolean
+  mustChangePassword?: boolean
 }
 
 export interface Client {

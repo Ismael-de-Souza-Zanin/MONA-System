@@ -55,6 +55,40 @@ if (app.Environment.IsDevelopment())
 
 app.UseCors();
 app.UseAuthentication();
+app.Use(async (context, next) =>
+{
+    if (context.User.Identity?.IsAuthenticated == true)
+    {
+        var path = context.Request.Path;
+        var passwordRoute = path.Equals("/api/v1/auth/change-password", StringComparison.OrdinalIgnoreCase);
+        var logoutRoute = path.Equals("/api/v1/auth/logout", StringComparison.OrdinalIgnoreCase);
+        var meRoute = path.Equals("/api/v1/auth/me", StringComparison.OrdinalIgnoreCase);
+        if (!passwordRoute && !logoutRoute && !meRoute)
+        {
+            var userId = context.User.FindFirst("sub")?.Value;
+            if (userId is not null)
+            {
+                var db = context.RequestServices.GetRequiredService<AppDbContext>();
+                var mustChangePassword = await db.Users.AsNoTracking()
+                    .Where(user => user.Id == userId)
+                    .Select(user => user.MustChangePassword)
+                    .FirstOrDefaultAsync();
+                if (mustChangePassword)
+                {
+                    context.Response.StatusCode = StatusCodes.Status403Forbidden;
+                    await context.Response.WriteAsJsonAsync(new
+                    {
+                        detail = "Troque sua senha temporária para continuar.",
+                        code = "PASSWORD_CHANGE_REQUIRED"
+                    });
+                    return;
+                }
+            }
+        }
+    }
+
+    await next();
+});
 app.UseAuthorization();
 app.MapControllers();
 

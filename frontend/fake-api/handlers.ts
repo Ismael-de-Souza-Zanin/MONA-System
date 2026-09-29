@@ -135,6 +135,7 @@ type SharedUserRow = {
   isOwner?: boolean
   isCurrentUser?: boolean
   password?: string
+  mustChangePassword?: boolean
 }
 
 function toAuthUser(u: SharedUserRow) {
@@ -146,6 +147,7 @@ function toAuthUser(u: SharedUserRow) {
     email: u.email,
     organizationId: 'org-fatto',
     isOwner,
+    mustChangePassword: !!u.mustChangePassword,
     permissions: isOwner ? PERMISSIONS : (accessType?.permissions ?? []),
     assignedClientIds: isOwner
       ? db.clients.map((c) => c.id)
@@ -188,7 +190,7 @@ function ensureEmployeeForUser(u: SharedUserRow) {
       id: nid('e'),
       name: u.name,
       email: u.email,
-      phone: undefined as string | undefined,
+      phone: '',
       color: '#0F4C5C',
       status: 'Active',
       managerId: null as string | null,
@@ -205,13 +207,12 @@ function ensureEmployeeForUser(u: SharedUserRow) {
 
 function syncEmployeeClientsFromUser(u: SharedUserRow) {
   const emp = ensureEmployeeForUser(u)
+  db.employeeClients = db.employeeClients.filter((x) => x.employeeId !== emp.id)
   if (u.isOwner) return emp
   for (const cid of u.assignedClientIds ?? []) {
-    if (!db.employeeClients.some((x) => x.employeeId === emp.id && x.clientId === cid)) {
-      db.employeeClients.push({ employeeId: emp.id, clientId: cid })
-    }
+    db.employeeClients.push({ employeeId: emp.id, clientId: cid })
   }
-  return emp
+  return emp!
 }
 
 function teamEmployees() {
@@ -884,6 +885,7 @@ function seed() {
       isOwner: true,
       isCurrentUser: true,
       password: 'Admin123!',
+      mustChangePassword: false,
     },
     {
       id: 'u-marina',
@@ -894,6 +896,7 @@ function seed() {
       assignedClientIds: ['c-ana'],
       isOwner: false,
       password: 'Admin123!',
+      mustChangePassword: false,
     },
   ]
 
@@ -1317,6 +1320,26 @@ const routes: Route[] = [
   },
   { method: 'POST', pattern: '/auth/logout', handle: () => undefined },
   { method: 'GET', pattern: '/auth/me', handle: ({ authHeader }) => currentUser(authHeader) },
+  {
+    method: 'POST',
+    pattern: '/auth/change-password',
+    handle: ({ body, authHeader }) => {
+      const row = resolveSharedUser(authHeader)
+      const currentPassword = String(body.currentPassword ?? '')
+      const newPassword = String(body.newPassword ?? '')
+      if (row.password !== currentPassword) httpError(400, 'Senha atual incorreta.')
+      if (newPassword.length < 6) httpError(400, 'A nova senha deve ter pelo menos 6 caracteres.')
+      if (newPassword === currentPassword) httpError(400, 'A nova senha deve ser diferente da senha atual.')
+      row.password = newPassword
+      row.mustChangePassword = false
+      return {
+        accessToken: `fake-access-${row.id}`,
+        refreshToken: `fake-refresh-${row.id}`,
+        expiresAt: iso(24),
+        user: toAuthUser(row),
+      }
+    },
+  },
   { method: 'POST', pattern: '/auth/verify-admin-password', handle: () => ({ ok: true }) },
 
   { method: 'GET', pattern: '/preferences/me', handle: () => db.prefs },
@@ -2186,6 +2209,7 @@ const routes: Route[] = [
         assignedClientIds: u.assignedClientIds,
         isOwner: u.isOwner,
         isCurrentUser: u.id === me.id,
+        mustChangePassword: !!u.mustChangePassword,
       }))
     },
   },
@@ -2205,10 +2229,11 @@ const routes: Route[] = [
         name: String(body.name ?? 'Usuário'),
         email,
         accessTypeId: String(body.accessTypeId ?? ''),
-        accessTypeName: accessType?.name,
+        accessTypeName: accessType?.name ?? 'Sem perfil',
         assignedClientIds: equalHierarchy ? [] : ((body.assignedClientIds as string[]) ?? []),
         isOwner: equalHierarchy,
         password: String(body.password ?? ''),
+        mustChangePassword: true,
       }
       db.sharedUsers.push(row)
       syncEmployeeClientsFromUser(row)
@@ -2224,17 +2249,39 @@ const routes: Route[] = [
       }
     },
   },
-  { method: 'PATCH', pattern: '/shared-users/:id', handle: ({ params, body }) => {
+  { method: 'PATCH', pattern: '/shared-users/:id', handle: ({ params, body, authHeader }) => {
     const row = requireRow(db.sharedUsers, params.id) as SharedUserRow
-    if (row.isOwner) throw Object.assign(new Error('A conta principal já tem acesso a todos os clientes.'), { status: 400 })
-    if (Array.isArray(body.assignedClientIds)) {
-      row.assignedClientIds = (body.assignedClientIds as string[]).filter((cid) => db.clients.some((c) => c.id === cid))
-      const emp = ensureEmployeeForUser(row)
-      db.employeeClients = db.employeeClients.filter((x) => x.employeeId !== emp.id)
-      for (const cid of row.assignedClientIds) {
-        db.employeeClients.push({ employeeId: emp.id, clientId: cid })
+    const me = currentUser(authHeader)
+    const changesIdentity = ['name', 'email', 'password', 'accessTypeId'].some((key) => body[key] != null)
+    if (changesIdentity && !me.isOwner) httpError(403, 'Somente a conta principal pode editar logins.')
+    if (changesIdentity && row.id === me.id) httpError(400, 'Edite sua própria conta pela aba Meu perfil.')
+
+    if (typeof body.email === 'string') {
+      const email = body.email.trim()
+      if (!email) httpError(400, 'E-mail é obrigatório.')
+      if (db.sharedUsers.some((user) => user.id !== row.id && user.email.toLowerCase() === email.toLowerCase())) {
+        httpError(400, 'Já existe um usuário com este e-mail.')
       }
+      row.email = email
     }
+    if (typeof body.name === 'string' && body.name.trim()) row.name = body.name.trim()
+    if (typeof body.password === 'string' && body.password) {
+      row.password = body.password
+      row.mustChangePassword = true
+    }
+    if (typeof body.accessTypeId === 'string') {
+      const accessType = db.accessTypes.find((type) => type.id === body.accessTypeId)
+      if (!accessType) httpError(400, 'Tipo de acesso inválido.')
+      row.accessTypeId = accessType.id
+      row.accessTypeName = accessType.name
+      row.isOwner = !!accessType.isOwnerType
+    }
+    if (Array.isArray(body.assignedClientIds)) {
+      row.assignedClientIds = row.isOwner
+        ? []
+        : (body.assignedClientIds as string[]).filter((cid) => db.clients.some((c) => c.id === cid))
+    }
+    syncEmployeeClientsFromUser(row)
     return {
       id: row.id,
       name: row.name,
@@ -2244,6 +2291,20 @@ const routes: Route[] = [
       assignedClientIds: row.assignedClientIds,
       isOwner: row.isOwner,
     }
+  } },
+  { method: 'DELETE', pattern: '/shared-users/:id', handle: ({ params, authHeader }) => {
+    const me = currentUser(authHeader)
+    if (!me.isOwner) httpError(403, 'Somente a conta principal pode excluir logins.')
+    if (params.id === me.id) httpError(400, 'A conta em uso não pode ser excluída.')
+    const index = db.sharedUsers.findIndex((user) => user.id === params.id)
+    if (index < 0) httpError(404, 'Usuário não encontrado.')
+    const employee = db.employees.find((item) => item.userId === params.id)
+    if (employee) {
+      db.employeeClients = db.employeeClients.filter((link) => link.employeeId !== employee.id)
+      employee.userId = ''
+      employee.status = 'Inactive'
+    }
+    db.sharedUsers.splice(index, 1)
   } },
 
   { method: 'GET', pattern: '/share-links', handle: () => db.shareLinks },

@@ -17,6 +17,7 @@ interface AuthContextValue {
   isLoading: boolean
   isAuthenticated: boolean
   login: (email: string, password: string) => Promise<void>
+  changePassword: (currentPassword: string, newPassword: string) => Promise<void>
   logout: () => Promise<void>
   refreshUser: () => Promise<void>
 }
@@ -88,16 +89,36 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [queryClient])
 
+  const changePassword = useCallback(
+    async (currentPassword: string, newPassword: string) => {
+      const res = await api.post<LoginResponse>('/auth/change-password', {
+        currentPassword,
+        newPassword,
+      })
+      setTokens(res.accessToken, res.refreshToken)
+      setUser(res.user)
+      await queryClient.clear()
+    },
+    [queryClient],
+  )
+
+  useEffect(() => {
+    const handlePasswordRequired = () => void refreshUser()
+    window.addEventListener('mona:password-change-required', handlePasswordRequired)
+    return () => window.removeEventListener('mona:password-change-required', handlePasswordRequired)
+  }, [refreshUser])
+
   const value = useMemo(
     () => ({
       user,
       isLoading,
       isAuthenticated: Boolean(user),
       login,
+      changePassword,
       logout,
       refreshUser,
     }),
-    [user, isLoading, login, logout, refreshUser],
+    [user, isLoading, login, changePassword, logout, refreshUser],
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

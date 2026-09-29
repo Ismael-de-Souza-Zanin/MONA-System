@@ -1,19 +1,18 @@
 import { useMutation } from '@tanstack/react-query'
 import { useState, type FormEvent } from 'react'
 import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom'
-import { ArrowRight, Eye, EyeOff, Headphones, Lock, Mail, ShieldCheck } from 'lucide-react'
+import { ArrowRight, Headphones, Lock, Mail, ShieldCheck } from 'lucide-react'
 import { useAuth } from '../../shared/auth/AuthContext'
 import { BrandLogo, Button, ErrorAlert, Input, LoadingSpinner, MonaArrow, MonaWave } from '../../shared/ui'
 
 export function LoginPage() {
-  const { login, isAuthenticated, isLoading } = useAuth()
+  const { user, login, isAuthenticated, isLoading } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
   const from = (location.state as { from?: { pathname: string } })?.from?.pathname || '/'
 
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState('')
 
   const mutation = useMutation({
@@ -23,7 +22,7 @@ export function LoginPage() {
   })
 
   if (isLoading) return <LoadingSpinner />
-  if (isAuthenticated) return <Navigate to="/" replace />
+  if (isAuthenticated) return <Navigate to={user?.mustChangePassword ? '/trocar-senha' : '/'} replace />
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault()
@@ -105,23 +104,15 @@ export function LoginPage() {
               <Lock className="pointer-events-none absolute left-3 top-[38px] text-ink-500" size={16} />
               <Input
                 label="Senha"
-                type={showPassword ? 'text' : 'password'}
+                type="password"
                 name="mona-login-password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
                 autoComplete="new-password"
                 placeholder="Sua senha"
-                className="pl-10 pr-11"
+                className="pl-10"
               />
-              <button
-                type="button"
-                onClick={() => setShowPassword((v) => !v)}
-                className="absolute right-3 top-[38px] text-ink-500 hover:text-ink-700"
-                aria-label={showPassword ? 'Ocultar senha' : 'Mostrar senha'}
-              >
-                {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-              </button>
             </div>
 
             <div className="flex flex-wrap items-center justify-between gap-2 text-sm">

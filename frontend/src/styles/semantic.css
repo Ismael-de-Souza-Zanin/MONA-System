@@ -151,6 +151,43 @@
     }
   }
 
+  .mona-field__control-wrap {
+    position: relative;
+    min-width: 0;
+  }
+
+  .mona-field__control.has-trailing-action {
+    padding-right: 3.25rem;
+  }
+
+  .mona-field__action {
+    position: absolute;
+    top: 50%;
+    right: 0.25rem;
+    display: inline-flex;
+    width: 2.5rem;
+    height: 2.5rem;
+    align-items: center;
+    justify-content: center;
+    transform: translateY(-50%);
+    border: 0;
+    border-radius: var(--mona-radius-sm);
+    background: transparent;
+    color: var(--mona-color-muted);
+    cursor: pointer;
+    transition: color 0.15s ease, background-color 0.15s ease;
+
+    &:hover {
+      background: var(--mona-color-accent-soft);
+      color: var(--mona-color-ink);
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--mona-color-accent);
+      outline-offset: -2px;
+    }
+  }
+
   textarea.mona-field__control {
     min-height: 96px;
     resize: vertical;
@@ -636,6 +673,12 @@
     border-color: color-mix(in srgb, var(--mona-color-info) 35%, var(--mona-color-border));
     background: var(--mona-color-info-soft);
     color: var(--mona-color-info-ink);
+  }
+
+  .mona-alert--success {
+    border-color: color-mix(in srgb, var(--mona-color-success) 35%, var(--mona-color-border));
+    background: var(--mona-color-success-soft);
+    color: var(--mona-color-success-ink);
   }
 
   .mona-brand {
