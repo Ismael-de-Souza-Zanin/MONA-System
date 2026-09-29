@@ -4,6 +4,7 @@ import {
   useLayoutEffect,
   useMemo,
   useRef,
+  useId,
   useState,
   type CSSProperties,
   type MouseEvent as ReactMouseEvent,
@@ -17,7 +18,6 @@ import {
   LogOut,
   PanelLeftClose,
   PanelLeftOpen,
-  GripVertical,
   X,
   MessageSquare,
   LayoutPanelTop,
@@ -31,6 +31,13 @@ import {
   Maximize2,
   SquareStack,
   Users,
+  SlidersHorizontal,
+  ArrowUp,
+  ArrowDown,
+  ExternalLink,
+  BarChart3,
+  ListChecks,
+  ArrowRight,
 } from 'lucide-react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { api } from '../shared/api/client'
@@ -60,9 +67,35 @@ const SIDEBAR_KEY = 'fatto_sidebar_collapsed'
 const NAV_GROUPS_KEY = 'mona_nav_groups_v1'
 const QUICK_PANEL_OPEN_KEY = 'mona_quick_panel_open_v1'
 const QUICK_PANEL_WIDTH_KEY = 'mona_quick_panel_width_v1'
-const QUICK_PANEL_TAB_KEY = 'mona_quick_panel_tab_v1'
+const QUICK_PANEL_WIDGETS_KEY = 'mona_quick_panel_widgets_v1'
 const FAN_COLORS = ['#F54D7D', '#582B86', '#8B4BB8', '#FF7A33', '#C45BA8']
-type QuickPanelTab = 'todos' | 'agenda' | 'clients'
+type QuickWidgetId = 'agenda' | 'todos' | 'clients' | 'overview'
+type QuickWidgetSize = 'compact' | 'expanded'
+type QuickWidget = { id: QuickWidgetId; visible: boolean; size: QuickWidgetSize }
+const QUICK_WIDGET_DEFAULTS: QuickWidget[] = [
+  { id: 'agenda', visible: true, size: 'expanded' },
+  { id: 'todos', visible: true, size: 'expanded' },
+  { id: 'clients', visible: true, size: 'compact' },
+  { id: 'overview', visible: false, size: 'compact' },
+]
+
+function readQuickWidgets(): QuickWidget[] {
+  if (typeof window === 'undefined') return QUICK_WIDGET_DEFAULTS
+  try {
+    const stored: unknown = JSON.parse(window.localStorage.getItem(QUICK_PANEL_WIDGETS_KEY) || 'null')
+    if (!Array.isArray(stored)) return QUICK_WIDGET_DEFAULTS
+    const valid = stored.filter((item): item is QuickWidget =>
+      item && typeof item === 'object' &&
+      QUICK_WIDGET_DEFAULTS.some((widget) => widget.id === item.id) &&
+      typeof item.visible === 'boolean' &&
+      (item.size === 'compact' || item.size === 'expanded'),
+    )
+    const unique = valid.filter((item, index) => valid.findIndex((entry) => entry.id === item.id) === index)
+    return [...unique, ...QUICK_WIDGET_DEFAULTS.filter((item) => !unique.some((entry) => entry.id === item.id))]
+  } catch {
+    return QUICK_WIDGET_DEFAULTS
+  }
+}
 
 function hintOffset(index: number, count: number, upward = false) {
   if (count <= 1) return { x: 0, y: 0 }
@@ -95,6 +128,24 @@ function dockFanOffset(index: number, count: number, viewportWidth: number) {
 
 function BrandMark({ compact }: { compact?: boolean }) {
   return <BrandLogo size={compact ? 48 : 42} showWordmark={!compact} title="MONA" />
+}
+
+function TabShape() {
+  const gradientId = useId()
+  return (
+    <svg className="mona-tab__shape" viewBox="0 0 122 40" preserveAspectRatio="none" aria-hidden="true">
+      <defs>
+        <linearGradient id={gradientId} x1="0%" y1="0%" x2="0%" y2="65%">
+          <stop className="mona-tab__gradient-top" offset="0%" />
+          <stop className="mona-tab__gradient-bottom" offset="100%" />
+        </linearGradient>
+      </defs>
+      <path
+        d="M122 40.036C122 34 119.5 30.1 116.486 29.036c-23.582-8-14.821-29-42.018-29h-62.4C5.441,0.036,0,5.376,0,12.003v28.033z"
+        fill={`url(#${gradientId})`}
+      />
+    </svg>
+  )
 }
 
 function SidebarLink({
@@ -924,13 +975,14 @@ function WorkspaceTabBar({ variant = 'bar', compact = false }: { variant?: 'bar'
               if (window.matchMedia('(min-width: 768px)').matches) floatTab(tab.id)
             }}
             className={`mona-tab ${activeId === tab.id ? 'is-active' : ''}`}
+            style={{ zIndex: activeId === tab.id ? docked.length + floating.length + 1 : docked.length - index }}
             title="Clique direito para gerenciar · arraste · duplo clique flutua"
           >
-            <GripVertical size={12} className="hidden shrink-0 text-ink-300 sm:block" />
+            <TabShape />
             {showTabIcons && <TabIcon size={13} className="shrink-0" strokeWidth={1.9} />}
             <button
               type="button"
-              className="max-w-[72px] truncate sm:max-w-[140px]"
+              className="mona-tab__label"
               onClick={() => activateTab(tab.id)}
               onContextMenu={(e) => openMenu(e, tab.id, 'docked', index)}
             >
@@ -938,7 +990,7 @@ function WorkspaceTabBar({ variant = 'bar', compact = false }: { variant?: 'bar'
             </button>
             <button
               type="button"
-              className="hidden shrink-0 rounded p-0.5 text-ink-400 hover:bg-ink-100 hover:text-ink-700 md:inline-flex"
+              className="mona-tab__float"
               title="Flutuar"
               onClick={() => floatTab(tab.id)}
             >
@@ -946,7 +998,7 @@ function WorkspaceTabBar({ variant = 'bar', compact = false }: { variant?: 'bar'
             </button>
             <button
               type="button"
-              className="shrink-0 rounded p-1 text-ink-500 hover:bg-ink-100 hover:text-ink-800"
+              className="mona-tab__close"
               onClick={(e) => {
                 e.stopPropagation()
                 closeTab(tab.id)
@@ -966,8 +1018,10 @@ function WorkspaceTabBar({ variant = 'bar', compact = false }: { variant?: 'bar'
             data-tab-id={tab.id}
             onContextMenu={(e) => openMenu(e, tab.id, 'floating', -1)}
             className={`mona-tab is-float ${activeId === tab.id ? 'is-active' : ''}`}
+            style={{ zIndex: activeId === tab.id ? docked.length + floating.length + 1 : 0 }}
             title="Clique direito para gerenciar janela flutuante"
           >
+            <TabShape />
             {showTabIcons ? (
               <TabIcon size={13} className="shrink-0 text-brand-800" strokeWidth={1.9} />
             ) : (
@@ -1001,6 +1055,16 @@ function WorkspaceTabBar({ variant = 'bar', compact = false }: { variant?: 'bar'
           )
         })}
       </div>
+
+      <button
+        type="button"
+        className="mona-tabbar__new"
+        aria-label="Abrir módulos"
+        title="Abrir módulos em uma aba"
+        onClick={() => navigate('/mais')}
+      >
+        <Plus size={17} strokeWidth={1.9} />
+      </button>
 
       {!compact && floating.length > 0 && (
         <div className="flex shrink-0 flex-wrap items-center gap-1 border-ink-100 sm:border-l sm:pl-2">
@@ -1076,11 +1140,6 @@ function WorkspaceTabBar({ variant = 'bar', compact = false }: { variant?: 'bar'
   )
 }
 
-function tzCity(id?: string) {
-  if (!id) return '—'
-  return id.split('/').pop()?.replace(/_/g, ' ') || id
-}
-
 function dayKey(value: string | undefined, tz: string) {
   if (!value) return ''
   return new Date(value).toLocaleDateString('en-CA', { timeZone: tz })
@@ -1088,12 +1147,6 @@ function dayKey(value: string | undefined, tz: string) {
 
 function clampQuickPanelWidth(value: number) {
   return Math.min(420, Math.max(236, value))
-}
-
-function readQuickPanelTab(): QuickPanelTab {
-  if (typeof window === 'undefined') return 'todos'
-  const value = window.localStorage.getItem(QUICK_PANEL_TAB_KEY)
-  return value === 'agenda' || value === 'clients' || value === 'todos' ? value : 'todos'
 }
 
 function QuickAccessPanel({
@@ -1111,7 +1164,8 @@ function QuickAccessPanel({
   const { preferences, saveTravel, browserTimeZone } = useUserPreferences()
   const [now, setNow] = useState(() => new Date())
   const [doneIds, setDoneIds] = useState<string[]>([])
-  const [activeTab, setActiveTab] = useState<QuickPanelTab>(() => readQuickPanelTab())
+  const [widgets, setWidgets] = useState<QuickWidget[]>(readQuickWidgets)
+  const [editing, setEditing] = useState(false)
   const canSeeClients = hasPermission(Permissions.ClientsRead)
   const tz = preferences?.effectiveTimeZoneId || preferences?.timeZoneId || 'America/Sao_Paulo'
   const homeTz = preferences?.homeTimeZoneId || preferences?.timeZoneId || 'America/Sao_Paulo'
@@ -1119,16 +1173,16 @@ function QuickAccessPanel({
     Boolean(preferences?.isAwayFromHome) ||
     Boolean(browserTimeZone && homeTz && browserTimeZone !== homeTz && !preferences?.travelModeEnabled)
 
-  const { data: todos = [] } = useQuery({
+  const { data: todos = [], isLoading: todosLoading, isError: todosError } = useQuery({
     queryKey: ['todos'],
     queryFn: () => api.get<TodoItem[]>('/todos'),
   })
-  const { data: events = [] } = useQuery({
+  const { data: events = [], isLoading: eventsLoading, isError: eventsError } = useQuery({
     queryKey: ['agenda-events', tz],
     queryFn: () =>
       api.get<AgendaEvent[]>(`/agenda/events?displayTimeZoneId=${encodeURIComponent(tz)}`),
   })
-  const { data: clients = [] } = useQuery({
+  const { data: clients = [], isLoading: clientsLoading, isError: clientsError } = useQuery({
     queryKey: ['clients'],
     queryFn: () => api.get<Client[]>('/clients'),
     enabled: canSeeClients,
@@ -1139,6 +1193,10 @@ function QuickAccessPanel({
     return () => window.clearInterval(id)
   }, [])
 
+  useEffect(() => {
+    window.localStorage.setItem(QUICK_PANEL_WIDGETS_KEY, JSON.stringify(widgets))
+  }, [widgets])
+
   const completeTodo = useMutation({
     mutationFn: (id: string) => api.patch(`/todos/${id}`, { status: 'Done' }),
     onSuccess: () => {
@@ -1148,67 +1206,100 @@ function QuickAccessPanel({
   })
 
   const today = dayKey(now.toISOString(), tz)
+  const todosUnavailable = todosLoading || todosError
+  const eventsUnavailable = eventsLoading || eventsError
+  const clientsUnavailable = clientsLoading || clientsError
   const openTodos = todos
     .filter((todo) => todo.status !== 'Done' || doneIds.includes(todo.id))
-    .filter((todo) => !todo.dueAtLocal || dayKey(todo.dueAtLocal, tz) <= today || doneIds.includes(todo.id))
-    .slice(0, 5)
+    .filter((todo) => dayKey(todo.dueAtUtc || todo.dueAtLocal, tz) === today)
   const todayEvents = events
     .filter((event) => dayKey(event.startAtUtc || event.startAt, tz) === today)
-    .slice(0, 5)
+    .sort((a, b) => new Date(a.startAtUtc || a.startAt).getTime() - new Date(b.startAtUtc || b.startAt).getTime())
   const priorityClients = clients
     .filter((client) => client.status === 'Notice' || client.status === 'Hold' || client.needsQuickResponse)
     .concat(clients.filter((client) => client.status === 'Active' && !client.needsQuickResponse))
     .filter((client, index, list) => list.findIndex((item) => item.id === client.id) === index)
-    .slice(0, 6)
 
-  const time = now.toLocaleTimeString('pt-BR', { timeZone: tz, hour: '2-digit', minute: '2-digit' })
-  const tabs: { id: QuickPanelTab; label: string; icon: LucideIcon; count: number }[] = [
-    { id: 'todos', label: 'Tarefas', icon: CheckSquare, count: openTodos.length },
-    { id: 'agenda', label: 'Agenda', icon: CalendarDays, count: todayEvents.length },
-    { id: 'clients', label: 'Clientes', icon: Users, count: canSeeClients ? priorityClients.length : 0 },
+  const dateText = now.toLocaleDateString('pt-BR', { timeZone: tz, weekday: 'short', day: 'numeric', month: 'short' })
+  const displayDate = dateText[0].toUpperCase() + dateText.slice(1)
+  const widgetOptions: { id: QuickWidgetId; label: string; icon: LucideIcon }[] = [
+    { id: 'todos', label: 'Tarefas', icon: CheckSquare },
+    { id: 'agenda', label: 'Agenda', icon: CalendarDays },
+    { id: 'clients', label: 'Clientes', icon: Users },
+    { id: 'overview', label: 'Resumo', icon: BarChart3 },
   ]
 
-  const activateTab = (tab: QuickPanelTab) => {
-    setActiveTab(tab)
-    window.localStorage.setItem(QUICK_PANEL_TAB_KEY, tab)
+  const moveWidget = (id: QuickWidgetId, direction: -1 | 1) => {
+    setWidgets((current) => {
+      const index = current.findIndex((widget) => widget.id === id)
+      const nextIndex = index + direction
+      if (index < 0 || nextIndex < 0 || nextIndex >= current.length) return current
+      const next = [...current]
+      ;[next[index], next[nextIndex]] = [next[nextIndex], next[index]]
+      return next
+    })
   }
 
   return (
     <section className="mona-quick" style={{ '--mona-quick-w': `${width}px` } as CSSProperties}>
       <header className="mona-quick__header">
-        <div>
-          <p className="mona-quick__eyebrow">Acesso rápido</p>
-          <h2>Painel lateral</h2>
+        <div className="mona-quick__date">
+          <CalendarDays size={23} />
+          <div><h2>Hoje</h2><p>{displayDate}</p></div>
         </div>
         <div className="mona-quick__actions">
+          <button
+            type="button"
+            className={`mona-icon-btn ${editing ? 'is-active' : ''}`}
+            aria-label={editing ? 'Concluir edição do painel' : 'Personalizar painel'}
+            title={editing ? 'Concluir edição' : 'Personalizar painel'}
+            aria-pressed={editing}
+            onClick={() => setEditing((value) => !value)}
+          >
+            {editing ? <CheckSquare size={17} /> : <SlidersHorizontal size={17} />}
+          </button>
           <button type="button" className="mona-icon-btn" aria-label="Fechar painel rápido" title="Fechar" onClick={onClose}>
             <ChevronsRight size={17} />
           </button>
         </div>
       </header>
 
-      <div className="mona-quick__tabs" role="tablist" aria-label="Painel rápido">
-        {tabs.map((tab) => {
-          const TabIcon = tab.icon
-          const active = activeTab === tab.id
-          return (
-            <button
-              key={tab.id}
-              type="button"
-              role="tab"
-              aria-selected={active}
-              className={`mona-quick__tab ${active ? 'is-active' : ''}`}
-              onClick={() => activateTab(tab.id)}
-            >
-              <TabIcon size={15} />
-              <span>{tab.label}</span>
-              <em>{tab.count}</em>
-            </button>
-          )
-        })}
-      </div>
+      {editing && (
+        <div className="mona-quick__editor" aria-label="Personalização do painel">
+          <p>Janelas do painel</p>
+          {widgets.map((widget, index) => {
+            const option = widgetOptions.find((item) => item.id === widget.id)!
+            const Icon = option.icon
+            return (
+              <div className="mona-quick__editor-row" key={widget.id}>
+                <label>
+                  <input
+                    type="checkbox"
+                    className="mona-check__input"
+                    checked={widget.visible}
+                    onChange={(event) => setWidgets((current) => current.map((item) => item.id === widget.id ? { ...item, visible: event.target.checked } : item))}
+                  />
+                  <Icon size={15} />
+                  <span>{option.label}</span>
+                </label>
+                <button
+                  type="button"
+                  className="mona-quick__edit-icon"
+                  aria-label={`${widget.size === 'compact' ? 'Expandir' : 'Compactar'} ${option.label}`}
+                  title={widget.size === 'compact' ? 'Expandir janela' : 'Compactar janela'}
+                  onClick={() => setWidgets((current) => current.map((item) => item.id === widget.id ? { ...item, size: item.size === 'compact' ? 'expanded' : 'compact' } : item))}
+                >
+                  <Maximize2 size={14} />
+                </button>
+                <button type="button" className="mona-quick__edit-icon" aria-label={`Mover ${option.label} para cima`} disabled={index === 0} onClick={() => moveWidget(widget.id, -1)}><ArrowUp size={14} /></button>
+                <button type="button" className="mona-quick__edit-icon" aria-label={`Mover ${option.label} para baixo`} disabled={index === widgets.length - 1} onClick={() => moveWidget(widget.id, 1)}><ArrowDown size={14} /></button>
+              </div>
+            )
+          })}
+        </div>
+      )}
 
-      <div className="mona-quick__resize">
+      {editing && <div className="mona-quick__resize">
         <Maximize2 size={14} />
         <input
           type="range"
@@ -1219,21 +1310,22 @@ function QuickAccessPanel({
           aria-label="Largura do painel rápido"
           onChange={(event) => onWidthChange(clampQuickPanelWidth(Number(event.target.value)))}
         />
-      </div>
+      </div>}
 
       <div className="mona-quick__body">
-        {activeTab === 'todos' && (
-          <section className="mona-quick__screen" aria-label="Tarefas do dia">
-            <button type="button" className="mona-day__head" onClick={() => navigate('/todos')}>
+        {widgets.filter((widget) => widget.visible).map((widget) => (
+          <section key={widget.id} className={`mona-quick__screen is-${widget.size}`} aria-label={widgetOptions.find((item) => item.id === widget.id)?.label}>
+            {widget.id === 'todos' && <>
+            <div className="mona-day__head">
               <span>
                 <CheckSquare size={15} strokeWidth={2} />
                 Tarefas do dia
               </span>
-              <em>{openTodos.length} abertas</em>
-            </button>
-            <ul className="mona-day__list">
-              {openTodos.length === 0 && <li className="mona-day__empty">Nada pendente para hoje</li>}
-              {openTodos.map((todo) => (
+              <button type="button" aria-label="Abrir tarefas" title="Abrir tarefas" onClick={() => navigate('/todos')}><ExternalLink size={14} /></button>
+            </div>
+            <strong className="mona-quick__metric">{todosUnavailable ? '—' : openTodos.length} <small>abertas</small></strong>
+            {todosUnavailable || openTodos.length === 0 ? <div className="mona-quick__empty-state"><ListChecks size={42} /><strong>{todosLoading ? 'Carregando tarefas' : todosError ? 'Tarefas indisponíveis' : 'Nada pendente para hoje'}</strong><span>{todosLoading ? 'Aguarde um instante.' : todosError ? 'Não foi possível carregar.' : 'Tudo em dia!'}</span></div> : <ul className="mona-day__list">
+              {openTodos.slice(0, widget.size === 'compact' ? 1 : 5).map((todo) => (
                 <li key={todo.id} className="mona-day__task">
                   <div className="mona-checklist">
                     <input
@@ -1251,45 +1343,39 @@ function QuickAccessPanel({
                   {todo.isOverdue && !doneIds.includes(todo.id) && <em>atrasada</em>}
                 </li>
               ))}
-            </ul>
-            <button type="button" className="mona-quick__cta" onClick={() => navigate('/todos')}>
-              <Plus size={15} />
-              Nova tarefa
-            </button>
-          </section>
-        )}
+            </ul>}
+            {widget.size === 'expanded' && !todosUnavailable && openTodos.length > 0 && <button type="button" className="mona-quick__cta" onClick={() => navigate('/todos')}><ExternalLink size={15} />Ver tarefas</button>}
+            </>}
 
-        {activeTab === 'agenda' && (
-          <section className="mona-quick__screen" aria-label="Agenda do dia">
-            <button type="button" className="mona-day__head" onClick={() => navigate('/agenda')}>
+            {widget.id === 'agenda' && <>
+            <div className="mona-day__head">
               <span>
                 <CalendarDays size={15} strokeWidth={2} />
                 Agenda do dia
               </span>
-              <em>{todayEvents.length} hoje</em>
-            </button>
-            <div className="mona-day__clock">
-              <strong>{time}</strong>
-              <span>{tzCity(tz)}</span>
+              <button type="button" aria-label="Abrir agenda" title="Abrir agenda" onClick={() => navigate('/agenda')}><ExternalLink size={14} /></button>
             </div>
-            <ul className="mona-day__list">
-              {todayEvents.length === 0 && <li className="mona-day__empty">Sem compromissos hoje</li>}
-              {todayEvents.map((event) => (
+            <strong className="mona-quick__metric">{eventsUnavailable ? '—' : todayEvents.length} <small>{todayEvents.length === 1 ? 'evento hoje' : 'eventos hoje'}</small></strong>
+            <ul className="mona-day__list mona-quick__timeline">
+              {(eventsUnavailable || todayEvents.length === 0) && <li className="mona-day__empty">{eventsLoading ? 'Carregando agenda' : eventsError ? 'Não foi possível carregar a agenda' : 'Sem compromissos hoje'}</li>}
+              {!eventsUnavailable && todayEvents.slice(widget.size === 'compact' ? -1 : -3).map((event) => (
                 <li key={event.id}>
-                  <button type="button" className="mona-day__row" onClick={() => navigate('/agenda')}>
-                    <span className="truncate">{event.title}</span>
-                    <em>
+                  <button type="button" className="mona-quick__event-row" onClick={() => navigate('/agenda')}>
+                    <span className="mona-quick__event-time">
                       {new Date(event.startAtUtc || event.startAt).toLocaleTimeString('pt-BR', {
                         timeZone: tz,
                         hour: '2-digit',
                         minute: '2-digit',
                       })}
-                    </em>
+                    </span>
+                    <span className="mona-quick__event-dot" />
+                    <span className="mona-quick__event-copy"><strong>{event.title}</strong><small>{event.clientName || event.categoryName || 'Compromisso'}</small></span>
                   </button>
                 </li>
               ))}
             </ul>
-        {preferences?.travelModeEnabled ? (
+            {widget.size === 'expanded' && <button type="button" className="mona-quick__cta" onClick={() => navigate('/agenda')}>Ver agenda completa <ArrowRight size={15} /></button>}
+        {widget.size === 'expanded' && (preferences?.travelModeEnabled ? (
           <button
             type="button"
             className="mona-pin__action"
@@ -1312,23 +1398,28 @@ function QuickAccessPanel({
           >
             Usar fuso local
           </button>
-        ) : null}
-          </section>
-        )}
+        ) : null)}
+            </>}
 
-        {activeTab === 'clients' && (
-          <section className="mona-quick__screen" aria-label="Clientes">
-            <button type="button" className="mona-day__head" onClick={() => navigate('/clientes')}>
+            {widget.id === 'clients' && <>
+            <div className="mona-day__head">
               <span>
                 <Users size={15} strokeWidth={2} />
                 Clientes
               </span>
-              <em>{canSeeClients ? `${clients.length} total` : 'sem acesso'}</em>
-            </button>
-            <ul className="mona-day__list">
+              {canSeeClients && <button type="button" aria-label="Abrir clientes" title="Abrir clientes" onClick={() => navigate('/clientes')}><ExternalLink size={14} /></button>}
+            </div>
+            <strong className="mona-quick__metric">{canSeeClients && !clientsUnavailable ? clients.length : '—'} <small>{canSeeClients ? 'na carteira' : 'sem acesso'}</small></strong>
+            {canSeeClients && !clientsUnavailable && widget.size === 'compact' && <div className="mona-quick__client-avatars">
+              {clients.slice(0, 3).map((client) => <button key={client.id} type="button" title={client.name} aria-label={`Abrir ${client.name}`} onClick={() => navigate(`/clientes/${client.id}`)}>{client.name.split(' ').filter(Boolean).slice(0, 2).map((part) => part[0]).join('').toUpperCase()}</button>)}
+              <button type="button" title="Ver todos os clientes" aria-label="Ver todos os clientes" onClick={() => navigate('/clientes')}><Plus size={14} /></button>
+            </div>}
+            {widget.size === 'expanded' && <ul className="mona-day__list">
               {!canSeeClients && <li className="mona-day__empty">Seu acesso atual não inclui clientes.</li>}
-              {canSeeClients && priorityClients.length === 0 && <li className="mona-day__empty">Nenhum cliente em destaque.</li>}
-              {priorityClients.map((client) => (
+              {canSeeClients && clientsLoading && <li className="mona-day__empty">Carregando clientes.</li>}
+              {canSeeClients && clientsError && <li className="mona-day__empty">Não foi possível carregar clientes.</li>}
+              {canSeeClients && !clientsUnavailable && priorityClients.length === 0 && <li className="mona-day__empty">Nenhum cliente em destaque.</li>}
+              {!clientsUnavailable && priorityClients.slice(0, 6).map((client) => (
                 <li key={client.id}>
                   <button type="button" className="mona-client-peek" onClick={() => navigate(`/clientes/${client.id}`)}>
                     <span className="mona-client-peek__main">
@@ -1342,13 +1433,23 @@ function QuickAccessPanel({
                   </button>
                 </li>
               ))}
-            </ul>
-            <button type="button" className="mona-quick__cta" onClick={() => navigate('/clientes')}>
+            </ul>}
+            {canSeeClients && <button type="button" className="mona-quick__footer-link" onClick={() => navigate('/clientes')}>
               <Users size={15} />
-              Ver clientes
-            </button>
+              Ver todos os clientes <ArrowRight size={15} />
+            </button>}
+            </>}
+            {widget.id === 'overview' && <>
+              <div className="mona-day__head"><span><BarChart3 size={15} />Resumo do dia</span></div>
+              <div className="mona-quick__overview">
+                <div><strong>{todosUnavailable ? '—' : openTodos.length}</strong><span>Tarefas abertas</span></div>
+                <div><strong>{eventsUnavailable ? '—' : todayEvents.length}</strong><span>Eventos hoje</span></div>
+                {canSeeClients && <div><strong>{clientsUnavailable ? '—' : priorityClients.filter((client) => client.needsQuickResponse).length}</strong><span>Clientes em atenção</span></div>}
+              </div>
+            </>}
           </section>
-        )}
+        ))}
+        {!widgets.some((widget) => widget.visible) && <p className="mona-quick__empty">Nenhuma janela selecionada. Use Personalizar painel para adicionar uma.</p>}
       </div>
     </section>
   )
@@ -1585,8 +1686,10 @@ function AppShell() {
   })
   const [quickPanelOpen, setQuickPanelOpen] = useState(() => {
     if (typeof window === 'undefined') return true
+    if (window.innerWidth >= 768 && window.innerWidth < 1024) return false
     return window.localStorage.getItem(QUICK_PANEL_OPEN_KEY) !== '0'
   })
+  const narrowDesktopRef = useRef(typeof window !== 'undefined' && window.innerWidth >= 768 && window.innerWidth < 1024)
   const [quickPanelWidth, setQuickPanelWidth] = useState(() => {
     if (typeof window === 'undefined') return 280
     return clampQuickPanelWidth(Number(window.localStorage.getItem(QUICK_PANEL_WIDTH_KEY)) || 280)
@@ -1621,8 +1724,11 @@ function AppShell() {
   useEffect(() => {
     const onResize = () => {
       const mobile = window.innerWidth < 768
+      const narrowDesktop = !mobile && window.innerWidth < 1024
       setIsMobile(mobile)
       if (mobile) setCollapsed(true)
+      if (narrowDesktop && !narrowDesktopRef.current) setQuickPanelOpen(false)
+      narrowDesktopRef.current = narrowDesktop
     }
     window.addEventListener('resize', onResize)
     return () => window.removeEventListener('resize', onResize)
@@ -1731,42 +1837,24 @@ function AppShell() {
     )
   }
 
-  const railW = isMobile ? 0 : collapsed ? 80 : 248
+  const railW = isMobile ? 0 : collapsed ? 68 : 216
   const contentMargin = isMobile ? 0 : 12 + railW + 12
   const compactRail = isMobile || collapsed
-  const brandH = isMobile ? 0 : compactRail ? 80 : 72
-  const menuTop = 12 + brandH + 10
+  const brandH = isMobile ? 0 : compactRail ? 64 : 66
   const mobileDockH = 72
   const dockColumnW = quickPanelWidth
 
   return (
     <div className={`mona-shell ${isMobile ? 'is-mobile' : ''}`}>
-      {!isMobile && (
-      <NavLink
-        to="/"
-        end
-        className={`mona-brand ${compactRail ? 'is-compact' : 'is-wide'}`}
-        style={{ width: railW, height: brandH }}
-        aria-label="MONA"
-        title="MONA"
-      >
-        <BrandMark compact={compactRail} />
-        {import.meta.env.VITE_FAKE_API === '1' && !compactRail && (
-          <span className="rounded-full bg-white/70 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-ink-700">
-              Fake
-            </span>
-          )}
-      </NavLink>
-      )}
       <aside
         ref={sidebarRef}
         className={`mona-sidebar fixed z-30 flex overflow-visible ${
-          isMobile ? 'is-mobile-dock is-compact' : compactRail ? 'is-compact w-20 flex-col' : 'w-[248px] flex-col'
+          isMobile ? 'is-mobile-dock is-compact' : compactRail ? 'is-compact flex-col' : 'flex-col'
         }`}
         style={
           isMobile
             ? { top: 'auto', right: 0, bottom: 0, left: 0, height: mobileDockH, width: 'auto' }
-            : { top: menuTop, bottom: 12, left: 12 }
+            : { top: 12, bottom: 12, left: 12, width: railW }
         }
       >
         <SidebarIndicator
@@ -1775,6 +1863,21 @@ function AppShell() {
           orientation={isMobile ? 'horizontal' : 'vertical'}
           tick={`${openGroups.join(',')}|${fanGroupId ?? ''}|${isMobile ? 'm' : 'd'}`}
         />
+        {!isMobile && (
+          <NavLink
+            to="/"
+            end
+            className={`mona-brand ${compactRail ? 'is-compact' : 'is-wide'}`}
+            style={{ height: brandH }}
+            aria-label="MONA"
+            title="MONA"
+          >
+            <BrandMark compact={compactRail} />
+            {import.meta.env.VITE_FAKE_API === '1' && !compactRail && (
+              <span className="rounded-full bg-white/70 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-ink-700">Fake</span>
+            )}
+          </NavLink>
+        )}
         {!isMobile && (
           <div className={`relative z-[3] flex shrink-0 items-center ${compactRail ? 'justify-center pt-3' : 'justify-end px-3 pt-3'}`}>
             {compactRail ? (
@@ -1799,20 +1902,6 @@ function AppShell() {
           )}
         </div>
         )}
-        {!isMobile && (
-          <div className={`relative z-[3] shrink-0 ${compactRail ? 'px-2 pb-2 pt-3' : 'px-3 pb-2 pt-3'}`}>
-              <button
-                type="button"
-              className={`mona-sidebar__cta ${compactRail ? 'px-0' : ''}`}
-              onClick={() => navigate('/todos')}
-              title="Nova tarefa"
-              >
-              <Plus size={16} strokeWidth={2.4} />
-              {!compactRail && 'Nova tarefa'}
-              </button>
-          </div>
-        )}
-
         <nav className="mona-sidebar__nav min-h-0 flex-1">
           {compactRail ? (
             <div className="mona-sidebar__compact">
@@ -1936,6 +2025,19 @@ function AppShell() {
             </>
             )}
         </nav>
+        {!isMobile && hasPermission(Permissions.TodosWrite) && (
+          <div className={`relative z-[3] shrink-0 ${compactRail ? 'px-2 pb-2 pt-3' : 'px-3 pb-2 pt-3'}`}>
+            <button
+              type="button"
+              className={`mona-sidebar__cta ${compactRail ? 'px-0' : ''}`}
+              onClick={() => navigate('/todos?novo=1')}
+              title="Nova tarefa"
+            >
+              <Plus size={16} strokeWidth={2.4} />
+              {!compactRail && 'Nova tarefa'}
+            </button>
+          </div>
+        )}
       </aside>
       <div
         className={`mona-canvas min-w-0 flex-1 transition-[margin] ${quickPanelOpen ? 'has-quick-panel' : 'is-quick-closed'} ${isMobile ? '' : 'my-3 mr-3'}`}

@@ -126,7 +126,7 @@ export function LoginPage() {
 
             <div className="flex flex-wrap items-center justify-between gap-2 text-sm">
               <label className="inline-flex items-center gap-2 text-ink-700">
-                <input type="checkbox" className="rounded border-ink-300 text-brand-800" />
+                <input type="checkbox" className="mona-check__input" />
                 Lembrar de mim
               </label>
               <span className="font-medium text-brand-800">Esqueci minha senha</span>

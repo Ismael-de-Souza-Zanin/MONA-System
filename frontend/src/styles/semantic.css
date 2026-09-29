@@ -32,6 +32,24 @@
     margin-bottom: var(--mona-space-6);
   }
 
+  .mona-page__heading {
+    display: flex;
+    flex: 1 1 22rem;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    min-width: 0;
+  }
+
+  .mona-page__heading > div { min-width: 0; }
+
+  .mona-page__illustration {
+    width: 140px;
+    height: 104px;
+    flex: none;
+    object-fit: cover;
+  }
+
   .mona-page__title {
     margin: 0;
     font-family: var(--mona-font-display);
@@ -148,10 +166,46 @@
   }
 
   .mona-check__input {
-    margin-top: 0.125rem;
-    width: 1rem;
-    height: 1rem;
-    accent-color: var(--mona-color-accent);
+    --check: var(--mona-color-accent);
+    appearance: none;
+    -webkit-appearance: none;
+    position: relative;
+    flex: 0 0 18px;
+    width: 18px;
+    height: 18px;
+    margin: 0;
+    border: 1.5px solid var(--mona-color-border);
+    border-radius: 4px;
+    background: var(--mona-color-surface);
+    cursor: pointer;
+  }
+
+  .mona-check__input::before,
+  .mona-check__input::after {
+    content: "";
+    position: absolute;
+    width: 0;
+    height: 2px;
+    top: auto;
+    border-radius: 2px;
+    background: var(--check);
+  }
+
+  .mona-check__input::before { right: 60%; transform-origin: right bottom; }
+  .mona-check__input::after { left: 40%; transform-origin: left bottom; }
+  .mona-check__input:checked { border-color: var(--check); }
+  .mona-check__input:checked::before { animation: mona-check-01 0.4s ease forwards; }
+  .mona-check__input:checked::after { animation: mona-check-02 0.4s ease forwards; }
+  .mona-check__input:focus-visible,
+  .mona-checklist input[type="checkbox"]:focus-visible {
+    outline: 2px solid var(--mona-color-accent);
+    outline-offset: 3px;
+  }
+
+  .mona-check__input:disabled,
+  .mona-checklist input[type="checkbox"]:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
   }
 
   .mona-checklist {
@@ -262,6 +316,35 @@
           }
         }
       }
+    }
+  }
+
+  .mona-checklist--option {
+    grid-template-columns: 18px minmax(0, 1fr);
+    column-gap: 10px;
+    min-height: 24px;
+
+    input[type="checkbox"] {
+      width: 18px;
+      height: 18px;
+      border: 1.5px solid var(--mona-color-border);
+      border-radius: 4px;
+
+      &:checked { border-color: var(--check); }
+    }
+
+    label {
+      width: auto;
+      font-size: 0.875rem;
+      line-height: 1.4;
+
+      &::before,
+      &::after { display: none; }
+    }
+
+    input[type="checkbox"]:checked + label {
+      color: var(--mona-color-ink);
+      animation: none;
     }
   }
 
@@ -507,6 +590,35 @@
     color: var(--mona-color-muted);
   }
 
+  .mona-empty--illustrated {
+    display: flex;
+    min-height: 250px;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 1.5rem;
+    border-style: solid;
+    border-color: var(--mona-color-border);
+    background: var(--mona-color-surface);
+  }
+
+  .mona-empty__illustration {
+    width: clamp(90px, 11vw, 142px);
+    height: 110px;
+    margin-bottom: 0.55rem;
+    object-fit: contain;
+  }
+
+  .mona-empty--illustrated .mona-empty__title {
+    font-size: 1rem;
+    font-weight: 700;
+  }
+
+  .mona-empty--illustrated .mona-empty__description { max-width: 30rem; }
+  .mona-empty__action { margin-top: 1rem; }
+  .mona-shell.is-mobile .mona-empty__illustration { display: none; }
+  .mona-shell.is-mobile .mona-empty--illustrated { min-height: 150px; }
+
   .mona-alert {
     padding: var(--mona-space-3) var(--mona-space-4);
     border-radius: var(--mona-radius-sm);
@@ -527,31 +639,30 @@
   }
 
   .mona-brand {
-    position: fixed;
-    z-index: 31;
-    top: 12px;
-    left: 12px;
+    position: relative;
+    z-index: 3;
     display: flex;
+    width: 100%;
+    flex: 0 0 auto;
     align-items: center;
     justify-content: center;
     gap: 0.5rem;
     overflow: hidden;
     text-decoration: none;
-    background: var(--mona-chrome-sidebar-bg);
-    background-image: var(--mona-chrome-sidebar-gradient);
-    box-shadow: 0 14px 32px color-mix(in srgb, var(--mona-color-coral) 14%, transparent);
+    background: transparent;
+    box-shadow: none;
     color: var(--mona-chrome-sidebar-ink);
     transition: width 0.2s ease, height 0.2s ease, border-radius 0.2s ease;
   }
 
   .mona-brand.is-compact {
-    border-radius: 50%;
+    border-radius: var(--mona-radius-xl) var(--mona-radius-xl) 0 0;
   }
 
   .mona-brand.is-wide {
     justify-content: flex-start;
-    padding: 0 1rem;
-    border-radius: var(--mona-radius-xl);
+    padding: 0 0.75rem;
+    border-radius: var(--mona-radius-xl) var(--mona-radius-xl) 0 0;
   }
 
   .mona-brand:hover {
@@ -2027,6 +2138,7 @@
 
   .mona-quick {
     display: flex;
+    container-type: inline-size;
     min-height: 0;
     flex: 1;
     width: var(--mona-quick-w, 280px);
@@ -2049,6 +2161,10 @@
     gap: 0.75rem;
     padding: 0.85rem 0.85rem 0.55rem;
   }
+
+  .mona-quick__date { display: flex; min-width: 0; align-items: center; gap: 0.65rem; color: var(--mona-color-purple); }
+  .mona-quick__date > svg { flex-shrink: 0; }
+  .mona-quick__date p { margin: 0.1rem 0 0; color: var(--mona-color-muted); font-size: 0.7rem; }
 
   .mona-quick__eyebrow {
     margin: 0;
@@ -2074,52 +2190,65 @@
     gap: 0.25rem;
   }
 
-  .mona-quick__tabs {
+  .mona-quick__editor {
     display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 0.35rem;
     flex-shrink: 0;
-    padding: 0 0.7rem 0.55rem;
+    gap: 0.28rem;
+    max-height: min(18rem, 42vh);
+    margin: 0 0.75rem 0.6rem;
+    overflow-y: auto;
+    border: 1px solid var(--mona-color-border);
+    border-radius: 8px;
+    background: var(--mona-color-surface);
+    padding: 0.55rem;
   }
 
-  .mona-quick__tab {
-    display: grid;
-    grid-template-columns: 1fr;
-    justify-items: center;
-    gap: 0.16rem;
-    min-width: 0;
-    border: 1px solid color-mix(in srgb, var(--mona-color-border) 78%, transparent);
-    border-radius: 16px;
-    background: color-mix(in srgb, var(--mona-color-surface) 78%, var(--fv-ink-50));
-    padding: 0.45rem 0.25rem;
+  .mona-quick__editor > p {
+    margin: 0 0 0.2rem;
     color: var(--mona-color-muted);
-    cursor: pointer;
-  }
-
-  .mona-quick__tab span {
-    max-width: 100%;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    font-size: 0.68rem;
+    font-size: 0.72rem;
     font-weight: 700;
   }
 
-  .mona-quick__tab em {
-    min-width: 1.25rem;
-    border-radius: 999px;
-    padding: 0.06rem 0.28rem;
-    background: color-mix(in srgb, var(--mona-color-muted) 12%, transparent);
-    font-style: normal;
-    font-size: 0.58rem;
-    font-weight: 800;
+  .mona-quick__editor-row,
+  .mona-quick__editor-row label {
+    display: flex;
+    min-width: 0;
+    align-items: center;
+    gap: 0.3rem;
   }
 
-  .mona-quick__tab.is-active {
-    border-color: color-mix(in srgb, var(--mona-color-accent) 38%, transparent);
-    background: color-mix(in srgb, var(--mona-color-accent) 12%, var(--mona-color-surface));
-    color: var(--mona-color-ink);
-    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--mona-color-accent) 12%, transparent);
+  .mona-quick__editor-row {
+    border-bottom: 1px solid var(--mona-color-border);
+    padding: 0.3rem 0;
+  }
+
+  .mona-quick__editor-row:last-child { border-bottom: 0; }
+  .mona-quick__editor-row label { flex: 1; cursor: pointer; font-size: 0.75rem; font-weight: 700; }
+  .mona-quick__editor-row input { accent-color: var(--mona-color-accent); }
+  .mona-quick__editor-row label span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .mona-quick__edit-icon {
+    display: inline-grid;
+    width: 26px;
+    height: 26px;
+    flex-shrink: 0;
+    place-items: center;
+    border: 0;
+    border-radius: 6px;
+    background: transparent;
+    color: var(--mona-color-muted);
+    cursor: pointer;
+  }
+  .mona-quick__edit-icon:hover { background: var(--mona-color-bg-accent); color: var(--mona-color-ink); }
+  .mona-quick__edit-icon:disabled { opacity: 0.35; cursor: default; }
+  .mona-quick__actions .is-active { color: var(--mona-color-accent); }
+  .mona-quick__edit-icon:focus-visible,
+  .mona-quick__actions button:focus-visible { outline: 2px solid var(--mona-color-accent); outline-offset: 2px; }
+
+  .mona-quick__empty {
+    margin: 0;
+    color: var(--mona-color-muted);
+    font-size: 0.8rem;
   }
 
   .mona-quick__resize {
@@ -2137,9 +2266,14 @@
   }
 
   .mona-quick__body {
-    display: flex;
+    display: grid;
+    grid-auto-rows: max-content;
+    grid-template-columns: minmax(0, 1fr);
+    align-content: start;
+    gap: 0.55rem;
     min-height: 0;
     flex: 1;
+    overflow-y: auto;
     padding: 0 0.75rem 0.8rem;
   }
 
@@ -2148,10 +2282,49 @@
     min-height: 0;
     width: 100%;
     flex-direction: column;
-    overflow: hidden;
-    border-radius: 22px;
-    background: color-mix(in srgb, var(--mona-color-surface) 76%, var(--fv-ink-50));
-    padding: 0.85rem;
+    border: 1px solid color-mix(in srgb, var(--mona-color-border) 80%, transparent);
+    border-radius: 8px;
+    background: var(--mona-color-surface);
+    padding: 0.75rem;
+    box-shadow: 0 3px 12px color-mix(in srgb, var(--mona-color-ink) 5%, transparent);
+  }
+
+  .mona-quick__screen.is-compact { min-height: 132px; }
+  .mona-quick__screen.is-expanded { min-height: 214px; }
+  .mona-quick__screen .mona-day__list { flex: none; max-height: 180px; overflow-y: auto; }
+  .mona-quick__screen.is-compact .mona-day__list { max-height: 56px; overflow: hidden; }
+  .mona-quick__metric { display: block; margin-top: 0.4rem; font: 700 1.25rem var(--mona-font-display); color: var(--mona-color-ink); }
+  .mona-quick__metric small,
+  .mona-quick__submetric { font-size: 0.68rem; font-weight: 500; color: var(--mona-color-muted); }
+  .mona-quick__overview { display: grid; gap: 0.45rem; margin-top: 0.65rem; }
+  .mona-quick__overview > div { display: flex; align-items: baseline; justify-content: space-between; gap: 0.3rem; border-bottom: 1px solid var(--mona-color-border); padding-bottom: 0.25rem; }
+  .mona-quick__overview strong { font: 700 1.2rem var(--mona-font-display); }
+  .mona-quick__overview span { color: var(--mona-color-muted); font-size: 0.68rem; text-align: right; }
+  .mona-quick__empty-state { display: flex; min-height: 112px; flex-direction: column; align-items: center; justify-content: center; gap: 0.25rem; color: var(--mona-color-muted); text-align: center; }
+  .mona-quick__empty-state svg { color: color-mix(in srgb, var(--mona-color-purple) 30%, var(--mona-color-surface)); }
+  .mona-quick__empty-state strong { color: var(--mona-color-muted); font-size: 0.76rem; }
+  .mona-quick__empty-state span { font-size: 0.68rem; }
+  .mona-quick__timeline { position: relative; gap: 0; margin-top: 0.55rem; }
+  .mona-quick__timeline:has(.mona-quick__event-row)::before { content: ''; position: absolute; top: 0.7rem; bottom: 0.8rem; left: 4.45rem; width: 2px; background: color-mix(in srgb, var(--mona-color-pink) 45%, var(--mona-color-surface)); }
+  .mona-quick__event-row { position: relative; display: grid; width: 100%; grid-template-columns: 3.6rem 0.75rem minmax(0, 1fr); align-items: start; gap: 0.35rem; border: 0; background: transparent; padding: 0.35rem 0; color: var(--mona-color-ink); text-align: left; cursor: pointer; }
+  .mona-quick__event-time { font-size: 0.7rem; font-weight: 700; }
+  .mona-quick__event-dot { position: relative; z-index: 1; width: 8px; height: 8px; margin: 0.2rem auto 0; border-radius: 50%; background: var(--mona-color-purple); }
+  .mona-quick__timeline li:nth-child(3n + 2) .mona-quick__event-dot { background: var(--mona-color-pink); }
+  .mona-quick__timeline li:nth-child(3n) .mona-quick__event-dot { background: var(--mona-color-orange); }
+  .mona-quick__event-copy { display: grid; min-width: 0; gap: 0.1rem; }
+  .mona-quick__event-copy strong { overflow: hidden; font-size: 0.72rem; text-overflow: ellipsis; white-space: nowrap; }
+  .mona-quick__event-copy small { overflow: hidden; color: var(--mona-color-muted); font-size: 0.65rem; text-overflow: ellipsis; white-space: nowrap; }
+  .mona-quick__client-avatars { display: flex; gap: 0.3rem; margin-top: 0.65rem; }
+  .mona-quick__client-avatars button { display: grid; width: 29px; height: 29px; place-items: center; border: 1px solid var(--mona-color-surface); border-radius: 50%; background: color-mix(in srgb, var(--mona-color-purple) 75%, var(--mona-color-surface)); color: white; font-size: 0.65rem; font-weight: 700; cursor: pointer; }
+  .mona-quick__client-avatars button:nth-child(2) { background: color-mix(in srgb, var(--mona-color-orange) 65%, var(--mona-color-surface)); }
+  .mona-quick__client-avatars button:nth-child(3) { background: color-mix(in srgb, var(--mona-color-pink) 65%, var(--mona-color-surface)); }
+  .mona-quick__client-avatars button:last-child { border-color: var(--mona-color-border); background: var(--mona-color-surface); color: var(--mona-color-accent); }
+  .mona-quick__footer-link { display: inline-flex; align-items: center; gap: 0.3rem; margin-top: auto; border: 0; background: transparent; padding: 0.45rem 0 0; color: var(--mona-color-accent); font-size: 0.7rem; font-weight: 700; cursor: pointer; }
+  .mona-quick__footer-link svg:last-child { margin-left: auto; }
+
+  @container (min-width: 360px) {
+    .mona-quick__body { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .mona-quick__screen.is-expanded { grid-column: span 2; }
   }
 
   .mona-quick__cta {
@@ -2345,6 +2518,20 @@
     font-weight: 700;
     color: var(--mona-color-muted);
   }
+
+  .mona-day__head button {
+    display: inline-grid;
+    width: 28px;
+    height: 28px;
+    flex-shrink: 0;
+    place-items: center;
+    border: 0;
+    border-radius: 6px;
+    background: transparent;
+    color: var(--mona-color-muted);
+    cursor: pointer;
+  }
+  .mona-day__head button:hover { background: var(--mona-color-bg-accent); color: var(--mona-color-accent); }
 
   .mona-day__clock {
     display: flex;
@@ -2703,6 +2890,98 @@
     display: none;
   }
 
+  .mona-dashboard {
+    container-type: inline-size;
+    display: grid;
+    gap: 1.1rem;
+    padding: 0.1rem 0 1.5rem;
+  }
+
+  .mona-dashboard__hero {
+    position: relative;
+    min-height: 190px;
+    overflow: hidden;
+    border-radius: var(--mona-radius-lg);
+    background: linear-gradient(110deg,
+      color-mix(in srgb, var(--mona-color-surface) 91%, var(--mona-color-orange)),
+      color-mix(in srgb, var(--mona-color-surface) 87%, var(--mona-color-pink)) 75%,
+      color-mix(in srgb, var(--mona-color-surface) 79%, var(--mona-color-orange)));
+    padding: 1.4rem 1.5rem;
+  }
+
+  .mona-dashboard__wave { position: absolute; right: 0; bottom: -5rem; width: 34%; opacity: 0.55; pointer-events: none; }
+  .mona-dashboard__hero-copy { position: relative; z-index: 2; max-width: 68%; }
+  .mona-dashboard__eyebrow { margin: 0; color: var(--mona-color-purple); font-size: 0.7rem; font-weight: 800; text-transform: uppercase; }
+  .mona-dashboard__hero h1 { display: flex; align-items: center; gap: 0.4rem; margin: 0.28rem 0 0; color: var(--mona-color-ink); font: 700 2rem/1.12 var(--mona-font-display); }
+  .mona-dashboard__hero h1 svg { flex-shrink: 0; color: var(--mona-color-orange); }
+  .mona-dashboard__hero-copy > p:not(.mona-dashboard__eyebrow) { margin: 0.35rem 0 0; color: var(--mona-color-muted); font-size: 0.9rem; }
+  .mona-dashboard__primary { display: inline-flex; min-height: 42px; align-items: center; gap: 1.35rem; margin-top: 0.7rem; border-radius: var(--mona-radius-pill); background: var(--mona-gradient-cta); padding: 0.55rem 1.2rem; color: white; font-size: 0.82rem; font-weight: 700; text-decoration: none; }
+  .mona-dashboard__brand { position: absolute; right: 2rem; top: 50%; z-index: 1; transform: translateY(-50%); }
+  .mona-dashboard__motto { position: absolute; right: 10.5rem; top: 50%; z-index: 1; display: flex; width: 10rem; align-items: center; gap: 0.45rem; transform: translateY(-50%); border-radius: var(--mona-radius-pill); background: color-mix(in srgb, var(--mona-color-surface) 72%, transparent); padding: 0.65rem 0.75rem; color: var(--mona-color-purple); font-size: 0.68rem; line-height: 1.25; }
+  .mona-dashboard__motto svg { flex-shrink: 0; color: var(--mona-color-orange); }
+
+  .mona-dashboard__metrics { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.85rem; }
+  .mona-dashboard__metric { position: relative; display: flex; min-height: 152px; flex-direction: column; align-items: flex-start; overflow: hidden; border: 1px solid var(--mona-color-border); border-radius: var(--mona-radius-md); background: color-mix(in srgb, var(--mona-color-surface) 92%, var(--mona-color-purple)); padding: 0.85rem 1rem; color: var(--mona-color-ink); text-decoration: none; }
+  .mona-dashboard__metric.is-orange { background: color-mix(in srgb, var(--mona-color-surface) 91%, var(--mona-color-orange)); }
+  .mona-dashboard__metric.is-mint { background: color-mix(in srgb, var(--mona-color-surface) 92%, var(--mona-color-success)); }
+  .mona-dashboard__metric-icon { display: grid; width: 42px; height: 42px; flex-shrink: 0; place-items: center; border-radius: 8px; background: color-mix(in srgb, var(--mona-color-purple) 11%, var(--mona-color-surface)); color: var(--mona-color-purple); }
+  .mona-dashboard__metric.is-orange .mona-dashboard__metric-icon { background: color-mix(in srgb, var(--mona-color-orange) 12%, var(--mona-color-surface)); color: var(--mona-color-orange); }
+  .mona-dashboard__metric.is-mint .mona-dashboard__metric-icon { background: color-mix(in srgb, var(--mona-color-success) 11%, var(--mona-color-surface)); color: var(--mona-color-success); }
+  .mona-dashboard__metric-title { position: absolute; top: 1rem; left: 4.2rem; right: 2.2rem; font-size: 0.82rem; font-weight: 700; }
+  .mona-dashboard__metric strong { margin: 0.15rem 0 0 3.2rem; font: 700 2rem/1 var(--mona-font-display); }
+  .mona-dashboard__metric > span:not(.mona-dashboard__metric-icon, .mona-dashboard__metric-title, .mona-dashboard__metric-arrow, .mona-dashboard__progress) { margin-left: 3.2rem; font-size: 0.78rem; }
+  .mona-dashboard__metric small { margin-top: auto; padding-top: 0.45rem; color: var(--mona-color-muted); font-size: 0.7rem; }
+  .mona-dashboard__metric-arrow { position: absolute; right: 0.9rem; top: 0.95rem; color: var(--mona-color-purple); }
+  .mona-dashboard__metric.is-orange .mona-dashboard__metric-arrow { color: var(--mona-color-orange); }
+  .mona-dashboard__metric.is-mint .mona-dashboard__metric-arrow { color: var(--mona-color-success); }
+  .mona-dashboard__progress { display: block; width: 100%; height: 8px; flex-shrink: 0; overflow: hidden; margin-top: 0.5rem; border-radius: var(--mona-radius-pill); background: color-mix(in srgb, var(--mona-color-purple) 12%, var(--mona-color-surface)); }
+  .mona-dashboard__progress > span { display: block; height: 100%; border-radius: inherit; background: var(--mona-gradient-cta); }
+
+  .mona-dashboard__section { min-width: 0; }
+  .mona-dashboard__section-head { display: flex; align-items: end; justify-content: space-between; gap: 1rem; margin: 0.35rem 0 0.7rem; }
+  .mona-dashboard__section-head h2 { margin: 0; color: var(--mona-color-ink); font: 700 1.2rem var(--mona-font-display); }
+  .mona-dashboard__section-head p { margin: 0.15rem 0 0; color: var(--mona-color-muted); font-size: 0.78rem; }
+  .mona-dashboard__section-head > a { display: inline-flex; align-items: center; gap: 0.3rem; color: var(--mona-color-accent); font-size: 0.75rem; font-weight: 700; white-space: nowrap; text-decoration: none; }
+  .mona-dashboard__actions { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0.75rem; }
+  .mona-dashboard__action { position: relative; display: flex; min-height: 126px; flex-direction: column; align-items: flex-start; border: 1px solid var(--mona-color-border); border-radius: var(--mona-radius-md); background: color-mix(in srgb, var(--mona-color-surface) 93%, var(--mona-color-purple)); padding: 0.85rem 1rem; color: var(--mona-color-ink); text-decoration: none; }
+  .mona-dashboard__action.is-orange { background: color-mix(in srgb, var(--mona-color-surface) 93%, var(--mona-color-orange)); }
+  .mona-dashboard__action.is-pink { background: color-mix(in srgb, var(--mona-color-surface) 93%, var(--mona-color-pink)); }
+  .mona-dashboard__action-icon { display: grid; width: 42px; height: 42px; place-items: center; border-radius: 8px; background: color-mix(in srgb, var(--mona-color-purple) 10%, var(--mona-color-surface)); color: var(--mona-color-purple); }
+  .mona-dashboard__action.is-orange .mona-dashboard__action-icon { background: color-mix(in srgb, var(--mona-color-orange) 10%, var(--mona-color-surface)); color: var(--mona-color-orange); }
+  .mona-dashboard__action.is-pink .mona-dashboard__action-icon { background: color-mix(in srgb, var(--mona-color-pink) 10%, var(--mona-color-surface)); color: var(--mona-color-pink); }
+  .mona-dashboard__action strong { margin-top: auto; font-size: 0.86rem; }
+  .mona-dashboard__action > span:not(.mona-dashboard__action-icon) { color: var(--mona-color-muted); font-size: 0.75rem; }
+  .mona-dashboard__action > svg { position: absolute; right: 0.8rem; bottom: 2.2rem; color: var(--mona-color-accent); }
+
+  .mona-dashboard__reminders { display: grid; gap: 0.5rem; }
+  .mona-dashboard__reminder { display: flex; min-height: 66px; align-items: center; gap: 0.85rem; border: 1px solid var(--mona-color-border); border-radius: var(--mona-radius-md); background: var(--mona-color-surface); padding: 0.65rem 0.9rem; color: var(--mona-color-ink); text-decoration: none; }
+  .mona-dashboard__reminder-icon { display: grid; width: 40px; height: 40px; flex-shrink: 0; place-items: center; border-radius: 8px; background: color-mix(in srgb, var(--mona-color-purple) 9%, var(--mona-color-surface)); color: var(--mona-color-purple); }
+  .mona-dashboard__reminder strong { font-size: 0.82rem; }
+  .mona-dashboard__reminder p { margin: 0.15rem 0 0; color: var(--mona-color-muted); font-size: 0.72rem; }
+  .mona-dashboard__reminder > svg { margin-left: auto; color: var(--mona-color-accent); }
+  .mona-dashboard a:hover { filter: brightness(0.98); }
+  .mona-dashboard a:focus-visible { outline: 2px solid var(--mona-color-accent); outline-offset: 2px; }
+  html.dark .mona-dashboard__eyebrow { color: color-mix(in srgb, var(--mona-color-pink) 55%, white); }
+  html.dark .mona-dashboard__motto { color: var(--mona-color-ink); }
+  html.dark .mona-dashboard__metric.is-purple .mona-dashboard__metric-icon,
+  html.dark .mona-dashboard__action.is-purple .mona-dashboard__action-icon { color: color-mix(in srgb, var(--mona-color-purple) 40%, white); }
+
+  @container (max-width: 850px) {
+    .mona-dashboard__motto { display: none; }
+    .mona-dashboard__brand { right: 1rem; width: 96px; height: 96px; }
+    .mona-dashboard__hero-copy { max-width: calc(100% - 105px); }
+    .mona-dashboard__hero h1 { font-size: 1.55rem; }
+  }
+
+  @container (max-width: 700px) {
+    .mona-dashboard__actions { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  }
+
+  @container (max-width: 600px) {
+    .mona-dashboard__metrics { grid-template-columns: 1fr; }
+    .mona-dashboard__metric { min-height: 136px; }
+  }
+
   .mona-hero__art {
     position: relative;
     width: 148px;
@@ -2838,22 +3117,30 @@
     display: flex;
     min-width: 0;
     align-items: flex-end;
-    gap: 0.45rem;
+    gap: 0.2rem;
     background: transparent;
-    border-color: transparent;
-    padding: 0.2rem 0.1rem 0;
+    border-bottom: 1px solid color-mix(in srgb, var(--mona-color-border) 65%, transparent);
+    padding: 0 0.15rem;
   }
 
   .mona-tabbar__strip {
     display: flex;
     min-width: 0;
-    flex: 1;
+    flex: 0 1 auto;
     align-items: flex-end;
-    gap: 0.28rem;
+    gap: 0;
     overflow-x: auto;
     overscroll-behavior-x: contain;
-    scrollbar-width: thin;
-    padding-top: 12px;
+    scroll-padding-inline-end: 2rem;
+    scrollbar-width: none;
+    padding-top: 0.35rem;
+    padding-right: 1.5rem;
+    -webkit-mask-image: linear-gradient(to right, #000 0, #000 calc(100% - 1.5rem), transparent 100%);
+    mask-image: linear-gradient(to right, #000 0, #000 calc(100% - 1.5rem), transparent 100%);
+  }
+
+  .mona-tabbar__strip::-webkit-scrollbar {
+    display: none;
   }
 
   .mona-tabbar.is-compact .mona-tabbar__strip {
@@ -2869,9 +3156,9 @@
     height: 2rem;
     padding: 0 0.45rem;
     border: 0;
-    border-radius: 999px;
-    background: color-mix(in srgb, #fff 70%, transparent);
-    color: var(--mona-color-ink);
+    border-radius: 0.5rem;
+    background: transparent;
+    color: var(--mona-chrome-tab-ink);
     cursor: pointer;
 
     span {
@@ -2880,7 +3167,27 @@
     }
 
     &:hover {
-      background: #fff;
+      background: color-mix(in srgb, var(--mona-color-purple) 8%, var(--mona-color-surface));
+      color: var(--mona-color-ink);
+    }
+  }
+
+  .mona-tabbar__new {
+    display: inline-grid;
+    flex: 0 0 auto;
+    width: 2rem;
+    height: 2rem;
+    place-items: center;
+    margin-bottom: 0.1rem;
+    padding: 0;
+    border: 0;
+    border-radius: 0.5rem;
+    background: transparent;
+    color: var(--mona-chrome-tab-active-ink);
+    cursor: pointer;
+
+    &:hover {
+      background: color-mix(in srgb, var(--mona-color-purple) 8%, var(--mona-color-surface));
     }
   }
 
@@ -2996,55 +3303,48 @@
   }
 
   .mona-tab {
+    --mona-tab-top: color-mix(in srgb, var(--mona-color-purple) 12%, var(--mona-color-surface));
+    --mona-tab-bottom: color-mix(in srgb, var(--mona-color-purple) 5%, var(--mona-color-surface));
     position: relative;
     isolation: isolate;
     display: flex;
     flex-shrink: 0;
     align-items: center;
-    gap: 0.3rem;
-    min-height: 2rem;
-    padding: 0.38rem 0.55rem 0.36rem 0.65rem;
+    gap: 0.4rem;
+    min-height: 2.85rem;
+    margin-left: -0.8rem;
+    padding: 0.45rem 0.95rem 0.45rem 1.4rem;
     border: 0;
-    border-radius: 0 14px 10px 10px;
-    background: color-mix(in srgb, var(--mona-color-purple) 9%, var(--mona-color-surface));
+    background: transparent;
     color: var(--mona-chrome-tab-ink);
     font-size: calc(var(--mona-type-tab) * var(--mona-type-scale));
     font-weight: 600;
     cursor: default;
+    transition: color 180ms ease;
 
-    &::before {
-      content: "";
-      position: absolute;
-      top: -9px;
-      left: 0;
-      width: 42%;
-      max-width: 46px;
-      height: 10px;
-      background: inherit;
-      border-radius: 9px 11px 0 0;
+    &:first-child {
+      margin-left: 0;
+      padding-left: 0.85rem;
     }
 
     &:nth-child(3n + 2) {
-      background: color-mix(in srgb, var(--mona-color-pink) 10%, var(--mona-color-surface));
+      --mona-tab-top: color-mix(in srgb, var(--mona-color-pink) 13%, var(--mona-color-surface));
+      --mona-tab-bottom: color-mix(in srgb, var(--mona-color-pink) 6%, var(--mona-color-surface));
     }
 
     &:nth-child(3n + 3) {
-      background: color-mix(in srgb, var(--mona-color-orange) 12%, var(--mona-color-surface));
+      --mona-tab-top: color-mix(in srgb, var(--mona-color-orange) 13%, var(--mona-color-surface));
+      --mona-tab-bottom: color-mix(in srgb, var(--mona-color-orange) 6%, var(--mona-color-surface));
     }
 
     &:hover {
-      filter: brightness(0.98);
+      filter: brightness(1.02);
     }
 
     &.is-active {
-      z-index: 2;
-      background: var(--mona-color-surface);
-      color: var(--mona-color-purple);
-      box-shadow: 0 8px 18px color-mix(in srgb, var(--mona-color-purple) 12%, transparent);
-    }
-
-    &.is-active::before {
-      background: color-mix(in srgb, var(--mona-color-purple) 16%, var(--mona-color-surface));
+      --mona-tab-top: color-mix(in srgb, var(--mona-color-accent) 7%, var(--mona-chrome-tab-active-bg));
+      --mona-tab-bottom: var(--mona-chrome-tab-active-bg);
+      color: var(--mona-chrome-tab-active-ink);
     }
 
     &.is-float {
@@ -3058,6 +3358,310 @@
       color: inherit;
       cursor: pointer;
     }
+
+    > :not(.mona-tab__shape) {
+      position: relative;
+      z-index: 1;
+    }
+  }
+
+  .mona-tab__shape {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: calc(100% + 1.5rem);
+    height: 100%;
+    overflow: visible;
+    pointer-events: none;
+    filter: drop-shadow(1px 1px 2px color-mix(in srgb, var(--mona-color-ink) 13%, transparent));
+  }
+
+  .mona-tab__gradient-top {
+    stop-color: var(--mona-tab-top);
+  }
+
+  .mona-tab__gradient-bottom {
+    stop-color: var(--mona-tab-bottom);
+  }
+
+  .mona-agenda-desktop {
+    container-type: inline-size;
+    min-width: 0;
+    color: var(--mona-color-ink);
+  }
+
+  .mona-agenda-desktop__header,
+  .mona-agenda-desktop__identity,
+  .mona-agenda-desktop__actions,
+  .mona-agenda-desktop__toolbar,
+  .mona-agenda-desktop__month-nav,
+  .mona-agenda-desktop__toolbar-actions {
+    display: flex;
+    align-items: center;
+  }
+
+  .mona-agenda-desktop__header {
+    justify-content: space-between;
+    gap: 1.5rem;
+    margin: 0.25rem 0 1.5rem;
+  }
+
+  .mona-agenda-desktop__identity { gap: 1rem; min-width: 0; }
+  .mona-agenda-desktop__mark {
+    display: grid;
+    flex: 0 0 4rem;
+    width: 4rem;
+    height: 4rem;
+    place-items: center;
+    border: 1px solid color-mix(in srgb, var(--mona-color-pink) 35%, var(--mona-color-border));
+    border-radius: 1.15rem;
+    background: color-mix(in srgb, var(--mona-color-pink) 13%, var(--mona-color-surface));
+    color: var(--mona-color-pink);
+  }
+
+  .mona-agenda-desktop__identity h1 {
+    margin: 0;
+    font-family: var(--mona-font-display);
+    font-size: clamp(1.85rem, 2.6vw, 2.55rem);
+    font-weight: 700;
+    line-height: 1.1;
+  }
+
+  .mona-agenda-desktop__identity p,
+  .mona-agenda-desktop__identity small {
+    display: block;
+    margin: 0.15rem 0 0;
+    color: var(--mona-color-muted);
+    font-size: 0.83rem;
+    line-height: 1.35;
+  }
+
+  .mona-agenda-desktop__identity small { font-size: 0.73rem; }
+  .mona-agenda-desktop__actions { flex: 0 0 auto; gap: 0.6rem; }
+  .mona-agenda-desktop__actions .mona-btn { display: inline-flex; align-items: center; gap: 0.55rem; white-space: nowrap; }
+
+  .mona-agenda-desktop__modes {
+    display: flex;
+    width: max-content;
+    max-width: 100%;
+    gap: 0.15rem;
+    overflow-x: auto;
+    margin-bottom: 1rem;
+    padding: 0.2rem;
+    border: 1px solid var(--mona-color-border);
+    border-radius: 1rem;
+    background: color-mix(in srgb, var(--mona-color-purple) 5%, var(--mona-color-surface));
+    scrollbar-width: none;
+  }
+
+  .mona-agenda-desktop__modes button {
+    display: inline-flex;
+    min-height: 2.5rem;
+    flex: 0 0 auto;
+    align-items: center;
+    justify-content: center;
+    gap: 0.55rem;
+    padding: 0.35rem 0.85rem;
+    border: 0;
+    border-radius: 0.75rem;
+    background: transparent;
+    color: var(--mona-color-muted);
+    font-size: 0.76rem;
+    font-weight: 650;
+    cursor: pointer;
+  }
+
+  .mona-agenda-desktop__modes button.is-active {
+    background: var(--mona-gradient-cta);
+    color: white;
+    box-shadow: 0 4px 12px color-mix(in srgb, var(--mona-color-purple) 22%, transparent);
+  }
+
+  .mona-agenda-desktop__calendar {
+    min-width: 0;
+    padding: 0.95rem;
+    border: 1px solid var(--mona-color-border);
+    border-radius: var(--mona-radius-lg);
+    background: color-mix(in srgb, var(--mona-color-purple) 3%, var(--mona-color-surface));
+  }
+
+  .mona-agenda-desktop__toolbar { justify-content: space-between; gap: 1rem; margin-bottom: 0.8rem; }
+  .mona-agenda-desktop__month-nav { min-width: 0; gap: 0.35rem; }
+  .mona-agenda-desktop__month-nav h2 { margin: 0 0 0 0.65rem; font-size: 1.3rem; font-weight: 700; white-space: nowrap; }
+  .mona-agenda-desktop__toolbar-actions { gap: 0.45rem; }
+
+  .mona-agenda-desktop__month-nav button,
+  .mona-agenda-desktop__icon-btn,
+  .mona-agenda-desktop__today,
+  .mona-agenda-desktop__view {
+    display: inline-grid;
+    min-width: 2.2rem;
+    min-height: 2.2rem;
+    place-items: center;
+    border: 1px solid var(--mona-color-border);
+    border-radius: 0.65rem;
+    background: var(--mona-color-surface);
+    color: var(--mona-color-ink);
+    cursor: pointer;
+  }
+
+  .mona-agenda-desktop__today { padding: 0 0.85rem; color: var(--mona-color-accent); font-weight: 700; }
+  .mona-agenda-desktop__view { position: relative; display: flex; gap: 0.35rem; padding: 0 0.55rem 0 0.8rem; }
+  .mona-agenda-desktop__view select { appearance: none; min-width: 4.2rem; border: 0; outline: 0; background: transparent; color: inherit; cursor: pointer; }
+  .mona-agenda-desktop__view option { background: var(--mona-color-surface); color: var(--mona-color-ink); }
+
+  .mona-agenda-desktop__columns { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(17rem, 0.85fr); gap: 0.75rem; }
+  .mona-agenda-desktop__primary,
+  .mona-agenda-desktop__secondary { min-width: 0; }
+  .mona-agenda-desktop__secondary { display: grid; align-content: start; gap: 0.65rem; }
+
+  .mona-agenda-desktop__week { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 0.35rem; margin-bottom: 0.6rem; }
+  .mona-agenda-desktop__week button {
+    display: grid;
+    min-width: 0;
+    min-height: 5.1rem;
+    justify-items: center;
+    align-content: center;
+    gap: 0.3rem;
+    border: 1px solid var(--mona-color-border);
+    border-radius: 0.65rem;
+    background: var(--mona-color-surface);
+    color: var(--mona-color-ink);
+    cursor: pointer;
+  }
+  .mona-agenda-desktop__week button > span:first-child { color: var(--mona-color-muted); font-size: 0.65rem; font-weight: 700; text-transform: uppercase; }
+  .mona-agenda-desktop__week button strong { font-size: 1rem; }
+  .mona-agenda-desktop__week button.is-active { border-color: color-mix(in srgb, var(--mona-color-accent) 45%, transparent); background: color-mix(in srgb, var(--mona-color-accent) 55%, var(--mona-color-surface)); color: var(--mona-color-ink); }
+  .mona-agenda-desktop__week button.is-active > span:first-child { color: inherit; }
+  .mona-agenda-desktop__dots { display: flex; min-height: 0.4rem; gap: 0.2rem; }
+  .mona-agenda-desktop__dots i { width: 0.38rem; height: 0.38rem; border-radius: 50%; }
+
+  .mona-agenda-desktop__day,
+  .mona-agenda-desktop__upcoming,
+  .mona-agenda-desktop__summary {
+    min-width: 0;
+    padding: 0.75rem;
+    border: 1px solid var(--mona-color-border);
+    border-radius: 0.9rem;
+    background: var(--mona-color-surface);
+  }
+
+  .mona-agenda-desktop__day-head,
+  .mona-agenda-desktop__upcoming header,
+  .mona-agenda-desktop__summary header { display: flex; align-items: center; gap: 0.55rem; min-height: 2.3rem; border-bottom: 1px solid var(--mona-color-border); padding-bottom: 0.6rem; }
+  .mona-agenda-desktop__day-head h3,
+  .mona-agenda-desktop__upcoming h3,
+  .mona-agenda-desktop__summary h3 { min-width: 0; margin: 0; font-size: 0.92rem; font-weight: 700; }
+  .mona-agenda-desktop__day-head > span { padding: 0.2rem 0.55rem; border-radius: 99px; background: var(--mona-color-accent-soft); color: var(--mona-color-accent); font-size: 0.68rem; white-space: nowrap; }
+  .mona-agenda-desktop__day-head button,
+  .mona-agenda-desktop__upcoming header button { display: inline-flex; align-items: center; gap: 0.3rem; margin-left: auto; border: 0; background: transparent; color: var(--mona-color-accent); font-size: 0.7rem; cursor: pointer; white-space: nowrap; }
+  .mona-agenda-desktop__upcoming header > svg,
+  .mona-agenda-desktop__summary header > svg { flex: 0 0 auto; color: var(--mona-color-accent); }
+
+  .mona-agenda-desktop__timeline { display: grid; grid-template-columns: 3.3rem minmax(0, 1fr); min-height: 12rem; margin-top: 0.55rem; }
+  .mona-agenda-desktop__times { position: relative; color: var(--mona-color-muted); font-size: 0.68rem; }
+  .mona-agenda-desktop__times time { position: absolute; left: 0; transform: translateY(-0.4rem); }
+  .mona-agenda-desktop__track { position: relative; min-width: 0; border-left: 1px solid var(--mona-color-border); background: repeating-linear-gradient(to bottom, var(--mona-color-border) 0 1px, transparent 1px 64px); }
+  .mona-agenda-desktop__now { position: absolute; z-index: 3; right: 0; left: 0; height: 1px; background: var(--mona-color-pink); pointer-events: none; }
+  .mona-agenda-desktop__now::before { content: ''; position: absolute; left: -0.25rem; top: -0.25rem; width: 0.5rem; height: 0.5rem; border-radius: 50%; background: var(--mona-color-pink); }
+  .mona-agenda-desktop__event { position: absolute; z-index: 2; left: calc(0.55rem + (100% - 0.85rem) * var(--agenda-event-lane) / var(--agenda-event-lanes)); width: calc((100% - 0.85rem) / var(--agenda-event-lanes) - 0.3rem); display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 0.3rem; min-width: 0; padding: 0.5rem 0.7rem; border: 1px solid var(--agenda-event-color); border-left-width: 4px; border-radius: 0.55rem; background: color-mix(in srgb, var(--agenda-event-color) 26%, var(--mona-color-surface)); box-shadow: 0 4px 10px color-mix(in srgb, var(--agenda-event-color) 10%, transparent); }
+  .mona-agenda-desktop__event-main { display: grid; min-width: 0; gap: 0.15rem; }
+  .mona-agenda-desktop__event-main strong { overflow: hidden; font-size: 0.73rem; text-overflow: ellipsis; white-space: nowrap; }
+  .mona-agenda-desktop__event-main span { overflow: hidden; color: var(--mona-color-muted); font-size: 0.68rem; text-overflow: ellipsis; white-space: nowrap; }
+  .mona-agenda-desktop__event time { flex: 0 0 auto; color: var(--mona-color-muted); font-size: 0.62rem; }
+  .mona-agenda-desktop__event-menu { position: relative; flex: 0 0 auto; }
+  .mona-agenda-desktop__event-menu summary { display: grid; width: 1.3rem; height: 1.3rem; place-items: center; color: var(--mona-color-muted); cursor: pointer; list-style: none; }
+  .mona-agenda-desktop__event-menu summary::-webkit-details-marker { display: none; }
+  .mona-agenda-desktop__event-menu > div { position: absolute; z-index: 8; right: 0; top: 100%; display: grid; width: max-content; min-width: 12rem; max-width: min(18rem, 75vw); padding: 0.45rem; border: 1px solid var(--mona-color-border); border-radius: 0.5rem; background: var(--mona-color-surface); box-shadow: var(--mona-shadow-sm); }
+  .mona-agenda-desktop__event-menu > div strong { margin-bottom: 0.25rem; font-size: 0.75rem; }
+  .mona-agenda-desktop__event-menu > div p { margin: 0.15rem 0; color: var(--mona-color-muted); font-size: 0.68rem; overflow-wrap: anywhere; }
+  .mona-agenda-desktop__event-menu button { padding: 0.45rem; border: 0; border-radius: 0.35rem; background: transparent; color: var(--mona-color-ink); text-align: left; cursor: pointer; }
+  .mona-agenda-desktop__event-menu button:hover { background: var(--mona-color-accent-soft); }
+  .mona-agenda-desktop__empty { padding: 1rem; color: var(--mona-color-muted); font-size: 0.8rem; }
+  .mona-agenda-desktop__all { display: grid; gap: 0.3rem; margin-top: 0.55rem; }
+  .mona-agenda-desktop__all-row { display: grid; grid-template-columns: auto minmax(0, 1fr); column-gap: 0.6rem; padding: 0.65rem; border-left: 3px solid var(--agenda-event-color); background: color-mix(in srgb, var(--agenda-event-color) 8%, var(--mona-color-surface)); font-size: 0.74rem; }
+  .mona-agenda-desktop__all-row time { color: var(--mona-color-muted); }
+  .mona-agenda-desktop__all-row span { grid-column: 2; color: var(--mona-color-muted); }
+
+  .mona-agenda-desktop__upcoming-row { display: grid; grid-template-columns: 3.1rem minmax(0, 1fr); gap: 0.6rem; min-width: 0; margin-top: 0.4rem; padding: 0.65rem; border: 1px solid var(--mona-color-border); border-left: 4px solid var(--agenda-event-color); border-radius: 0.55rem; background: color-mix(in srgb, var(--agenda-event-color) 6%, var(--mona-color-surface)); }
+  .mona-agenda-desktop__upcoming-row time { display: grid; align-content: start; gap: 0.15rem; font-size: 0.75rem; font-weight: 700; }
+  .mona-agenda-desktop__upcoming-row time span { color: var(--mona-color-muted); font-size: 0.68rem; font-weight: 400; }
+  .mona-agenda-desktop__upcoming-row > div { display: grid; min-width: 0; gap: 0.1rem; padding-left: 0.55rem; border-left: 3px solid var(--agenda-event-color); }
+  .mona-agenda-desktop__upcoming-row strong { overflow: hidden; font-size: 0.73rem; text-overflow: ellipsis; white-space: nowrap; }
+  .mona-agenda-desktop__upcoming-row div span,
+  .mona-agenda-desktop__upcoming-row small { overflow: hidden; color: var(--mona-color-muted); font-size: 0.67rem; text-overflow: ellipsis; white-space: nowrap; }
+  .mona-agenda-desktop__no-upcoming { color: var(--mona-color-muted); font-size: 0.78rem; }
+  .mona-agenda-desktop__summary header > span { margin-left: auto; color: var(--mona-color-muted); font-size: 0.7rem; }
+  .mona-agenda-desktop__metrics { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.4rem; margin-top: 0.6rem; }
+  .mona-agenda-desktop__metrics > div { display: grid; min-width: 0; gap: 0.25rem; padding: 0.65rem; border: 1px solid var(--mona-color-border); border-radius: 0.55rem; background: color-mix(in srgb, var(--mona-color-purple) 5%, var(--mona-color-surface)); }
+  .mona-agenda-desktop__metrics > div:nth-child(2) { background: color-mix(in srgb, var(--mona-color-success) 7%, var(--mona-color-surface)); }
+  .mona-agenda-desktop__metrics > div:nth-child(3) { background: color-mix(in srgb, var(--mona-color-pink) 7%, var(--mona-color-surface)); }
+  .mona-agenda-desktop__metrics > div:nth-child(4) { background: color-mix(in srgb, var(--mona-color-orange) 7%, var(--mona-color-surface)); }
+  .mona-agenda-desktop__metrics svg { color: var(--mona-color-accent); }
+  .mona-agenda-desktop__metrics strong { font-size: 1.05rem; }
+  .mona-agenda-desktop__metrics span { color: var(--mona-color-muted); font-size: 0.66rem; }
+
+  .mona-agenda-desktop :is(button, select, summary):focus-visible { outline: 2px solid var(--mona-color-accent); outline-offset: 2px; }
+
+  @container (max-width: 850px) {
+    .mona-agenda-desktop__header { align-items: flex-start; flex-wrap: wrap; }
+    .mona-agenda-desktop__columns { grid-template-columns: minmax(0, 1fr); }
+    .mona-agenda-desktop__secondary { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  }
+
+  @container (max-width: 600px) {
+    .mona-agenda-desktop__secondary { grid-template-columns: minmax(0, 1fr); }
+    .mona-agenda-desktop__toolbar { align-items: flex-start; flex-wrap: wrap; }
+    .mona-agenda-desktop__week { gap: 0.2rem; }
+    .mona-agenda-desktop__week button { min-height: 4rem; }
+  }
+
+  .mona-tab__label {
+    min-width: 0;
+    max-width: 9rem;
+    overflow: hidden;
+    padding: 0;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    text-align: left;
+  }
+
+  .mona-tab__float,
+  .mona-tab__close {
+    display: inline-grid;
+    flex: 0 0 auto;
+    width: 1.1rem;
+    height: 1.1rem;
+    place-items: center;
+    padding: 0;
+    border-radius: 0.3rem;
+  }
+
+  .mona-tab__float {
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 150ms ease;
+  }
+
+  .mona-tab:hover .mona-tab__float,
+  .mona-tab:focus-within .mona-tab__float {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  .mona-tab__close {
+    opacity: 0.65;
+  }
+
+  .mona-tab__float:hover,
+  .mona-tab__close:hover {
+    background: color-mix(in srgb, var(--mona-color-purple) 9%, transparent);
+    opacity: 1;
+  }
+
+  .mona-tabbar :is(.mona-tab__label, .mona-tab__float, .mona-tab__close, .mona-tabbar__new, .mona-tabbar__more):focus-visible {
+    outline: 2px solid var(--mona-color-accent);
+    outline-offset: 2px;
   }
 
   .mona-window {
@@ -3076,12 +3680,12 @@
 
 html[data-tab-style="underline"] .mona-tabbar .mona-tab.is-active,
 html[data-tab-style="chip"] .mona-tabbar .mona-tab {
-  border-radius: 0 14px 10px 10px;
-  box-shadow: 0 8px 18px color-mix(in srgb, var(--mona-color-purple) 12%, transparent);
+  border-radius: 0.65rem 0.65rem 0 0;
+  box-shadow: none;
 }
 
 html[data-tab-style="underline"] .mona-tabbar .mona-tab.is-active {
-  background: var(--mona-color-surface);
+  background: var(--mona-chrome-tab-active-bg);
 }
 
 html.dark .mona-sidebar__promo {
@@ -3864,14 +4468,13 @@ img.mona-m-avatar {
   place-items: center;
   border-radius: 999px;
   border: 1.5px solid var(--mona-color-border);
-  background: #fff;
+  background: var(--mona-color-surface);
   color: transparent;
 }
 
-.mona-m-check.is-on {
-  border-color: var(--mona-color-purple);
-  background: var(--mona-color-purple);
-  color: #fff;
+.mona-m-check:checked {
+  border-color: var(--mona-color-accent);
+  background: var(--mona-color-surface);
 }
 
 .mona-m-apps,
@@ -4011,12 +4614,14 @@ button.mona-m-folder {
     display: none !important;
   }
 
-  .mona-shell:not(.is-mobile) .mona-home__mobile {
-    display: grid;
-    gap: 1rem;
+  .mona-shell:not(.is-mobile) .mona-home__mobile.mona-m-stack {
+    display: none;
   }
 
-  .mona-shell:not(.is-mobile) .mona-home__desktop,
+  .mona-shell:not(.is-mobile) .mona-home__desktop {
+    display: grid;
+  }
+
   .mona-shell:not(.is-mobile) .mona-hero--stage {
     display: none !important;
   }
@@ -4144,10 +4749,290 @@ button.mona-m-folder {
   .mona-shell:not(.is-mobile) .mona-m-actions {
     max-width: 28rem;
   }
+
+  .mona-clients-desktop__list {
+    overflow: hidden;
+    border: 1px solid var(--mona-color-border);
+    border-radius: var(--mona-radius-md);
+    background: var(--mona-color-surface);
+  }
+
+  .mona-clients-desktop__row {
+    display: grid;
+    grid-template-columns: minmax(180px, 0.9fr) minmax(180px, 1fr) auto;
+    align-items: center;
+    gap: 0.75rem;
+    min-height: 76px;
+    padding: 0.7rem 1rem;
+    border-bottom: 1px solid var(--mona-color-border);
+    transition: background-color 150ms ease;
+  }
+
+  .mona-clients-desktop__row:last-child { border-bottom: 0; }
+  .mona-clients-desktop__row:hover { background: color-mix(in srgb, var(--mona-color-accent-soft) 30%, var(--mona-color-surface)); }
+  .mona-clients-desktop__identity { display: flex; align-items: center; gap: 0.75rem; min-width: 0; }
+  .mona-clients-desktop__identity .mona-m-avatar { width: 2.85rem; height: 2.85rem; }
+  .mona-clients-desktop__name { display: grid; gap: 0.15rem; min-width: 0; }
+  .mona-clients-desktop__name > :is(a, span) { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .mona-clients-desktop__name > span { color: var(--mona-color-muted); font-size: 0.78rem; }
+  .mona-clients-desktop__details { display: flex; align-items: center; flex-wrap: wrap; gap: 0.4rem 0.7rem; min-width: 0; }
+  .mona-clients-desktop__group { display: inline-flex; align-items: center; gap: 0.4rem; min-width: 0; color: var(--mona-color-muted); font-size: 0.78rem; }
+  .mona-clients-desktop__group-dot { width: 0.5rem; height: 0.5rem; flex: none; border-radius: 50%; }
+  .mona-clients-desktop__attention { color: var(--mona-color-danger-ink); font-size: 0.75rem; font-weight: 700; }
+  .mona-clients-desktop__locale { color: var(--mona-color-muted); font-size: 0.75rem; }
+  .mona-clients-desktop__actions { display: flex; align-items: center; justify-content: end; gap: 0.3rem; }
+  .mona-clients-desktop__actions > a { display: grid; width: 2rem; height: 2rem; flex: none; place-items: center; border-radius: var(--mona-radius-sm); color: var(--mona-color-muted); }
+  .mona-clients-desktop__actions > a:hover { background: var(--mona-color-accent-soft); color: var(--mona-color-accent); }
+  .mona-clients-desktop__phone { margin-right: 0.25rem; color: var(--mona-color-muted); font-size: 0.78rem; white-space: nowrap; }
+
+  .mona-contracts-desktop .mona-management__stats { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .mona-contracts-desktop .mona-management__stats .mona-m-stat { min-width: 0; }
+
+  @media (max-width: 1100px) {
+    .mona-clients-desktop__row { grid-template-columns: minmax(0, 1fr) auto; }
+    .mona-clients-desktop__details { grid-column: 1 / -1; grid-row: 2; margin-left: 3.6rem; }
+    .mona-clients-desktop__actions { grid-column: 2; grid-row: 1; }
+    .mona-clients-desktop__phone { display: none; }
+    .mona-contracts-desktop .mona-management__stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  }
+
 }
+
+/* Chat workspace uses the same controls at both breakpoints. */
+.mona-chat-workspace__create {
+  display: grid;
+  gap: 0.65rem;
+  margin-bottom: 0.9rem;
+  padding: 0.85rem 1rem;
+  border: 1px solid var(--mona-color-border);
+  border-radius: var(--mona-radius-md);
+  background: var(--mona-color-surface);
+}
+.mona-chat-workspace__group { border-top: 1px solid var(--mona-color-border); padding-top: 0.6rem; }
+.mona-chat-workspace__group summary { width: fit-content; cursor: pointer; color: var(--mona-color-accent); font-size: 0.82rem; font-weight: 700; }
+.mona-chat-workspace__columns { display: grid; grid-template-columns: minmax(230px, 0.34fr) minmax(0, 1fr); gap: 0.8rem; min-width: 0; }
+.mona-chat-workspace__threads { min-width: 0; padding: 0.6rem; }
+.mona-chat-workspace__label { display: flex; justify-content: space-between; padding: 0.4rem 0.55rem 0.7rem; color: var(--mona-color-ink); font-size: 0.85rem; font-weight: 700; }
+.mona-chat-workspace__label span { color: var(--mona-color-muted); }
+.mona-chat-workspace__thread { display: flex; align-items: center; gap: 0.65rem; width: 100%; min-height: 58px; padding: 0.55rem; border: 0; border-radius: var(--mona-radius-sm); background: transparent; color: var(--mona-color-ink); text-align: left; }
+.mona-chat-workspace__thread:hover { background: var(--mona-color-accent-soft); }
+.mona-chat-workspace__thread.is-active { background: color-mix(in srgb, var(--mona-color-accent-soft) 72%, var(--mona-color-surface)); box-shadow: inset 3px 0 var(--mona-color-accent); }
+.mona-chat-workspace__thread-icon { display: grid; width: 2rem; height: 2rem; flex: none; place-items: center; border-radius: var(--mona-radius-sm); background: var(--mona-color-accent-soft); color: var(--mona-color-accent); }
+.mona-chat-workspace__thread-copy { display: grid; gap: 0.15rem; min-width: 0; }
+.mona-chat-workspace__thread-copy :is(strong, small) { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mona-chat-workspace__thread-copy strong { font-size: 0.83rem; }
+.mona-chat-workspace__thread-copy small { color: var(--mona-color-muted); font-size: 0.72rem; }
+.mona-chat-workspace__no-threads { padding: 0.7rem; color: var(--mona-color-muted); font-size: 0.8rem; text-align: center; }
+.mona-chat-workspace__conversation { display: flex; height: min(600px, calc(100dvh - 200px)); min-height: 340px; flex-direction: column; overflow: hidden; padding: 0; }
+.mona-chat-workspace__conversation > .mona-empty { flex: 1; border: 0; }
+.mona-chat-workspace__conversation .mona-empty { min-height: 230px; }
+.mona-chat-workspace__composer { display: flex; align-items: center; gap: 0.55rem; }
+.mona-chat-workspace__composer > .mona-field { flex: 1 1 auto; min-width: 0; }
+.mona-chat-workspace__composer > .mona-btn { flex: none; }
+.mona-shell.is-mobile .mona-chat-workspace__columns { grid-template-columns: minmax(0, 1fr); }
+.mona-shell.is-mobile .mona-chat-workspace__conversation { height: min(520px, calc(100dvh - 230px)); }
+.mona-shell.is-mobile .mona-chat-workspace__composer { flex-direction: column; align-items: stretch; }
+.mona-shell.is-mobile .mona-chat-workspace__create > .flex { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.mona-shell.is-mobile .mona-chat-workspace__create > .flex > .mona-field { grid-column: 1 / -1; min-width: 0; }
+.mona-shell.is-mobile .mona-chat-workspace__create > .flex > .mona-field select { width: 100%; }
+.mona-shell.is-mobile .mona-chat-workspace__create > .flex > .mona-btn { width: 100%; }
+.mona-shell.is-mobile .mona-chat-workspace__group > .flex { display: grid; grid-template-columns: minmax(0, 1fr); }
+.mona-shell.is-mobile .mona-chat-workspace__group :is(.mona-field, .mona-field__control) { width: 100%; min-width: 0; }
+.mona-shell.is-mobile .mona-chat-workspace__group > .flex > div { min-width: 0; }
+.mona-shell.is-mobile .mona-page__heading { width: 100%; }
+.mona-shell.is-mobile .mona-page__illustration { display: none; }
 
 /* Shared operational views: one set of data/actions at every viewport. */
 .mona-responsive-content { min-width: 0; }
+
+.mona-management .mona-page__header { margin-bottom: 1.15rem; }
+.mona-management__stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 0.75rem;
+  margin-bottom: 1.35rem;
+}
+.mona-management__stats .mona-m-stat {
+  min-height: 112px;
+  padding: 1rem 1.1rem;
+  border: 1px solid var(--mona-color-border);
+  border-radius: var(--mona-radius-md);
+  box-shadow: none;
+  background: color-mix(in srgb, var(--mona-color-surface) 94%, var(--mona-color-accent-soft));
+}
+.mona-management__stats .mona-m-stat:is(.is-purple, .is-rose, .is-orange, .is-mint) p {
+  flex-direction: row;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.78rem;
+  color: var(--mona-color-muted);
+}
+.mona-management__stats .mona-m-stat p svg { color: var(--mona-color-accent); }
+.mona-management__stats .mona-m-stat strong {
+  font-size: 1.8rem;
+  line-height: 1.15;
+}
+.mona-management__stats .mona-m-stat span { font-size: 0.75rem; }
+.mona-management__filters {
+  display: flex;
+  gap: 0.4rem;
+  overflow-x: auto;
+  margin-bottom: 0.9rem;
+  padding-bottom: 0.2rem;
+  scrollbar-width: thin;
+}
+.mona-management__filter {
+  flex: 0 0 auto;
+  min-height: 36px;
+  padding: 0.4rem 0.85rem;
+  border: 1px solid var(--mona-color-border);
+  border-radius: var(--mona-radius-pill);
+  background: var(--mona-color-surface);
+  color: var(--mona-color-muted);
+  font-size: 0.82rem;
+  font-weight: 600;
+  transition: background-color 150ms ease, color 150ms ease, border-color 150ms ease;
+}
+.mona-management__filter:hover { border-color: var(--mona-color-accent); color: var(--mona-color-accent); }
+.mona-management__filter.is-active { border-color: transparent; background: var(--mona-gradient-cta); color: var(--mona-color-on-accent); }
+.mona-management__toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+.mona-management__toolbar > .mona-field { flex: 1 1 11rem; max-width: 24rem; }
+.mona-management__table {
+  max-width: 100%;
+  overflow-x: auto;
+  border: 1px solid var(--mona-color-border);
+  border-radius: var(--mona-radius-md);
+  background: var(--mona-color-surface);
+}
+.mona-management__table .mona-data-table { min-width: 640px; }
+.mona-management__table thead { background: var(--mona-color-accent-soft); color: var(--mona-color-ink); }
+.mona-management__table th { color: var(--mona-color-ink); }
+.mona-management__table tbody tr { border-top: 1px solid var(--mona-color-border); transition: background-color 150ms ease; }
+.mona-management__table tbody tr:hover { background: color-mix(in srgb, var(--mona-color-accent-soft) 38%, var(--mona-color-surface)); }
+.mona-management__table td { color: var(--mona-color-muted); vertical-align: middle; }
+.mona-management__link { color: var(--mona-color-ink); font-weight: 700; text-decoration: none; }
+.mona-management__link:hover { color: var(--mona-color-accent); text-decoration: underline; }
+.mona-management__service-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 270px), 1fr)); gap: 0.8rem; }
+.mona-management__service { display: flex; flex-direction: column; gap: 0.3rem; border-radius: var(--mona-radius-md); }
+.mona-management__service-title { color: var(--mona-color-ink); font-size: 1rem; font-weight: 700; }
+.mona-management__service > div:last-child { margin-top: auto; }
+.mona-management__note { margin-top: 0.6rem; padding: 0.55rem 0.7rem; border-radius: var(--mona-radius-sm); color: var(--mona-color-ink); font-size: 0.75rem; }
+.mona-management__note.is-internal { background: color-mix(in srgb, var(--mona-color-orange) 12%, var(--mona-color-surface)); }
+.mona-management__note.is-client { background: color-mix(in srgb, var(--mona-color-accent) 10%, var(--mona-color-surface)); }
+.mona-management__partner {
+  min-width: 0;
+  padding: 1rem;
+  border: 1px solid var(--mona-color-border);
+  border-radius: var(--mona-radius-md);
+  background: var(--mona-color-surface);
+  color: var(--mona-color-muted);
+}
+.mona-management__partner-clients { margin-top: 0.9rem; padding-top: 0.75rem; border-top: 1px solid var(--mona-color-border); }
+.mona-onboarding-desktop__list { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 310px), 1fr)); align-items: start; gap: 0.8rem; }
+.mona-onboarding-desktop__client { border-radius: var(--mona-radius-md); }
+.mona-onboarding-desktop__track { width: 8rem; height: 7px; overflow: hidden; border-radius: var(--mona-radius-pill); background: var(--mona-color-accent-soft); }
+.mona-onboarding-desktop__track > div { border-radius: inherit; background: var(--mona-gradient-cta); }
+.mona-finance-desktop .mona-management__stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.mona-finance-desktop .mona-management__stats strong { font-size: 1.45rem; overflow-wrap: anywhere; }
+.mona-finance-desktop__ledgers > h2 { margin: 0 0 0.75rem; color: var(--mona-color-ink); font-size: 1rem; font-weight: 700; }
+.mona-finance-desktop__ledgers > div { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.mona-operations__priorities { min-width: 0; }
+.mona-operations__head { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; margin-bottom: 0.55rem; }
+.mona-operations__head h2 { color: var(--mona-color-ink); font-size: 0.95rem; font-weight: 700; }
+.mona-operations__head a { color: var(--mona-color-accent); font-size: 0.75rem; font-weight: 700; }
+.mona-operations__priority-list { display: grid; }
+.mona-operations__priority-list > a { display: grid; grid-template-columns: 18px minmax(0, 1fr) 16px; align-items: center; gap: 0.55rem; min-height: 54px; border-top: 1px solid var(--mona-color-border); color: var(--mona-color-accent); text-decoration: none; }
+.mona-operations__priority-list > a:hover strong { text-decoration: underline; }
+.mona-operations__priority-list strong { display: block; overflow: hidden; color: var(--mona-color-ink); font-size: 0.78rem; text-overflow: ellipsis; white-space: nowrap; }
+.mona-operations__priority-list small { display: block; margin-top: 0.1rem; color: var(--mona-color-muted); font-size: 0.68rem; }
+.mona-operations__priority-list > p { margin: 0; padding: 1rem 0; color: var(--mona-color-muted); font-size: 0.8rem; }
+
+.mona-report__filters {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.75rem;
+  margin-bottom: 1.35rem;
+}
+.mona-report__summary {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.7rem;
+  margin-bottom: 1.6rem;
+}
+.mona-report__summary .mona-m-stat {
+  min-height: 126px;
+  padding: 1rem;
+  border: 1px solid var(--mona-color-border);
+  border-radius: var(--mona-radius-md);
+  box-shadow: none;
+}
+.mona-report__summary .mona-m-stat:is(.is-purple, .is-rose, .is-orange, .is-mint) p { flex-direction: row; align-items: center; gap: 0.45rem; color: var(--mona-color-muted); font-size: 0.75rem; }
+.mona-report__summary .mona-m-stat p svg { color: var(--mona-color-accent); }
+.mona-report__summary .mona-m-stat strong { font-size: clamp(1.25rem, 2vw, 1.75rem); overflow-wrap: anywhere; }
+.mona-report__summary .mona-m-stat span { font-size: 0.72rem; }
+.mona-report__section { min-width: 0; margin-bottom: 1.5rem; }
+.mona-report__section > h2 { margin: 0 0 0.75rem; color: var(--mona-color-ink); font-size: 1rem; font-weight: 700; }
+.mona-report__diagnostics {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0;
+  padding: 1rem 0;
+  border-block: 1px solid var(--mona-color-border);
+}
+.mona-report__diagnostics > div { display: grid; grid-template-columns: 20px 1fr; align-content: start; gap: 0.3rem 0.45rem; padding: 0.15rem 1rem; border-right: 1px solid var(--mona-color-border); }
+.mona-report__diagnostics > div:first-child { padding-left: 0; }
+.mona-report__diagnostics > div:last-child { border-right: 0; }
+.mona-report__diagnostics svg { color: var(--mona-color-accent); }
+.mona-report__diagnostics span { color: var(--mona-color-muted); font-size: 0.73rem; }
+.mona-report__diagnostics strong { grid-column: 1 / -1; color: var(--mona-color-ink); font-size: 1.4rem; }
+.mona-report__diagnostics small { grid-column: 1 / -1; color: var(--mona-color-muted); font-size: 0.7rem; }
+.mona-report__money { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 160px), 1fr)); border: 1px solid var(--mona-color-border); border-radius: var(--mona-radius-md); background: var(--mona-color-surface); }
+.mona-report__money > div { display: flex; min-width: 0; flex-direction: column; gap: 0.35rem; padding: 1rem; border-right: 1px solid var(--mona-color-border); }
+.mona-report__money > div:last-child { border-right: 0; }
+.mona-report__money span { color: var(--mona-color-muted); font-size: 0.72rem; }
+.mona-report__money strong { color: var(--mona-color-ink); font-size: 1.15rem; overflow-wrap: anywhere; }
+.mona-report__money small { color: var(--mona-color-muted); font-size: 0.7rem; }
+.mona-report__detail { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 0.8fr); gap: 1.5rem; }
+.mona-report__client-list, .mona-report__evidence { display: grid; gap: 0; margin: 0; padding: 0; list-style: none; }
+.mona-report__client-list li, .mona-report__evidence li { padding: 0.7rem 0; border-top: 1px solid var(--mona-color-border); color: var(--mona-color-ink); font-size: 0.8rem; }
+.mona-report__client-list li > div { display: flex; justify-content: space-between; gap: 0.75rem; }
+.mona-report__client-list li > div span { color: var(--mona-color-muted); text-align: right; }
+.mona-report__track { display: block; height: 7px; margin-top: 0.5rem; border-radius: var(--mona-radius-pill); background: var(--mona-color-accent-soft); overflow: hidden; }
+.mona-report__track i { display: block; height: 100%; border-radius: inherit; background: var(--mona-gradient-cta); }
+.mona-report__evidence li span { display: block; margin-bottom: 0.2rem; color: var(--mona-color-accent); font-size: 0.7rem; font-weight: 700; }
+@media (max-width: 1180px) {
+  .mona-report__summary, .mona-report__diagnostics, .mona-report__money { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .mona-report__diagnostics > div:nth-child(2), .mona-report__money > div:nth-child(2) { border-right: 0; }
+  .mona-report__diagnostics > div:nth-child(n+3), .mona-report__money > div:nth-child(n+3) { border-top: 1px solid var(--mona-color-border); padding-top: 0.8rem; }
+}
+@media (max-width: 900px) {
+  .mona-report__filters, .mona-report__detail { grid-template-columns: 1fr; }
+}
+@media (min-width: 768px) and (max-width: 1023px) {
+  .mona-canvas { grid-template-rows: minmax(0, 1fr); }
+  .mona-canvas .mona-dock {
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 30;
+    width: min(var(--mona-dock-w, 280px), calc(100% - 1rem));
+    max-height: 100%;
+    flex-direction: column;
+    flex-wrap: nowrap;
+    overflow-y: auto;
+    border-radius: var(--mona-radius-xl);
+    box-shadow: 0 18px 48px color-mix(in srgb, var(--mona-color-purple) 22%, transparent);
+  }
+  .mona-canvas .mona-quick { min-height: 0; }
+}
+
 .mona-board {
   display: grid;
   gap: 1rem;
@@ -4828,4 +5713,37 @@ a.mona-m-person {
 .mona-shell.is-mobile .mona-m-tabs button.is-on {
   background: var(--mona-gradient-cta);
   color: #fff;
+}
+
+.mona-communication { container-type: inline-size; }
+
+.mona-communication__notice {
+  margin-bottom: 1rem;
+  padding: 0.65rem 0.8rem;
+  border: 1px solid var(--mona-color-border);
+  border-radius: var(--mona-radius-sm);
+  background: var(--mona-color-accent-soft);
+  color: var(--mona-color-ink);
+  font-size: 0.78rem;
+}
+
+.mona-mail-workspace,
+.mona-wa-workspace { display: grid; gap: 0.8rem; min-width: 0; }
+
+.mona-mail-workspace > *,
+.mona-wa-workspace > * { min-width: 0; }
+
+.mona-mail-inbox .flex.justify-between > p { min-width: 0; overflow-wrap: anywhere; }
+.mona-mail-inbox .flex.justify-between > span { max-width: 7rem; text-align: right; }
+.mona-mail-accounts button p { overflow-wrap: anywhere; }
+
+@container (min-width: 560px) {
+  .mona-mail-workspace { grid-template-columns: minmax(155px, 0.38fr) minmax(0, 1fr); }
+  .mona-mail-scheduled { grid-column: 1 / -1; }
+  .mona-wa-workspace { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+}
+
+@container (min-width: 920px) {
+  .mona-mail-workspace { grid-template-columns: minmax(180px, 0.65fr) minmax(0, 1.3fr) minmax(220px, 0.85fr); }
+  .mona-mail-scheduled { grid-column: auto; }
 }

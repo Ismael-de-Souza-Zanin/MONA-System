@@ -135,7 +135,7 @@ export function EmployeesPage() {
           </button>
         )}
       </div>
-      <div className="mona-responsive-content mona-desk">
+      <div className="mona-responsive-content mona-desk mona-management">
         <PageHeader
           title="Minha equipe"
           subtitle="Somente quem tem usuário (login) na MONA"
@@ -147,16 +147,21 @@ export function EmployeesPage() {
             ) : undefined
           }
         />
-        <div className="mb-4"><Input label="Buscar na equipe" placeholder="Nome, login ou tipo de acesso" value={search} onChange={(event) => setSearch(event.target.value)} /></div>
+        <div className="mona-management__stats">
+          <MobileStat icon={Users} label="Na equipe" value={employees.length} hint="com login na MONA" tone="purple" />
+          <MobileStat icon={UserPlus} label="Com clientes" value={withClients} hint="atribuição direta" tone="mint" />
+          <MobileStat icon={Calendar} label="Sem clientes atribuídos" value={employees.length - withClients} hint="verifique a distribuição" tone="orange" />
+        </div>
+        <div className="mona-management__toolbar"><Input label="Buscar na equipe" placeholder="Nome, login ou tipo de acesso" value={search} onChange={(event) => setSearch(event.target.value)} /></div>
         {filtered.length === 0 ? (
           <EmptyState
             title="Ninguém com login ainda"
             description="Crie um usuário com e-mail e senha para a pessoa aparecer aqui."
           />
         ) : (
-          <div className="overflow-hidden rounded-xl border border-sand-200 bg-white/90">
+          <div className="mona-management__table">
             <table className="mona-data-table w-full text-left text-sm">
-              <thead className="border-b border-sand-200 bg-sand-50/80">
+              <thead>
                 <tr>
                   <th className="px-4 py-3 font-medium text-teal-900">Nome</th>
                   <th className="px-4 py-3 font-medium text-teal-900">Login</th>
@@ -166,7 +171,7 @@ export function EmployeesPage() {
               </thead>
               <tbody>
                 {filtered.map((emp) => (
-                  <tr key={emp.id} className="border-b border-sand-100 hover:bg-sand-50/50">
+                  <tr key={emp.id}>
                     <td data-label="Nome" className="px-4 py-3">
                       <div className="flex items-center gap-2">
                         <span
@@ -175,7 +180,7 @@ export function EmployeesPage() {
                         />
                         <Link
                           to={`/prestadores/${emp.id}`}
-                          className="font-medium text-teal-900 hover:underline"
+                          className="mona-management__link"
                         >
                           {emp.name}
                         </Link>

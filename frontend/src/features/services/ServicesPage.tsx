@@ -15,6 +15,7 @@ import {
   MobileChip,
   MobileChips,
   MobilePageHeader,
+  MobileStat,
   Modal,
   PageHeader,
   Select,
@@ -149,26 +150,32 @@ export function ServicesPage() {
         </button>
       </div>
 
-      <div className="mona-responsive-content mona-desk">
+      <div className="mona-responsive-content mona-desk mona-management">
       <PageHeader
-        title="Base de serviços"
-        subtitle="Cadastre o que a equipe entrega, as especificidades e vincule por cliente — base para chat e comunicação."
+        title="Serviços"
+        subtitle="Catálogo de entregas e vínculos com clientes."
         actions={canWrite && <Button onClick={() => setShowAdd(true)}>Adicionar serviço</Button>}
       />
 
-      <div className="mb-4"><Select label="Filtrar serviços" value={svcFilter} onChange={(event) => setSvcFilter(event.target.value as typeof svcFilter)}><option value="all">Todos os serviços</option><option value="active">Ativos</option><option value="running">Em execução</option></Select></div>
+      <div className="mona-management__stats">
+        <MobileStat icon={Briefcase} label="No catálogo" value={services.length} hint="serviços cadastrados" tone="purple" />
+        <MobileStat icon={Briefcase} label="Ativos" value={activeCount} hint="disponíveis para entrega" tone="mint" />
+        <MobileStat icon={Briefcase} label="Em execução" value={runningCount} hint="com clientes ativos" tone="orange" />
+      </div>
+
+      <div className="mona-management__toolbar"><Select label="Filtrar serviços" value={svcFilter} onChange={(event) => setSvcFilter(event.target.value as typeof svcFilter)}><option value="all">Todos os serviços</option><option value="active">Ativos</option><option value="running">Em execução</option></Select></div>
       {filteredServices.length === 0 ? (
         <EmptyState title="Nenhum serviço cadastrado" />
       ) : (
-        <div className="grid gap-4 md:grid-cols-2">
+        <div className="mona-management__service-grid">
           {filteredServices.map((s) => (
-            <Card key={s.id}>
+            <Card key={s.id} className="mona-management__service">
               <div className="flex items-start justify-between gap-2">
                 <div>
                   <p className="text-[11px] font-semibold uppercase tracking-wide text-ink-500">
                     {s.category || 'Geral'}
                   </p>
-                  <h3 className="font-semibold text-teal-900">{s.title}</h3>
+                  <h3 className="mona-management__service-title">{s.title}</h3>
                 </div>
                 {canWrite && (
                   <Button size="sm" variant="secondary" onClick={() => setAssignServiceId(s.id)}>
@@ -176,7 +183,7 @@ export function ServicesPage() {
                   </Button>
                 )}
               </div>
-              <p className="mt-2 whitespace-pre-wrap text-sm text-teal-700">{s.description || '—'}</p>
+              <p className="mt-2 whitespace-pre-wrap text-sm">{s.description || '—'}</p>
               {!!s.specificities?.length && (
                 <ul className="mt-3 list-inside list-disc text-xs text-ink-600">
                   {s.specificities.map((sp) => (
@@ -185,12 +192,12 @@ export function ServicesPage() {
                 </ul>
               )}
               {s.assistantNotes && (
-                <p className="mt-3 rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-950">
+                <p className="mona-management__note is-internal">
                   <strong>Equipe:</strong> {s.assistantNotes}
                 </p>
               )}
               {s.clientFacingNotes && (
-                <p className="mt-2 rounded-lg bg-sky-50 px-3 py-2 text-xs text-sky-950">
+                <p className="mona-management__note is-client">
                   <strong>Cliente:</strong> {s.clientFacingNotes}
                 </p>
               )}

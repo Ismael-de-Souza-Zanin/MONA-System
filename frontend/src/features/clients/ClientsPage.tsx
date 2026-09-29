@@ -1,7 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
-import { Calendar, ChevronRight, MessageCircle, Search, SlidersHorizontal, UserPlus, Users } from 'lucide-react'
+import { Calendar, ChevronRight, MessageCircle, MoreHorizontal, Search, SlidersHorizontal, UserPlus, Users } from 'lucide-react'
+import clientsIllustration from '../../assets/illustrations/clients.png'
 import { api } from '../../shared/api/client'
 import type { Client, ClientStatus, ClientStatusChangeRequest, ClientStatusCounts } from '../../shared/types'
 import { Permissions } from '../../shared/permissions/constants'
@@ -24,7 +25,6 @@ import {
   PageHeader,
   Select,
   StatusBadge,
-  StatusDot,
   getStatusLabel,
 } from '../../shared/ui'
 
@@ -133,6 +133,7 @@ function ClientStatusModal({
 
         {needsEmailCheck && (
           <Checkbox
+            completion
             label="E-mail com a solicitação foi enviado ao cliente e entrou em vigor"
             checked={emailSent}
             onChange={(e) => setEmailSent(e.target.checked)}
@@ -143,16 +144,19 @@ function ClientStatusModal({
           <div className="space-y-2 rounded-lg border border-sand-200 p-3">
             <p className="text-sm font-medium text-teal-900">Checklist para inativar</p>
             <Checkbox
+              completion
               label="Pagamento pendente foi realizado"
               checked={paymentSettled}
               onChange={(e) => setPaymentSettled(e.target.checked)}
             />
             <Checkbox
+              completion
               label="Mensagem final foi enviada"
               checked={finalMessageSent}
               onChange={(e) => setFinalMessageSent(e.target.checked)}
             />
             <Checkbox
+              completion
               label="Todas as pendências foram resolvidas"
               checked={pendingResolved}
               disabled={blockedByTodos}
@@ -164,6 +168,7 @@ function ClientStatusModal({
               </p>
             )}
             <Checkbox
+              completion
               label="Cliente removido do grupo e responsáveis (exceto pessoal e número da empresa)"
               checked={removedFromGroup}
               onChange={(e) => setRemovedFromGroup(e.target.checked)}
@@ -231,12 +236,26 @@ function AddClientModal({ open, onClose }: { open: boolean; onClose: () => void 
 export function ClientsPage() {
   const { hasPermission } = usePermissions()
   const canWrite = hasPermission(Permissions.ClientsWrite)
-  const [searchParams] = useSearchParams()
+  const [searchParams, setSearchParams] = useSearchParams()
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState<ClientStatus | 'all'>('all')
   const [groupFilter, setGroupFilter] = useState('all')
   const [statusClient, setStatusClient] = useState<Client | null>(null)
   const [showAdd, setShowAdd] = useState(false)
+
+  useEffect(() => {
+    if (searchParams.get('novo') !== '1') return
+    if (canWrite) setShowAdd(true)
+  }, [searchParams, canWrite])
+
+  const closeAdd = () => {
+    setShowAdd(false)
+    if (searchParams.has('novo')) setSearchParams((params) => {
+      const next = new URLSearchParams(params)
+      next.delete('novo')
+      return next
+    }, { replace: true })
+  }
   const [showGroupFilter, setShowGroupFilter] = useState(false)
   const qc = useQueryClient()
 
@@ -381,16 +400,23 @@ export function ClientsPage() {
         )}
       </div>
 
-      <div className="mona-responsive-content mona-desk">
+      <div className="mona-responsive-content mona-desk mona-management">
       <PageHeader
-        title="Clientes totais"
-        subtitle={`${counts?.total ?? clients.length} clientes · agrupe como a equipe definir`}
+        title="Clientes"
+        subtitle="Acompanhe a carteira, os vínculos e quem precisa de atenção."
+        illustration={clientsIllustration}
         actions={
           canWrite && (
             <Button onClick={() => setShowAdd(true)}>Adicionar cliente</Button>
           )
         }
       />
+
+      <div className="mona-management__stats">
+        <MobileStat icon={Users} label="Na carteira" value={counts?.total ?? clients.length} hint="clientes cadastrados" tone="purple" />
+        <MobileStat icon={Users} label="Ativos" value={counts?.active ?? clients.filter((c) => c.status === 'Active').length} hint="em atendimento" tone="mint" />
+        <MobileStat icon={Calendar} label="Precisam de atenção" value={attention} hint="aviso, hold ou resposta rápida" tone="orange" />
+      </div>
 
       {isError && (
         <div className="mb-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
@@ -401,17 +427,13 @@ export function ClientsPage() {
         </div>
       )}
 
-      <div className="mb-4 flex flex-wrap gap-3">
+      <div className="mona-management__filters">
         {STATUS_FILTERS.map((f) => (
           <button
             key={f.value}
             type="button"
             onClick={() => setStatusFilter(f.value)}
-            className={`rounded-full px-3 py-1 text-sm transition ${
-              statusFilter === f.value
-                ? 'bg-teal-900 text-white'
-                : 'bg-white text-teal-800 hover:bg-sand-100'
-            }`}
+            className={`mona-management__filter ${statusFilter === f.value ? 'is-active' : ''}`}
           >
             {f.label}
             {counts && f.value !== 'all' && (
@@ -423,7 +445,7 @@ export function ClientsPage() {
         ))}
       </div>
 
-      <div className="mb-4 flex flex-wrap gap-3">
+      <div className="mona-management__toolbar">
         <Input
           placeholder="Buscar por nome, telefone ou empresa..."
           value={search}
@@ -445,74 +467,57 @@ export function ClientsPage() {
       </div>
 
       {filtered.length === 0 ? (
-        <EmptyState title="Nenhum cliente encontrado" />
+        <EmptyState
+          title={clients.length === 0 ? 'Sua carteira ainda está vazia' : 'Nenhum cliente neste filtro'}
+          description={clients.length === 0 ? 'Cadastre o primeiro cliente para acompanhar seus vínculos e atendimentos.' : 'Ajuste a busca ou os filtros para encontrar outros clientes.'}
+          illustration={clientsIllustration}
+          action={clients.length === 0 && canWrite ? <Button onClick={() => setShowAdd(true)}>Adicionar cliente</Button> : undefined}
+        />
       ) : (
-        <div className="overflow-hidden rounded-xl border border-sand-200 bg-white/90">
-          <table className="mona-data-table w-full text-left text-sm">
-            <thead className="border-b border-sand-200 bg-sand-50/80">
-              <tr>
-                <th className="px-4 py-3 font-medium text-teal-900">Status</th>
-                <th className="px-4 py-3 font-medium text-teal-900">Nome</th>
-                <th className="px-4 py-3 font-medium text-teal-900">Grupo</th>
-                <th className="px-4 py-3 font-medium text-teal-900">Telefone</th>
-                <th className="px-4 py-3 font-medium text-teal-900">Empresa</th>
-                <th className="px-4 py-3 w-12" />
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.map((client) => (
-                <tr key={client.id} className="border-b border-sand-100 hover:bg-sand-50/50">
-                  <td data-label="Status" className="px-4 py-3">
-                    <StatusDot status={client.status} />
-                  </td>
-                  <td data-label="Nome" className="px-4 py-3">
-                    <Link to={`/clientes/${client.id}`} className="font-medium text-teal-900 hover:underline">
-                      {client.name}
-                    </Link>
-                    <div className="mt-0.5 flex flex-wrap gap-1 text-[10px] text-ink-500">
-                      {client.preferredLanguage && <span>{client.preferredLanguage}</span>}
-                      {client.marketCountry && <span>· {client.marketCountry}</span>}
-                      {client.needsQuickResponse && (
-                        <span className="font-semibold text-red-600">· rápido</span>
-                      )}
-                    </div>
-                  </td>
-                  <td data-label="Grupo" className="px-4 py-3 text-teal-700">
-                    {client.clientGroupName ? (
-                      <span className="inline-flex items-center gap-1.5">
-                        <span
-                          className="h-2 w-2 rounded-full"
-                          style={{ background: client.clientGroupColor || '#006D69' }}
-                        />
-                        {client.clientGroupName}
-                      </span>
-                    ) : (
-                      '—'
-                    )}
-                  </td>
-                  <td data-label="Telefone" className="px-4 py-3 text-teal-700">{client.phone || '—'}</td>
-                  <td data-label="Empresa" className="px-4 py-3 text-teal-700">{client.companyName || '—'}</td>
-                  <td data-label="Ações" className="px-4 py-3">
-                    {canWrite && (
-                      <DropdownMenu trigger={<span className="text-lg">⋯</span>}>
-                        <DropdownItem onClick={() => setStatusClient(client)}>
-                          Alterar status
-                        </DropdownItem>
-                        <DropdownItem
-                          danger
-                          onClick={() => {
-                            if (confirm('Excluir este cliente?')) deleteMutation.mutate(client.id)
-                          }}
-                        >
-                          Excluir
-                        </DropdownItem>
-                      </DropdownMenu>
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        <div className="mona-clients-desktop__list">
+          {filtered.map((client) => {
+            const digits = phoneDigits(client.phone)
+            return (
+              <article key={client.id} className="mona-clients-desktop__row">
+                <div className="mona-clients-desktop__identity">
+                  <MobileAvatar name={client.name} />
+                  <div className="mona-clients-desktop__name">
+                    <Link to={`/clientes/${client.id}`} className="mona-management__link">{client.name}</Link>
+                    <span>{client.companyName || 'Sem empresa'}</span>
+                  </div>
+                </div>
+                <div className="mona-clients-desktop__details">
+                  <StatusBadge status={client.status} />
+                  {client.clientGroupName && (
+                    <span className="mona-clients-desktop__group">
+                      <span className="mona-clients-desktop__group-dot" style={{ backgroundColor: client.clientGroupColor || 'var(--mona-color-accent)' }} />
+                      {client.clientGroupName}
+                    </span>
+                  )}
+                  {client.needsQuickResponse && <span className="mona-clients-desktop__attention">Resposta rápida</span>}
+                  {(client.preferredLanguage || client.marketCountry) && (
+                    <span className="mona-clients-desktop__locale">{[client.preferredLanguage, client.marketCountry].filter(Boolean).join(' · ')}</span>
+                  )}
+                </div>
+                <div className="mona-clients-desktop__actions">
+                  {client.phone && <span className="mona-clients-desktop__phone">{client.phone}</span>}
+                  {digits ? (
+                    <a href={`https://wa.me/${digits}`} aria-label={`Mensagem para ${client.name}`} title="Enviar mensagem"><MessageCircle size={18} /></a>
+                  ) : (
+                    <Link to="/whatsapp" aria-label={`Mensagem para ${client.name}`} title="Abrir WhatsApp"><MessageCircle size={18} /></Link>
+                  )}
+                  <Link to="/agenda" aria-label={`Agenda de ${client.name}`} title="Abrir agenda"><Calendar size={18} /></Link>
+                  {canWrite && (
+                    <DropdownMenu trigger={<MoreHorizontal size={18} aria-label={`Ações de ${client.name}`} />}>
+                      <DropdownItem onClick={() => setStatusClient(client)}>Alterar status</DropdownItem>
+                      <DropdownItem danger onClick={() => { if (confirm('Excluir este cliente?')) deleteMutation.mutate(client.id) }}>Excluir</DropdownItem>
+                    </DropdownMenu>
+                  )}
+                  <Link to={`/clientes/${client.id}`} aria-label={`Abrir ficha de ${client.name}`} title="Abrir ficha"><ChevronRight size={18} /></Link>
+                </div>
+              </article>
+            )
+          })}
         </div>
       )}
       </div>
@@ -522,7 +527,7 @@ export function ClientsPage() {
         open={!!statusClient}
         onClose={() => setStatusClient(null)}
       />
-      <AddClientModal open={showAdd} onClose={() => setShowAdd(false)} />
+      <AddClientModal open={showAdd} onClose={closeAdd} />
     </div>
   )
 }

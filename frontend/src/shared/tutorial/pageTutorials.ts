@@ -5,7 +5,7 @@ export type PageTutorial = {
   tips: string[]
 }
 
-/** Tutorials keyed by the first path segment (or `home` for `/`). */
+/** One tutorial per authenticated screen, with entity IDs sharing a screen tutorial. */
 export const PAGE_TUTORIALS: Record<string, PageTutorial> = {
   home: {
     key: 'home',
@@ -45,6 +45,16 @@ export const PAGE_TUTORIALS: Record<string, PageTutorial> = {
       'Abra um cliente para ver visão geral, tarefas e arquivos.',
       'Na aba Equipe, veja e vincule quem atende esse cliente.',
       'O detalhe do cliente é o centro da operação na MONA.',
+    ],
+  },
+  'cliente-detalhe': {
+    key: 'cliente-detalhe',
+    title: 'Ficha do cliente',
+    lead: 'Contexto, atendimento e vínculos de um cliente.',
+    tips: [
+      'Use as abas para consultar equipe, tarefas, serviços, financeiro e documentos.',
+      'Vincule uma pessoa da equipe na aba Equipe para definir quem atende o cliente.',
+      'Atualize os dados e o status quando a relação com o cliente mudar.',
     ],
   },
   todos: {
@@ -137,6 +147,16 @@ export const PAGE_TUTORIALS: Record<string, PageTutorial> = {
       'Combine com a pirâmide para visão de estrutura.',
     ],
   },
+  'prestador-detalhe': {
+    key: 'prestador-detalhe',
+    title: 'Pessoa da equipe',
+    lead: 'Resumo dos clientes e contratos desta pessoa.',
+    tips: [
+      'Confira os clientes vinculados antes de distribuir novas demandas.',
+      'Vincule ou remova clientes conforme as responsabilidades da equipe mudarem.',
+      'Consulte os contratos associados nesta mesma página.',
+    ],
+  },
   piramide: {
     key: 'piramide',
     title: 'Pirâmide',
@@ -187,6 +207,36 @@ export const PAGE_TUTORIALS: Record<string, PageTutorial> = {
       'Procedimentos bons aceleram onboarding de pessoas novas.',
     ],
   },
+  'sop-novo': {
+    key: 'sop-novo',
+    title: 'Novo procedimento',
+    lead: 'Transforme uma rotina recorrente em passos claros.',
+    tips: [
+      'Defina nome, área, gatilho e resultado esperado para facilitar a busca.',
+      'Descreva as etapas na ordem em que a equipe deve executá-las.',
+      'Revise o procedimento antes de salvar para que possa ser reutilizado.',
+    ],
+  },
+  'sop-detalhe': {
+    key: 'sop-detalhe',
+    title: 'Executar procedimento',
+    lead: 'Siga o próximo passo sem perder o andamento.',
+    tips: [
+      'Escolha um cliente antes de iniciar, quando o processo estiver ligado a ele.',
+      'Alterne entre modo rápido e completo conforme a informação necessária.',
+      'Marque cada etapa concluída para manter o progresso atualizado.',
+    ],
+  },
+  'sop-editar': {
+    key: 'sop-editar',
+    title: 'Editar procedimento',
+    lead: 'Atualize o padrão de execução da equipe.',
+    tips: [
+      'Ajuste o contexto, o resultado esperado e as etapas que mudaram.',
+      'Use a opção de nova versão quando a mudança precisar ficar identificada.',
+      'Salve e confira o procedimento completo antes da próxima execução.',
+    ],
+  },
   apps: {
     key: 'apps',
     title: 'Apps',
@@ -224,7 +274,7 @@ export const PAGE_TUTORIALS: Record<string, PageTutorial> = {
     tips: [
       'Personalize tema e menu para o seu jeito de trabalhar.',
       'Revise permissões e dados do perfil.',
-      'Aqui também dá para reabrir tutoriais das páginas.',
+      'Abra o menu do perfil para rever o tutorial da página atual.',
     ],
   },
   mais: {
@@ -244,8 +294,14 @@ const STORAGE_KEY = 'mona_page_tutorials_v1'
 export function tutorialKeyFromPath(pathname: string): string {
   const clean = pathname.replace(/\/+$/, '') || '/'
   if (clean === '/') return 'home'
-  const segment = clean.split('/').filter(Boolean)[0] || 'home'
-  return segment
+  const segments = clean.split('/').filter(Boolean)
+  const [section, detail, action] = segments
+  if (section === 'clientes' && detail) return 'cliente-detalhe'
+  if (section === 'prestadores' && detail) return 'prestador-detalhe'
+  if (section === 'sops' && detail === 'nova') return 'sop-novo'
+  if (section === 'sops' && detail && action === 'editar') return 'sop-editar'
+  if (section === 'sops' && detail) return 'sop-detalhe'
+  return section || 'home'
 }
 
 export function getTutorialForPath(pathname: string): PageTutorial | null {

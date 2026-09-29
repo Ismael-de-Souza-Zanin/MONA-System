@@ -221,7 +221,6 @@ export function ReportsPage() {
     (data.money?.clientAp?.pending ?? 0) +
     (data.money?.payout?.pending ?? 0)
   const maxClientTodos = Math.max(1, ...data.byClient.map((client) => client.todosDone))
-  const maxClientMinutes = Math.max(1, ...data.byClient.map((client) => client.minutes))
 
   return (
     <div>
@@ -287,10 +286,10 @@ export function ReportsPage() {
         </div>
       </div>
 
-      <div className="mona-responsive-content mona-desk">
+      <div className="mona-responsive-content mona-desk mona-report-desktop">
       <PageHeader title="Relatórios operacionais" subtitle={subtitle} />
 
-      <div className="mb-5 grid gap-3 sm:grid-cols-3">
+      <div className="mona-report__filters">
         <Select label="Olhar" value={lens} onChange={(e) => setLens(e.target.value as Lens)}>
           {canAdm && <option value="adm">ADM / casa</option>}
           <option value="va">Minha VA</option>
@@ -311,97 +310,81 @@ export function ReportsPage() {
         </Select>
       </div>
 
-      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        <Card>
-          <p className="text-xs uppercase text-ink-500">Tarefas feitas</p>
-          <p className="mt-1 text-2xl font-semibold text-ink-900">{data.todos.done}</p>
-          <p className="text-xs text-ink-500">{data.todos.open} abertas · {data.todos.overdue} atrasadas</p>
-        </Card>
-        <Card>
-          <p className="text-xs uppercase text-ink-500">Reuniões / agenda</p>
-          <p className="mt-1 text-2xl font-semibold text-ink-900">{data.agenda.meetings}</p>
-          <p className="text-xs text-ink-500">{data.agenda.events} compromissos no período</p>
-        </Card>
-        <Card>
-          <p className="text-xs uppercase text-ink-500">Decisões</p>
-          <p className="mt-1 text-2xl font-semibold text-ink-900">{data.decisions.total}</p>
-          <p className="text-xs text-ink-500">{data.decisions.open} em aberto</p>
-        </Card>
-        <Card>
-          <p className="text-xs uppercase text-ink-500">Horas</p>
-          <p className="mt-1 text-2xl font-semibold text-ink-900">{data.time.hours}</p>
-          <p className="text-xs text-ink-500">
-            Pacote {data.time.retainerHours}h · usado {data.time.retainerUsedHours}h
-          </p>
-        </Card>
+      <div className="mona-report__summary">
+        <MobileStat icon={CheckSquare} label="Produtividade" value={`${donePct}%`} hint={`${data.todos.done} de ${taskTotal} tarefas concluídas`} tone="purple" />
+        <MobileStat icon={Users} label="Reuniões" value={data.agenda.meetings} hint={`${data.agenda.events} compromissos no período`} tone="orange" />
+        <MobileStat icon={Clock3} label="Horas registradas" value={`${data.time.hours.toLocaleString('pt-BR')}h`} hint={`${data.time.retainerUsedHours.toLocaleString('pt-BR')}h usadas do pacote`} tone="mint" />
+        <MobileStat icon={Wallet} label="Financeiro pendente" value={money(moneyPending)} hint="nas gavetas visíveis" tone="rose" />
       </div>
 
-      <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        <Card>
-          <div className="flex items-center gap-2">
-            <AlertTriangle size={18} className="text-amber-600" />
-            <p className="text-xs uppercase text-ink-500">Risco de atraso</p>
-          </div>
-          <p className="mt-1 text-2xl font-semibold text-ink-900">{overduePct}%</p>
-          <p className="text-xs text-ink-500">{data.todos.overdue} de {data.todos.open} tarefas abertas atrasadas</p>
-        </Card>
-        <Card>
-          <div className="flex items-center gap-2">
-            <Clock3 size={18} className="text-brand-800" />
-            <p className="text-xs uppercase text-ink-500">Uso de retainer</p>
-          </div>
-          <p className="mt-1 text-2xl font-semibold text-ink-900">{retainerPct}%</p>
-          <p className="text-xs text-ink-500">{data.time.retainerUsedHours}h usadas de {data.time.retainerHours}h contratadas</p>
-        </Card>
-        <Card>
-          <div className="flex items-center gap-2">
-            <FileCheck2 size={18} className="text-emerald-600" />
-            <p className="text-xs uppercase text-ink-500">SOPs executados</p>
-          </div>
-          <p className="mt-1 text-2xl font-semibold text-ink-900">{data.sops.completedRuns}</p>
-          <p className="text-xs text-ink-500">rotinas concluídas no recorte</p>
-        </Card>
-        <Card>
-          <div className="flex items-center gap-2">
-            <Wallet size={18} className="text-pink-600" />
-            <p className="text-xs uppercase text-ink-500">Financeiro pendente</p>
-          </div>
-          <p className="mt-1 text-2xl font-semibold text-ink-900">{money(moneyPending)}</p>
-          <p className="text-xs text-ink-500">somando gavetas visíveis neste olhar</p>
-        </Card>
-      </div>
+      <section className="mona-report__section">
+        <h2>Saúde operacional</h2>
+        <div className="mona-report__diagnostics">
+          <div><AlertTriangle size={18} /><span>Risco de atraso</span><strong>{overduePct}%</strong><small>{data.todos.overdue} de {data.todos.open} tarefas abertas</small></div>
+          <div><Clock3 size={18} /><span>Uso do pacote</span><strong>{retainerPct}%</strong><small>{data.time.retainerUsedHours}h de {data.time.retainerHours}h contratadas</small></div>
+          <div><BarChart3 size={18} /><span>Decisões abertas</span><strong>{data.decisions.open}</strong><small>{decisionOpenPct}% de {data.decisions.total} decisões</small></div>
+          <div><FileCheck2 size={18} /><span>SOPs concluídos</span><strong>{data.sops.completedRuns}</strong><small>rotinas no período</small></div>
+        </div>
+      </section>
 
       {data.money && (
-        <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <section className="mona-report__section">
+          <h2>Fluxos financeiros</h2>
+          <div className="mona-report__money">
           {data.money.agency && (
-            <Card>
-              <p className="text-xs uppercase text-ink-500">B · Fatto ← cliente</p>
-              <p className="mt-1 font-semibold">{money(data.money.agency.paid)}</p>
-              <p className="text-xs text-ink-500">Pendente {money(data.money.agency.pending)}</p>
-            </Card>
+            <div><span>Fatto recebe do cliente</span><strong>{money(data.money.agency.paid)}</strong><small>Pendente {money(data.money.agency.pending)}</small></div>
           )}
           {data.money.clientAr && (
-            <Card>
-              <p className="text-xs uppercase text-ink-500">A · Cliente recebe</p>
-              <p className="mt-1 font-semibold">{money(data.money.clientAr.paid)}</p>
-            </Card>
+            <div><span>Cliente recebe</span><strong>{money(data.money.clientAr.paid)}</strong><small>Pendente {money(data.money.clientAr.pending)}</small></div>
+          )}
+          {data.money.clientAp && (
+            <div><span>Cliente paga fornecedores</span><strong>{money(data.money.clientAp.paid)}</strong><small>Pendente {money(data.money.clientAp.pending)}</small></div>
           )}
           {data.money.payout && (
-            <Card>
-              <p className="text-xs uppercase text-ink-500">C · Fatto → VA</p>
-              <p className="mt-1 font-semibold">{money(data.money.payout.paid)}</p>
-              <p className="text-xs text-ink-500">O cliente não vê esta gaveta</p>
-            </Card>
+            <div><span>Repasse para VA</span><strong>{money(data.money.payout.paid)}</strong><small>Pendente {money(data.money.payout.pending)}</small></div>
           )}
           {typeof data.money.marginPaid === 'number' && (
-            <Card>
-              <p className="text-xs uppercase text-ink-500">Margem (B − C)</p>
-              <p className="mt-1 font-semibold">{money(data.money.marginPaid)}</p>
-              <p className="text-xs text-ink-500">Só ADM</p>
-            </Card>
+            <div><span>Margem recebida</span><strong>{money(data.money.marginPaid)}</strong><small>Recebido menos repassado</small></div>
           )}
-        </div>
+          </div>
+        </section>
       )}
+
+      <div className="mona-report__detail">
+        <section className="mona-report__section">
+          <h2>Uso do pacote por cliente</h2>
+          <ul className="mona-report__client-list">
+            {data.byClient.map((c) => (
+              <li key={c.clientId}>
+                <div><strong>{c.name}</strong><span>{c.todosDone} {c.todosDone === 1 ? 'entrega' : 'entregas'} · {(c.minutes / 60).toLocaleString('pt-BR', { maximumFractionDigits: 1 })}h de {c.retainerHours}h</span></div>
+                <span className="mona-report__track"><i style={{ width: `${c.retainerHours > 0 ? Math.min(100, Math.round((c.minutes / 60 / c.retainerHours) * 100)) : 0}%` }} /></span>
+              </li>
+            ))}
+            {data.byClient.length === 0 && <p className="text-sm text-ink-500">Sem movimento no período.</p>}
+          </ul>
+        </section>
+
+        <section className="mona-report__section">
+          <h2>Evidências do período</h2>
+          <ul className="mona-report__evidence">
+            {data.evidence.todos.map((t) => (
+              <li key={t.id}>
+                <span>Entrega</span>{t.title}
+                {t.clientName ? ` · ${t.clientName}` : ''}
+              </li>
+            ))}
+            {data.evidence.decisions.map((d) => (
+              <li key={d.id}>
+                <span>{d.isOpen ? 'Decisão aberta' : 'Decisão fechada'}</span>{d.title}
+                {d.visibleToClient ? ' · visível ao cliente' : ''}
+              </li>
+            ))}
+            {data.evidence.todos.length === 0 && data.evidence.decisions.length === 0 && <li>Sem evidências neste período.</li>}
+          </ul>
+        </section>
+      </div>
+
+      </div>
 
       <div className="mt-6 grid gap-4 lg:grid-cols-2">
         {canTime && (
@@ -412,131 +395,47 @@ export function ReportsPage() {
               <Input label="Nota" value={timeNote} onChange={(e) => setTimeNote(e.target.value)} />
             </div>
             <div className="mt-3">
-              <Button disabled={timeMut.isPending} onClick={() => timeMut.mutate()}>
-                Lançar horas
-              </Button>
+              <Button disabled={timeMut.isPending} onClick={() => timeMut.mutate()}>Lançar horas</Button>
             </div>
             {timeMut.error && <ErrorAlert message={timeMut.error.message} />}
           </Card>
         )}
-
         {canDecision && (
           <Card>
             <h2 className="text-base font-semibold text-ink-900">Decisão de negócio</h2>
             <div className="mt-3 space-y-3">
               <Textarea label="O que ficou combinado" value={decTitle} onChange={(e) => setDecTitle(e.target.value)} />
-              <Checkbox
-                label="Cliente pode ver no portal"
-                checked={decVisible}
-                onChange={(e) => setDecVisible(e.target.checked)}
-              />
-              {canTime && (
-                <Checkbox
-                  label="Abrir tarefa automaticamente"
-                  checked={decTodo}
-                  onChange={(e) => setDecTodo(e.target.checked)}
-                />
-              )}
-              <Button disabled={!decTitle.trim() || decMut.isPending} onClick={() => decMut.mutate()}>
-                Registrar decisão
-              </Button>
+              <Checkbox label="Cliente pode ver no portal" checked={decVisible} onChange={(e) => setDecVisible(e.target.checked)} />
+              {canTime && <Checkbox label="Abrir tarefa automaticamente" checked={decTodo} onChange={(e) => setDecTodo(e.target.checked)} />}
+              <Button disabled={!decTitle.trim() || decMut.isPending} onClick={() => decMut.mutate()}>Registrar decisão</Button>
             </div>
             {decMut.error && <ErrorAlert message={decMut.error.message} />}
           </Card>
         )}
-      </div>
-
-      <div className="mt-4 grid gap-4 lg:grid-cols-2">
-        <Card>
-          <h2 className="text-base font-semibold text-ink-900">Por cliente</h2>
-          <ul className="mt-3 space-y-3">
-            {data.byClient.map((c) => (
-              <li key={c.clientId} className="grid gap-1 text-sm">
-                <div className="flex justify-between gap-3">
-                  <span className="font-medium text-ink-900">{c.name}</span>
-                  <span className="text-ink-500">
-                    {c.todosDone} entregas · {Math.round(c.minutes / 60)}h / {c.retainerHours}h
-                  </span>
-                </div>
-                <div className="h-2 overflow-hidden rounded-full bg-ink-100">
-                  <div className="h-full rounded-full bg-gradient-to-r from-brand-700 via-pink-500 to-orange-400" style={{ width: `${Math.max(4, Math.round((c.minutes / maxClientMinutes) * 100))}%` }} />
-                </div>
-              </li>
-            ))}
-            {data.byClient.length === 0 && <p className="text-sm text-ink-500">Sem movimento no período.</p>}
-          </ul>
-        </Card>
-
-        <Card>
-          <h2 className="text-base font-semibold text-ink-900">Evidência analisável</h2>
-          <ul className="mt-3 space-y-2 text-sm">
-            {data.evidence.todos.map((t) => (
-              <li key={t.id} className="text-ink-800">
-                Feito: {t.title}
-                {t.clientName ? ` · ${t.clientName}` : ''}
-              </li>
-            ))}
-            {data.evidence.decisions.map((d) => (
-              <li key={d.id} className="text-ink-800">
-                Decisão{d.isOpen ? '' : ' (fechada)'}: {d.title}
-                {d.visibleToClient ? ' · visível ao cliente' : ''}
-              </li>
-            ))}
-          </ul>
-        </Card>
-      </div>
-
-      {canClientWrite && (
-      <Card className="mt-4">
-        <h2 className="text-base font-semibold text-ink-900">Ponto de atendimento e pacote de horas</h2>
-        <p className="mt-1 text-sm text-ink-500">
-          Escolha um cliente. Canal, o que perguntar e para quem escalar — sem criar um sistema por ramo.
-        </p>
-        <div className="mt-3 grid gap-3 sm:grid-cols-3">
-          <Input label="Nome do ponto" value={pointName} onChange={(e) => setPointName(e.target.value)} placeholder="WhatsApp comercial" />
-          <Select label="Canal" value={pointChannel} onChange={(e) => setPointChannel(e.target.value)}>
-            <option>WhatsApp</option>
-            <option>Email</option>
-            <option>Phone</option>
-            <option>Portal</option>
-          </Select>
-          <Input
-            label="Horas do retainer / mês"
-            type="number"
-            value={retainerHours}
-            onChange={(e) => setRetainerHours(e.target.value)}
-          />
-        </div>
-        <div className="mt-3 flex flex-wrap gap-2">
-          <Button
-            variant="secondary"
-            disabled={!clientId || !pointName.trim() || pointMut.isPending}
-            onClick={() => pointMut.mutate()}
-          >
-            Salvar ponto
-          </Button>
-          <Button
-            variant="secondary"
-            disabled={!clientId || retainerMut.isPending}
-            onClick={() => retainerMut.mutate()}
-          >
-            Salvar pacote
-          </Button>
-        </div>
-        {pointMut.error && <ErrorAlert message={pointMut.error.message} />}
-        {retainerMut.error && <ErrorAlert message={retainerMut.error.message} />}
-        {points.length > 0 && (
-          <ul className="mt-3 text-sm text-ink-700">
-            {points.map((p) => (
-              <li key={p.id}>
-                {p.name} · {p.channel}
-                {p.slaMinutes ? ` · SLA ${p.slaMinutes} min` : ''}
-              </li>
-            ))}
-          </ul>
+        {canClientWrite && (
+          <Card className="lg:col-span-2">
+            <h2 className="text-base font-semibold text-ink-900">Ponto de atendimento e pacote de horas</h2>
+            <p className="mt-1 text-sm text-ink-500">Escolha um cliente para configurar o canal de atendimento e o pacote de horas.</p>
+            <div className="mt-3 grid gap-3 sm:grid-cols-3">
+              <Input label="Nome do ponto" value={pointName} onChange={(e) => setPointName(e.target.value)} placeholder="WhatsApp comercial" />
+              <Select label="Canal" value={pointChannel} onChange={(e) => setPointChannel(e.target.value)}>
+                <option>WhatsApp</option><option>Email</option><option>Phone</option><option>Portal</option>
+              </Select>
+              <Input label="Horas do retainer / mês" type="number" value={retainerHours} onChange={(e) => setRetainerHours(e.target.value)} />
+            </div>
+            <div className="mt-3 flex flex-wrap gap-2">
+              <Button variant="secondary" disabled={!clientId || !pointName.trim() || pointMut.isPending} onClick={() => pointMut.mutate()}>Salvar ponto</Button>
+              <Button variant="secondary" disabled={!clientId || retainerMut.isPending} onClick={() => retainerMut.mutate()}>Salvar pacote</Button>
+            </div>
+            {pointMut.error && <ErrorAlert message={pointMut.error.message} />}
+            {retainerMut.error && <ErrorAlert message={retainerMut.error.message} />}
+            {points.length > 0 && (
+              <ul className="mt-3 text-sm text-ink-700">
+                {points.map((point) => <li key={point.id}>{point.name} · {point.channel}{point.slaMinutes ? ` · SLA ${point.slaMinutes} min` : ''}</li>)}
+              </ul>
+            )}
+          </Card>
         )}
-      </Card>
-      )}
       </div>
     </div>
   )

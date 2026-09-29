@@ -1,7 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Link } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import { Search, Wallet } from 'lucide-react'
-import { useMemo, useState } from 'react'
+import financeIllustration from '../../assets/illustrations/finance.png'
+import { useEffect, useMemo, useState } from 'react'
 import { api } from '../../shared/api/client'
 import type { ActiveClientPaymentTask, Payment } from '../../shared/types'
 import { Permissions } from '../../shared/permissions/constants'
@@ -43,7 +44,7 @@ function ledgerLabel(l?: string) {
   return 'Fatto ← cliente'
 }
 
-function AddPaymentModal({ open, onClose }: { open: boolean; onClose: () => void }) {
+function AddPaymentModal({ open, onClose, initialLedger = 'Agency' }: { open: boolean; onClose: () => void; initialLedger?: Exclude<Ledger, 'all'> }) {
   const qc = useQueryClient()
   const [error, setError] = useState('')
   const [links, setLinks] = useState<PaymentLink[]>([])
@@ -52,7 +53,7 @@ function AddPaymentModal({ open, onClose }: { open: boolean; onClose: () => void
     description: '',
     clientId: '',
     dueDate: '',
-    ledger: 'Agency',
+    ledger: initialLedger,
     counterpartyName: '',
     category: '',
     isSettled: false,
@@ -115,7 +116,7 @@ function AddPaymentModal({ open, onClose }: { open: boolean; onClose: () => void
         <Select
           label="Livro"
           value={form.ledger}
-          onChange={(e) => setForm({ ...form, ledger: e.target.value })}
+          onChange={(e) => setForm({ ...form, ledger: e.target.value as Exclude<Ledger, 'all'> })}
         >
           <option value="Agency">B · Fatto ← cliente</option>
           <option value="ClientAr">A · Cliente ← terceiros</option>
@@ -171,6 +172,7 @@ function AddPaymentModal({ open, onClose }: { open: boolean; onClose: () => void
         <label className="flex items-center gap-2 text-sm text-ink-700">
           <input
             type="checkbox"
+            className="mona-check__input"
             checked={form.isSettled}
             onChange={(e) => setForm({ ...form, isSettled: e.target.checked })}
           />
@@ -199,10 +201,27 @@ function AddPaymentModal({ open, onClose }: { open: boolean; onClose: () => void
 }
 
 export function FinancePage() {
+  const [searchParams, setSearchParams] = useSearchParams()
+  const createLedger = searchParams.get('livro') === 'ClientAp' ? 'ClientAp' : 'Agency'
   const { user } = useAuth()
   const { hasPermission } = usePermissions()
   const canManageAll = hasPermission(Permissions.FinanceAll)
   const [showAdd, setShowAdd] = useState(false)
+
+  useEffect(() => {
+    if (searchParams.get('novo') !== '1') return
+    setShowAdd(true)
+  }, [searchParams])
+
+  const closeAdd = () => {
+    setShowAdd(false)
+    if (searchParams.has('novo')) setSearchParams((params) => {
+      const next = new URLSearchParams(params)
+      next.delete('novo')
+      next.delete('livro')
+      return next
+    }, { replace: true })
+  }
   const [settleId, setSettleId] = useState<string | null>(null)
   const [ledgerFilter, setLedgerFilter] = useState<Ledger>('all')
   const [statusFilter, setStatusFilter] = useState<'all' | 'Pending' | 'Paid'>('all')
@@ -260,26 +279,43 @@ export function FinancePage() {
   if (isLoading) return <LoadingSpinner />
 
 
-  const paidSum = payments.filter((p) => p.status === 'Paid').reduce((sum, p) => sum + p.amount, 0)
-  const pendingSum = payments.filter((p) => p.status === 'Pending').reduce((sum, p) => sum + p.amount, 0)
   const pendingCount = payments.filter((p) => p.status === 'Pending').length
-  const expenseSum = totals.apPaid + totals.payoutPaid
-  const profitSum = paidSum - expenseSum
 
   return (
     <div>
       <div className="mona-phone mona-m-stack">
         <MobilePageHeader title="Financeiro" action={{ to: '/relatorios', label: 'Ver relatório' }} />
+        {canManageAll && (
+          <button type="button" className="mona-m-cta" onClick={() => setShowAdd(true)}>
+            Registrar movimento
+          </button>
+        )}
         <div className="mona-m-stats is-pair">
-          <MobileStat icon={Wallet} label="Receitas" value={money(paidSum)} hint="baixado" tone="mint" />
-          <MobileStat icon={Wallet} label="Despesas" value={money(expenseSum)} hint="baixado" tone="rose" />
-          <MobileStat icon={Wallet} label="Lucro" value={money(profitSum)} hint="no recorte" tone="purple" />
-          <MobileStat icon={Wallet} label="A receber" value={money(pendingSum)} hint="pendente" tone="orange" />
+          {canManageAll ? (
+            <>
+              <MobileStat icon={Wallet} label="Receita Fatto" value={money(totals.agencyPaid)} hint="recebida de clientes" tone="mint" />
+              <MobileStat icon={Wallet} label="Repasse VA" value={money(totals.payoutPaid)} hint="pago à equipe" tone="rose" />
+              <MobileStat icon={Wallet} label="Margem" value={money(totals.agencyPaid - totals.payoutPaid)} hint="recebido menos repassado" tone="purple" />
+              <MobileStat icon={Wallet} label="Pendências" value={pendingCount} hint="em todos os livros" tone="orange" />
+            </>
+          ) : (
+            <>
+              <MobileStat icon={Wallet} label="Recebido" value={money(totals.payoutPaid)} hint="repasses baixados" tone="mint" />
+              <MobileStat icon={Wallet} label="A receber" value={money(totals.payoutPending)} hint="repasses pendentes" tone="orange" />
+            </>
+          )}
         </div>
         <label className="mona-m-search">
           <Search size={16} />
           <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Buscar lançamento ou cliente..." />
         </label>
+        <Select label="Livro" value={ledgerFilter} onChange={(e) => setLedgerFilter(e.target.value as Ledger)}>
+          <option value="all">Todos os livros</option>
+          <option value="Agency">Fatto ← cliente</option>
+          <option value="ClientAr">Cliente ← terceiros</option>
+          <option value="AssistantPayout">Fatto → VA</option>
+          <option value="ClientAp">Cliente → fornecedores</option>
+        </Select>
         <MobileChips>
           <MobileChip active={statusFilter === 'all'} onClick={() => setStatusFilter('all')}>Todos ({payments.length})</MobileChip>
           <MobileChip active={statusFilter === 'Paid'} tone="mint" onClick={() => setStatusFilter('Paid')}>Pagos ({payments.filter((p) => p.status === 'Paid').length})</MobileChip>
@@ -306,10 +342,11 @@ export function FinancePage() {
         )}
       </div>
 
-      <div className="mona-responsive-content mona-desk">
+      <div className="mona-responsive-content mona-desk mona-management mona-finance-desktop">
       <PageHeader
         title={canManageAll ? 'Financeiro' : 'Meu financeiro'}
         subtitle="Gavetas separadas: negócio do cliente, mensalidade da Fatto e repasse da VA."
+        illustration={financeIllustration}
         actions={
           canManageAll && (
             <Button onClick={() => setShowAdd(true)}>Registrar movimento</Button>
@@ -317,7 +354,25 @@ export function FinancePage() {
         }
       />
 
+      <div className="mona-management__stats">
+        {canManageAll ? (
+          <>
+            <MobileStat icon={Wallet} label="Receita Fatto" value={money(totals.agencyPaid)} hint="recebida de clientes" tone="mint" />
+            <MobileStat icon={Wallet} label="Repasse VA" value={money(totals.payoutPaid)} hint="pago à equipe" tone="rose" />
+            <MobileStat icon={Wallet} label="Margem" value={money(totals.agencyPaid - totals.payoutPaid)} hint="recebido menos repassado" tone="purple" />
+            <MobileStat icon={Wallet} label="Pendências" value={pendingCount} hint="em todos os livros" tone="orange" />
+          </>
+        ) : (
+          <>
+            <MobileStat icon={Wallet} label="Recebido" value={money(totals.payoutPaid)} hint="repasses baixados" tone="mint" />
+            <MobileStat icon={Wallet} label="A receber" value={money(totals.payoutPending)} hint="repasses pendentes" tone="orange" />
+          </>
+        )}
+      </div>
+
       {canManageAll && (
+        <section className="mona-finance-desktop__ledgers">
+        <h2>Gavetas financeiras</h2>
         <div className="mb-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
           <Card>
             <p className="text-xs font-semibold uppercase text-ink-500">Fatto ← cliente</p>
@@ -341,6 +396,7 @@ export function FinancePage() {
             <p className="mt-1 text-xs text-ink-500">Margem {money(totals.agencyPaid - totals.payoutPaid)}</p>
           </Card>
         </div>
+        </section>
       )}
 
       {canManageAll && pendingTasks.length > 0 && (
@@ -363,7 +419,7 @@ export function FinancePage() {
         </Card>
       )}
 
-      <div className="mb-4 flex flex-wrap gap-2">
+      <div className="mona-management__toolbar">
         <Input
           placeholder="Buscar descrição, cliente, terceiro…"
           value={q}
@@ -395,9 +451,9 @@ export function FinancePage() {
       {filtered.length === 0 ? (
         <EmptyState title="Nenhum movimento neste filtro" />
       ) : (
-        <div className="overflow-hidden rounded-xl border border-ink-100 bg-white">
+        <div className="mona-management__table">
           <table className="mona-data-table w-full text-left text-sm">
-            <thead className="border-b border-ink-100 bg-ink-50/80">
+            <thead>
               <tr>
                 <th className="px-4 py-3 font-medium text-ink-800">Descrição</th>
                 <th className="px-4 py-3 font-medium text-ink-800">Livro</th>
@@ -468,7 +524,7 @@ export function FinancePage() {
       )}
 
       </div>
-      <AddPaymentModal open={showAdd} onClose={() => setShowAdd(false)} />
+      <AddPaymentModal key={createLedger} open={showAdd} onClose={closeAdd} initialLedger={createLedger} />
       <SettlePaymentModal
         open={!!settleId}
         paymentId={settleId}

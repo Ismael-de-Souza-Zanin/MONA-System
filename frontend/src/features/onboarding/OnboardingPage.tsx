@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Check, CheckCircle2, ClipboardCheck, PlayCircle, Sparkles } from 'lucide-react'
+import { CheckCircle2, ClipboardCheck, PlayCircle, Sparkles } from 'lucide-react'
 import { api } from '../../shared/api/client'
 import type { ChecklistTemplate, Client, Employee, OnboardingClient, Organization, ServiceItem } from '../../shared/types'
 import { Permissions } from '../../shared/permissions/constants'
@@ -16,6 +16,7 @@ import {
   MobileAvatar,
   MobilePageHeader,
   MobileProgress,
+  MobileStat,
   Modal,
   PageHeader,
   Select,
@@ -359,9 +360,14 @@ export function OnboardingPage() {
       <div className="mona-phone mona-m-stack">
         <MobilePageHeader title="Onboarding" />
         {canWrite && (
-          <button type="button" className="mona-m-cta" onClick={openGuidedSetup}>
-            Novo onboarding
-          </button>
+          <div className="grid gap-2">
+            <button type="button" className="mona-m-cta" onClick={openGuidedSetup}>
+              Novo onboarding
+            </button>
+            <Button variant="secondary" onClick={() => setShowTemplates(true)}>
+              <ClipboardCheck size={16} /> Checklists padrão
+            </Button>
+          </div>
         )}
         {setupResult && (
           <div className="mona-m-tip">
@@ -397,15 +403,14 @@ export function OnboardingPage() {
               <div className="mona-m-list">
                 {featured.items.map((item) => (
                   <div key={item.id} className="mona-m-row">
-                    <button
-                      type="button"
-                      className={`mona-m-check${item.isCompleted ? ' is-on' : ''}`}
+                    <input
+                      type="checkbox"
+                      className="mona-m-check mona-check__input"
                       aria-label={item.isCompleted ? 'Reabrir etapa' : 'Concluir etapa'}
+                      checked={item.isCompleted}
                       disabled={!canWrite}
-                      onClick={() => toggleMutation.mutate({ clientId: featured.clientId, itemId: item.id, isCompleted: !item.isCompleted })}
-                    >
-                      <Check size={12} />
-                    </button>
+                      onChange={(event) => toggleMutation.mutate({ clientId: featured.clientId, itemId: item.id, isCompleted: event.target.checked })}
+                    />
                     <div className="mona-m-row__body">
                       <strong>{item.title}</strong>
                       <span className={`mona-m-badge ${item.isCompleted ? 'is-status-active' : 'is-status-hold'}`}>
@@ -450,10 +455,10 @@ export function OnboardingPage() {
         )}
       </div>
 
-      <div className="mona-responsive-content mona-desk">
+      <div className="mona-responsive-content mona-desk mona-management mona-onboarding-desktop">
       <PageHeader
         title="Onboarding"
-        subtitle="Setup operacional guiado para tirar uma agência de AVs do zero até uma operação real configurada."
+        subtitle="Acompanhe a preparação de cada cliente, etapa por etapa."
         actions={
           canWrite && (
             <div className="flex flex-wrap gap-2">
@@ -475,22 +480,10 @@ export function OnboardingPage() {
         </div>
       )}
 
-      <div className="mb-6 grid gap-3 md:grid-cols-3">
-        {[
-          ['1', 'Configurar', 'Agência, cliente, serviço, vertical e responsável.'],
-          ['2', 'Operar', 'Canais, SLA, SOPs e workflow ficam prontos para execução.'],
-          ['3', 'Provar valor', 'A primeira mensagem simulada vira tarefa rastreável.'],
-        ].map(([step, title, body]) => (
-          <div key={step} className="rounded-xl border border-ink-100 bg-white p-4">
-            <div className="mb-2 flex items-center gap-2">
-              <span className="flex h-7 w-7 items-center justify-center rounded-full bg-teal-900 text-xs font-semibold text-white">
-                {step}
-              </span>
-              <p className="font-semibold text-ink-900">{title}</p>
-            </div>
-            <p className="text-sm text-ink-600">{body}</p>
-          </div>
-        ))}
+      <div className="mona-management__stats">
+        <MobileStat icon={ClipboardCheck} label="Em onboarding" value={clients.length} hint="clientes com checklist" tone="purple" />
+        <MobileStat icon={CheckCircle2} label="Etapas concluídas" value={clients.reduce((sum, client) => sum + client.completedCount, 0)} hint="em todos os clientes" tone="mint" />
+        <MobileStat icon={Sparkles} label="Etapas pendentes" value={clients.reduce((sum, client) => sum + Math.max(0, client.totalCount - client.completedCount), 0)} hint="próximos passos" tone="orange" />
       </div>
 
       {isError && (
@@ -505,24 +498,24 @@ export function OnboardingPage() {
       {!isError && clients.length === 0 ? (
         <EmptyState title="Todos os clientes concluíram o onboarding" />
       ) : clients.length > 0 ? (
-        <div className="space-y-6">
+        <div className="mona-onboarding-desktop__list">
           {clients.map((client) => (
-            <Card key={client.clientId}>
+            <Card key={client.clientId} className="mona-onboarding-desktop__client">
               <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
                 <div>
                   <Link
                     to={`/clientes/${client.clientId}`}
-                    className="text-lg font-semibold text-teal-900 hover:underline brand-font"
+                    className="mona-management__link text-lg"
                   >
                     {client.clientName}
                   </Link>
-                  <p className="text-sm text-teal-700">
+                  <p className="text-sm">
                     {client.completedCount}/{client.totalCount} etapas concluídas
                   </p>
                 </div>
-                <div className="h-2 w-32 overflow-hidden rounded-full bg-sand-200">
+                <div className="mona-onboarding-desktop__track">
                   <div
-                    className="h-full bg-teal-600 transition-all"
+                    className="h-full transition-all"
                     style={{
                       width: `${client.totalCount ? (client.completedCount / client.totalCount) * 100 : 0}%`,
                     }}
@@ -533,6 +526,7 @@ export function OnboardingPage() {
                 {client.items.map((item) => (
                   <li key={item.id}>
                     <Checkbox
+                      completion
                       label={item.title}
                       checked={item.isCompleted}
                       disabled={!canWrite}

@@ -2175,6 +2175,7 @@ export function ClientDetailPage() {
           <label className="flex items-center gap-2 self-end text-sm text-ink-700">
             <input
               type="checkbox"
+              className="mona-check__input"
               checked={editForm.needsQuickResponse}
               onChange={(e) => setEditForm({ ...editForm, needsQuickResponse: e.target.checked })}
             />

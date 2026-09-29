@@ -1,8 +1,10 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
+import { MessageCircle, NotebookPen, Users } from 'lucide-react'
+import chatIllustration from '../../assets/illustrations/chat.png'
 import { api } from '../../shared/api/client'
-import { Button, Card, EmptyState, Input, LoadingSpinner, PageHeader, Select } from '../../shared/ui'
+import { Button, Card, Checkbox, EmptyState, Input, LoadingSpinner, PageHeader, Select } from '../../shared/ui'
 
 type Peer = { id: string; name: string; email?: string; isSelf?: boolean }
 type Thread = {
@@ -86,7 +88,8 @@ export function ChatPage() {
   })
 
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
+    const scroller = bottomRef.current?.parentElement
+    if (scroller) scroller.scrollTop = scroller.scrollHeight
   }, [messages.length])
 
   useEffect(() => {
@@ -148,13 +151,14 @@ export function ChatPage() {
   if (isLoading) return <LoadingSpinner />
 
   return (
-    <div>
+    <div className="mona-chat-workspace">
       <PageHeader
         title="Chat interno"
         subtitle="Direto, grupos, notas consigo e envio de tarefas, agenda, clientes e serviços — com ACL."
+        illustration={chatIllustration}
       />
 
-      <div className="mb-4 space-y-3 rounded-2xl border border-ink-100 bg-white p-3">
+      <div className="mona-chat-workspace__create">
         <div className="flex flex-wrap items-end gap-2">
           <Select
             label="Conversa direta"
@@ -177,9 +181,9 @@ export function ChatPage() {
           </Button>
         </div>
 
-        <div className="border-t border-ink-50 pt-3">
-          <p className="mb-2 text-xs font-semibold uppercase text-ink-500">Novo grupo</p>
-          <div className="flex flex-wrap items-end gap-2">
+        <details className="mona-chat-workspace__group">
+          <summary>Novo grupo</summary>
+          <div className="flex flex-wrap items-end gap-2 pt-3">
             <Input
               label="Nome do grupo (opcional)"
               value={groupTitle}
@@ -192,18 +196,16 @@ export function ChatPage() {
                 {others.map((p) => {
                   const checked = groupIds.includes(p.id)
                   return (
-                    <label key={p.id} className="flex cursor-pointer items-center gap-2 text-sm text-ink-800">
-                      <input
-                        type="checkbox"
-                        checked={checked}
-                        onChange={() =>
-                          setGroupIds((prev) =>
-                            checked ? prev.filter((id) => id !== p.id) : [...prev, p.id],
-                          )
-                        }
-                      />
-                      {p.name}
-                    </label>
+                    <Checkbox
+                      key={p.id}
+                      label={p.name}
+                      checked={checked}
+                      onChange={() =>
+                        setGroupIds((prev) =>
+                          checked ? prev.filter((id) => id !== p.id) : [...prev, p.id],
+                        )
+                      }
+                    />
                   )
                 })}
                 {others.length === 0 && (
@@ -218,42 +220,45 @@ export function ChatPage() {
               Criar grupo
             </Button>
           </div>
-        </div>
+        </details>
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-[260px_1fr]">
-        <Card className="p-2">
-          <p className="px-2 py-1 text-xs font-semibold uppercase text-ink-500">Conversas</p>
+      <div className="mona-chat-workspace__columns">
+        <Card className="mona-chat-workspace__threads">
+          <p className="mona-chat-workspace__label">Conversas <span>{threads.length}</span></p>
           <ul className="space-y-1">
             {threads.map((t) => (
               <li key={t.id}>
                 <button
                   type="button"
                   onClick={() => setThreadId(t.id)}
-                  className={`w-full rounded-xl px-3 py-2 text-left text-sm ${
-                    activeId === t.id ? 'bg-brand-50 text-brand-900' : 'hover:bg-ink-50'
-                  }`}
+                  className={`mona-chat-workspace__thread ${activeId === t.id ? 'is-active' : ''}`}
                 >
-                  <p className="font-medium">
-                    {t.isSelf ? '📝 ' : t.isGroup ? '👥 ' : ''}
-                    {t.title}
-                  </p>
-                  <p className="truncate text-xs text-ink-500">{t.lastMessage || '—'}</p>
+                  <span className="mona-chat-workspace__thread-icon">{t.isSelf ? <NotebookPen size={17} /> : t.isGroup ? <Users size={17} /> : <MessageCircle size={17} />}</span>
+                  <span className="mona-chat-workspace__thread-copy"><strong>{t.title}</strong><small>{t.lastMessage || 'Sem mensagens'}</small></span>
                 </button>
               </li>
             ))}
             {threads.length === 0 && (
-              <li className="px-2 py-6 text-center text-sm text-ink-500">Nenhuma conversa</li>
+              <li className="mona-chat-workspace__no-threads">Nenhuma conversa ainda</li>
             )}
           </ul>
         </Card>
 
-        <Card className="flex h-[min(520px,calc(100dvh-230px))] flex-col overflow-hidden p-0">
+        <Card className="mona-chat-workspace__conversation">
           {!activeId ? (
-            <EmptyState title="Selecione ou inicie uma conversa" />
+            <EmptyState
+              title="Comece uma conversa"
+              description="Selecione um colega, crie um grupo ou guarde uma nota para você."
+              illustration={chatIllustration}
+              action={<Button variant="secondary" onClick={() => createSelf.mutate()} disabled={createSelf.isPending}>Criar nota pessoal</Button>}
+            />
           ) : (
             <>
               <div className="flex-1 space-y-2 overflow-y-auto px-4 py-3">
+                {messages.length === 0 && (
+                  <EmptyState title="Ainda não há mensagens" description="Escreva a primeira mensagem nesta conversa." illustration={chatIllustration} />
+                )}
                 {messages.map((m) => (
                   <div
                     key={m.id}
@@ -320,7 +325,7 @@ export function ChatPage() {
                     </Select>
                   )}
                 </div>
-                <div className="flex flex-col gap-2 sm:flex-row">
+                <div className="mona-chat-workspace__composer">
                   <Input
                     value={text}
                     onChange={(e) => setText(e.target.value)}

@@ -1,7 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { ChevronRight, Eye, FileText, Search } from 'lucide-react'
+import { ChevronRight, Eye, FileText, Pencil, Search } from 'lucide-react'
+import documentsIllustration from '../../assets/illustrations/documents.png'
 import { api } from '../../shared/api/client'
 import type { Client, Contract, Employee } from '../../shared/types'
 import { Permissions } from '../../shared/permissions/constants'
@@ -227,6 +228,17 @@ export function ContractsPage() {
           <Search size={16} />
           <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Buscar contrato ou parte..." />
         </label>
+        <div className="grid grid-cols-2 gap-2">
+          <Select aria-label="Tipo de contrato" value={typeFilter} onChange={(e) => setTypeFilter(e.target.value as typeof typeFilter)}>
+            <option value="all">Todos os tipos</option>
+            <option value="Client">Clientes</option>
+            <option value="Provider">Prestadores</option>
+          </Select>
+          <Select aria-label="Status do contrato" value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
+            <option value="all">Todos os status</option>
+            {statuses.map((status) => <option key={status} value={status}>{statusLabel(status)}</option>)}
+          </Select>
+        </div>
         <MobileChips>
           <MobileChip active={statusFilter === 'all' && typeFilter === 'all'} onClick={() => { setStatusFilter('all'); setTypeFilter('all') }}>Todos ({contracts.length})</MobileChip>
           <MobileChip active={statusFilter === 'Active'} tone="mint" onClick={() => setStatusFilter('Active')}>Assinados ({countStatus('Active')})</MobileChip>
@@ -248,6 +260,7 @@ export function ContractsPage() {
                   {contract.pdfUrl && (
                     <button type="button" aria-label="Ver PDF" onClick={() => setPreview(contract)}><Eye size={18} /></button>
                   )}
+                  {canWrite && <button type="button" aria-label={`Editar ${contract.name}`} onClick={() => setEdit(contract)}><Pencil size={18} /></button>}
                   {contract.partyPath && <Link to={contract.partyPath} aria-label="Abrir ficha"><ChevronRight size={18} /></Link>}
                 </div>
               </article>
@@ -256,10 +269,11 @@ export function ContractsPage() {
         )}
       </div>
 
-      <div className="mona-responsive-content mona-desk">
+      <div className="mona-responsive-content mona-desk mona-management mona-contracts-desktop">
       <PageHeader
         title="Contratos"
         subtitle="Clientes e prestadores — PDF, ficha e vínculo com financeiro"
+        illustration={documentsIllustration}
         actions={
           canWrite && (
             <Button onClick={() => setShowForm(true)}>Novo contrato</Button>
@@ -267,7 +281,14 @@ export function ContractsPage() {
         }
       />
 
-      <div className="mb-4 flex flex-wrap gap-3">
+      <div className="mona-management__stats">
+        <MobileStat icon={FileText} label="Contratos" value={contracts.length} hint="na base" tone="purple" />
+        <MobileStat icon={FileText} label="Ativos" value={countStatus('Active')} hint="em vigor" tone="mint" />
+        <MobileStat icon={FileText} label="Rascunhos" value={countStatus('Draft')} hint="aguardam conclusão" tone="orange" />
+        <MobileStat icon={FileText} label="Vencidos" value={countStatus('Expired')} hint="precisam de revisão" tone="rose" />
+      </div>
+
+      <div className="mona-management__toolbar">
         <Select
           label="Tipo"
           value={typeFilter}
@@ -285,10 +306,10 @@ export function ContractsPage() {
           className="min-w-[140px]"
         >
           <option value="all">Todos</option>
-          {statuses.map((s) => (
-            <option key={s} value={s}>
-              {s}
-            </option>
+            {statuses.map((s) => (
+              <option key={s} value={s}>
+                {statusLabel(s)}
+              </option>
           ))}
         </Select>
         <Input
@@ -302,11 +323,16 @@ export function ContractsPage() {
 
       <div className={`grid gap-4 ${preview ? 'xl:grid-cols-[1fr_1.1fr]' : ''}`}>
         {filtered.length === 0 ? (
-          <EmptyState title="Nenhum contrato encontrado" />
+          <EmptyState
+            title={contracts.length === 0 ? 'Nenhum contrato cadastrado' : 'Nenhum contrato neste filtro'}
+            description={contracts.length === 0 ? 'Registre um contrato para acompanhar prazos, documentos e vínculos.' : 'Ajuste a busca, o tipo ou o status para encontrar outros contratos.'}
+            illustration={documentsIllustration}
+            action={contracts.length === 0 && canWrite ? <Button onClick={() => setShowForm(true)}>Novo contrato</Button> : undefined}
+          />
         ) : (
-          <div className="overflow-hidden rounded-xl border border-ink-100 bg-white">
+          <div className="mona-management__table">
             <table className="mona-data-table w-full text-left text-sm">
-              <thead className="border-b border-ink-100 bg-ink-50/80">
+              <thead>
                 <tr>
                   <th className="px-4 py-3 font-medium text-ink-900">Nome</th>
                   <th className="px-4 py-3 font-medium text-ink-900">Parte</th>
@@ -317,7 +343,7 @@ export function ContractsPage() {
               </thead>
               <tbody>
                 {filtered.map((c) => (
-                  <tr key={c.id} className="border-b border-ink-50 hover:bg-ink-50/50">
+                  <tr key={c.id}>
                     <td data-label="Nome" className="px-4 py-3 font-medium text-ink-900">{c.name}</td>
                     <td data-label="Parte" className="px-4 py-3">
                       {c.partyPath ? (
@@ -331,7 +357,7 @@ export function ContractsPage() {
                     <td data-label="Tipo" className="px-4 py-3">
                       {c.type === 'Client' ? 'Cliente' : 'Prestador'}
                     </td>
-                    <td data-label="Status" className="px-4 py-3">{c.status}</td>
+                    <td data-label="Status" className="px-4 py-3"><span className={`mona-m-badge ${c.status === 'Active' ? 'is-status-active' : c.status === 'Expired' ? 'is-status-notice' : 'is-status-hold'}`}>{statusLabel(c.status)}</span></td>
                     <td data-label="Ações" className="px-4 py-3">
                       <div className="flex flex-wrap gap-2">
                         {c.pdfUrl && (

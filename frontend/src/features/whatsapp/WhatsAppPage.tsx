@@ -23,7 +23,7 @@ type WaMsg = {
 
 export function WhatsAppPage() {
   const qc = useQueryClient()
-  const [to, setTo] = useState('+5511999990001')
+  const [to, setTo] = useState('')
   const [body, setBody] = useState('')
   const [clientId, setClientId] = useState('')
   const [lastResult, setLastResult] = useState<string | null>(null)
@@ -58,29 +58,26 @@ export function WhatsAppPage() {
 
 
   return (
-    <div>
-
-
+    <div className="mona-communication">
       <div className="mona-responsive-content">
       <PageHeader
         title="WhatsApp"
-        subtitle="POC da linha Fatto (WhatsAppKit). Envio grava na outbox DevFile — Meta Cloud fica no próximo passo."
+        subtitle="Mensagens recebidas e envio para clientes diretos."
       />
 
-      <div className="mb-4 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-950">
-        Pacote reutilizável em <code className="rounded bg-white px-1">packages/WhatsAppKit</code> — mesma
-        ideia do EmailKit. Ver arquitetura em <code className="rounded bg-white px-1">docs/INTEGRATIONS.md</code>.
+      <div className="mona-communication__notice" role="status">
+        Ambiente de demonstração: mensagens enviadas ficam na caixa de saída local.
       </div>
 
-      <div className="grid gap-5 lg:grid-cols-2">
-        <Card>
-          <p className="mb-3 text-sm font-semibold text-ink-900">Caixa demo (entrada)</p>
+      <div className="mona-wa-workspace">
+        <Card className="mona-wa-inbox">
+          <p className="mb-3 text-sm font-semibold text-ink-900">Recebidas ({inbox.length})</p>
           {inbox.length === 0 ? (
             <EmptyState title="Sem mensagens" />
           ) : (
             <ul className="max-h-[480px] space-y-2 overflow-y-auto">
               {inbox.map((m) => (
-                <li key={m.id} className="rounded-xl border border-ink-100 px-3 py-2 text-sm">
+                <li key={m.id} className="border-b border-ink-100 px-1 py-3 text-sm last:border-0">
                   <div className="flex justify-between gap-2">
                     <p className="font-medium text-ink-900">{m.contactName || m.from}</p>
                     <span className="text-[11px] text-ink-500">
@@ -106,8 +103,8 @@ export function WhatsAppPage() {
           )}
         </Card>
 
-        <Card>
-          <p className="mb-3 text-sm font-semibold text-ink-900">Enviar (POC)</p>
+        <Card className="mona-wa-compose">
+          <p className="mb-3 text-sm font-semibold text-ink-900">Nova mensagem</p>
           <div className="space-y-3">
             <Select
               label="Cliente direto (opcional)"

@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { ChevronRight, Handshake, Target, Users } from 'lucide-react'
+import { ChevronRight, Handshake, Link2, Pencil, Target, Users } from 'lucide-react'
 import { api } from '../../shared/api/client'
 import type { Client, Partner } from '../../shared/types'
 import { Permissions } from '../../shared/permissions/constants'
@@ -152,19 +152,34 @@ export function PartnersPage() {
         {partners.length === 0 ? <EmptyState title="Nenhuma parceira cadastrada" /> : (
           <div className="mona-m-list" id="mona-mobile-partners-list">
             {partners.map((partner) => (
-              <button key={partner.id} type="button" className="mona-m-person" onClick={() => setSelected(partner)}>
-                <span className="mona-m-person__main">
+              <article key={partner.id} className="mona-m-person">
+                <div className="mona-m-person__main">
                   <MobileAvatar name={partner.name} />
-                  <span>
+                  <div>
                     <strong>{partner.name}</strong>
                     <p>{partner.service || 'Serviço não informado'}</p>
                     <span className={`mona-m-badge ${(partner.clients?.length ?? 0) > 0 ? 'is-status-active' : 'is-status-hold'}`}>
                       {(partner.clients?.length ?? 0) > 0 ? `${partner.clients!.length} clientes` : 'Sem clientes'}
                     </span>
-                  </span>
-                </span>
-                <ChevronRight size={18} />
-              </button>
+                  </div>
+                </div>
+                {canWrite && (
+                  <div className="mona-m-person__tools">
+                    <button type="button" aria-label={`Editar ${partner.name}`} onClick={() => setSelected(partner)}><Pencil size={18} /></button>
+                    <button type="button" aria-label={`Vincular cliente a ${partner.name}`} onClick={() => setAssign(partner)}><Link2 size={18} /></button>
+                  </div>
+                )}
+                {!!partner.clients?.length && (
+                  <ul className="col-span-2 mt-2 space-y-2 border-t pt-2">
+                    {partner.clients.map((client) => (
+                      <li key={client.clientId} className="flex items-center justify-between gap-2 text-sm">
+                        <Link to={`/clientes/${client.clientId}`} className="mona-m-inline min-w-0 truncate">{client.clientName || client.clientId}</Link>
+                        {canWrite && <button type="button" className="mona-m-inline" onClick={() => unassign.mutate({ partnerId: partner.id, clientId: client.clientId })}>Remover</button>}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </article>
             ))}
           </div>
         )}
@@ -177,29 +192,35 @@ export function PartnersPage() {
         )}
       </div>
 
-      <div className="mona-responsive-content mona-desk">
+      <div className="mona-responsive-content mona-desk mona-management">
       <PageHeader
-        title="Empresas parceiras"
-        subtitle="Catálogo da organização — vincule aos clientes quando fizer sentido"
+        title="Parcerias"
+        subtitle="Empresas parceiras e clientes conectados à operação."
         actions={canWrite && <Button onClick={() => setShowAdd(true)}>Registrar parceira</Button>}
       />
+
+      <div className="mona-management__stats">
+        <MobileStat icon={Users} label="Parceiras" value={partners.length} hint="cadastradas" tone="purple" />
+        <MobileStat icon={Target} label="Vínculos" value={linkedClients} hint="clientes associados" tone="rose" />
+        <MobileStat icon={Handshake} label="Com clientes" value={partners.filter((partner) => (partner.clients?.length ?? 0) > 0).length} hint="parcerias em uso" tone="mint" />
+      </div>
 
       {partners.length === 0 ? (
         <EmptyState title="Nenhuma parceira cadastrada" />
       ) : (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="mona-management__service-grid">
           {partners.map((p) => (
             <div
               key={p.id}
-              className="rounded-xl border border-ink-100 bg-white p-4 text-left shadow-sm"
+              className="mona-management__partner"
             >
               <button type="button" className="w-full text-left" onClick={() => setSelected(p)}>
-                <p className="font-semibold text-ink-900">{p.name}</p>
-                <p className="mt-1 text-sm text-ink-500">{p.service || '—'}</p>
+                <p className="mona-management__service-title">{p.name}</p>
+                <p className="mt-1 text-sm">{p.service || 'Serviço não informado'}</p>
               </button>
-              <div className="mt-3 border-t border-ink-50 pt-3">
-                <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-ink-500">
-                  Clientes vinculados
+              <div className="mona-management__partner-clients">
+                <p className="mb-1 text-xs font-semibold uppercase tracking-wide">
+                  Clientes vinculados ({p.clients?.length ?? 0})
                 </p>
                 {p.clients?.length ? (
                   <ul className="space-y-1 text-sm">
@@ -240,13 +261,14 @@ export function PartnersPage() {
       )}
       </div>
 
-      <PartnerFormModal open={showAdd} onClose={() => setShowAdd(false)} />
+      <PartnerFormModal key={showAdd ? 'new-open' : 'new-closed'} open={showAdd} onClose={() => setShowAdd(false)} />
       <PartnerFormModal
+        key={selected?.id ?? 'none'}
         open={!!selected}
         onClose={() => setSelected(null)}
         partner={selected}
       />
-      <AssignClientModal open={!!assign} onClose={() => setAssign(null)} partner={assign} />
+      <AssignClientModal key={assign?.id ?? 'none'} open={!!assign} onClose={() => setAssign(null)} partner={assign} />
     </div>
   )
 }

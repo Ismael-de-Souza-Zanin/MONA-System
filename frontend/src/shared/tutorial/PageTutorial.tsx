@@ -16,11 +16,11 @@ export function reopenPageTutorial() {
 
 export function PageTutorialHost() {
   const { pathname } = useLocation()
-  const tutorial = getTutorialForPath(pathname)
   const [open, setOpen] = useState(false)
   const [current, setCurrent] = useState<PageTutorial | null>(null)
 
   useEffect(() => {
+    const tutorial = getTutorialForPath(pathname)
     if (!tutorial) {
       setOpen(false)
       setCurrent(null)
@@ -28,18 +28,18 @@ export function PageTutorialHost() {
     }
     setCurrent(tutorial)
     setOpen(!hasSeenTutorial(tutorial.key))
-  }, [tutorial?.key, pathname])
+  }, [pathname])
 
   useEffect(() => {
     const onReopen = () => {
-      const tip = getTutorialForPath(window.location.pathname)
+      const tip = getTutorialForPath(pathname)
       if (!tip) return
       setCurrent(tip)
       setOpen(true)
     }
     window.addEventListener(TUTORIAL_REOPEN_EVENT, onReopen)
     return () => window.removeEventListener(TUTORIAL_REOPEN_EVENT, onReopen)
-  }, [])
+  }, [pathname])
 
   if (!open || !current) return null
 

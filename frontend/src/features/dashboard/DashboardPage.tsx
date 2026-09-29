@@ -8,18 +8,18 @@ import {
   CirclePlus,
   ListChecks,
   ListPlus,
+  Sparkles,
+  Sun,
   UserPlus,
-  Users,
-  Wallet,
 } from 'lucide-react'
 import { useAuth } from '../../shared/auth/AuthContext'
 import { api } from '../../shared/api/client'
-import type { TodoItem } from '../../shared/types'
+import type { AgendaEvent, TodoItem } from '../../shared/types'
 import { Permissions } from '../../shared/permissions/constants'
 import { usePermissions } from '../../shared/permissions/hooks'
+import { useUserPreferences } from '../../shared/hooks/useWorkspaceData'
 import {
   BrandLogo,
-  Card,
   LoadingSpinner,
   MobileHero,
   MobileQuickActions,
@@ -27,33 +27,9 @@ import {
   MobileSection,
   MobileStat,
   MobileTip,
-  MonaArrow,
   MonaWave,
   isSameLocalDay,
 } from '../../shared/ui'
-
-interface DashboardStats {
-  clients?: number
-  activeClients?: number
-  paymentsPending?: number
-  employees?: number
-  partners?: number
-  services?: number
-  contracts?: number
-  onboardingPending?: number
-  agendaToday?: number
-  myClients?: number
-  myTodos?: number
-  myAgenda?: number
-  requests?: number
-}
-
-const KPI_TONES = [
-  'var(--mona-color-purple)',
-  'var(--mona-color-pink)',
-  'var(--mona-color-orange)',
-  '#8B4BB8',
-]
 
 function greeting() {
   const hour = new Date().getHours()
@@ -66,180 +42,150 @@ function firstName(name?: string) {
   return name?.split(' ').filter(Boolean)[0] || 'por aqui'
 }
 
-function KpiCard({
-  to,
-  label,
-  value,
-  hint,
-  icon: Icon,
-  tone,
-}: {
-  to: string
-  label: string
-  value?: number
-  hint?: string
-  icon: typeof Users
-  tone: string
-}) {
-  return (
-    <Link to={to}>
-      <Card hover className="mona-folder h-full rounded-[24px]">
-        <div className="flex items-start justify-between">
-          <div>
-            <p className="text-sm text-ink-500">{label}</p>
-            <p className="mt-2 text-3xl font-semibold text-ink-900 app-font">{value ?? '—'}</p>
-            {hint && <p className="mt-2 text-xs font-medium text-brand-800">{hint}</p>}
-          </div>
-          <div className="mona-kpi__icon" style={{ background: tone }}>
-            <Icon size={18} />
-          </div>
-        </div>
-        <div className="mt-4 flex h-10 items-end gap-1">
-          {[40, 65, 45, 80, 55, 90, 70].map((h, i) => (
-            <span
-              key={i}
-              className="flex-1 rounded-t-md"
-              style={{ height: `${h}%`, background: tone, opacity: 0.28 + i * 0.08 }}
-            />
-          ))}
-        </div>
-      </Card>
-    </Link>
-  )
+
+function localDay(value: string, timeZone: string) {
+  return new Date(value).toLocaleDateString('en-CA', { timeZone })
 }
 
 export function DashboardPage() {
   const { user } = useAuth()
   const { hasPermission } = usePermissions()
+  const { preferences } = useUserPreferences()
+  const timeZone = preferences?.effectiveTimeZoneId || preferences?.timeZoneId || 'America/Sao_Paulo'
+  const canReadTodos = hasPermission(Permissions.TodosRead)
+  const canReadAgenda = hasPermission(Permissions.AgendaRead)
+  const canReadClients = hasPermission(Permissions.ClientsRead)
+  const canReadFinance = hasPermission([Permissions.FinanceAll, Permissions.FinanceOwn])
+  const canCreateTodos = hasPermission(Permissions.TodosWrite)
+  const canCreateAgenda = hasPermission(Permissions.AgendaWrite)
+  const canCreateClients = hasPermission(Permissions.ClientsWrite)
 
-  const { data: stats, isLoading } = useQuery({
-    queryKey: ['dashboard-stats'],
-    queryFn: () => api.get<DashboardStats>('/dashboard/stats'),
-  })
-
-  const { data: reminders = [] } = useQuery({
+  const { data: reminders = [], isLoading: todosLoading, isError: todosError } = useQuery({
     queryKey: ['todos'],
     queryFn: () => api.get<TodoItem[]>('/todos'),
+    enabled: canReadTodos,
+  })
+  const { data: events = [], isLoading: agendaLoading, isError: agendaError } = useQuery({
+    queryKey: ['agenda-events', timeZone],
+    queryFn: () => api.get<AgendaEvent[]>(`/agenda/events?displayTimeZoneId=${encodeURIComponent(timeZone)}`),
+    enabled: canReadAgenda,
   })
 
-  if (isLoading) return <LoadingSpinner />
+  if (todosLoading || agendaLoading) return <LoadingSpinner />
 
-  const companyCards = [
-    {
-      to: '/clientes',
-      label: 'Clientes',
-      value: stats?.activeClients ?? stats?.clients,
-      hint: `${stats?.clients ?? 0} no total`,
-      icon: Users,
-      perm: Permissions.ClientsRead,
-    },
-    {
-      to: '/financeiro',
-      label: 'Financeiro',
-      value: stats?.paymentsPending,
-      hint: 'Cobranças pendentes',
-      icon: Wallet,
-      perm: [Permissions.FinanceAll, Permissions.FinanceOwn],
-    },
-    {
-      to: '/onboarding',
-      label: 'Onboarding',
-      value: stats?.onboardingPending,
-      hint: 'Em andamento',
-      icon: ListChecks,
-      perm: Permissions.OnboardingRead,
-    },
-    {
-      to: '/todos',
-      label: 'Tarefas',
-      value: stats?.myTodos,
-      hint: 'Pendentes',
-      icon: CheckSquare,
-      perm: Permissions.TodosRead,
-    },
-    {
-      to: '/agenda',
-      label: 'Agenda',
-      value: stats?.agendaToday,
-      hint: 'Hoje',
-      icon: CalendarDays,
-      perm: Permissions.AgendaRead,
-    },
-  ]
+  const hasTodosData = canReadTodos && !todosError
+  const hasAgendaData = canReadAgenda && !agendaError
 
-  const userCards = [
-    { to: '/clientes', label: 'Meus clientes', value: stats?.myClients, icon: Users, perm: Permissions.ClientsRead },
-    { to: '/financeiro', label: 'Meu financeiro', value: stats?.paymentsPending, icon: Wallet, perm: Permissions.FinanceOwn },
-    { to: '/todos', label: 'To do', value: stats?.myTodos, icon: CheckSquare, perm: Permissions.TodosRead },
-    { to: '/agenda', label: 'Agenda', value: stats?.myAgenda, icon: CalendarDays, perm: Permissions.AgendaRead },
-  ]
-
-  const cards = (user?.isOwner ? companyCards : userCards).filter((c) => hasPermission(c.perm))
-  const todos = stats?.myTodos ?? 0
-  const agenda = stats?.agendaToday ?? stats?.myAgenda ?? 0
-
-  const quickLinks = [
-    { to: '/todos', label: 'Nova tarefa' },
-    { to: '/agenda', label: 'Agendar reunião' },
-    { to: '/clientes', label: 'Novo cliente' },
-    { to: '/financeiro', label: 'Registrar pagamento' },
-    { to: '/sops', label: 'Abrir SOPs' },
-    { to: '/relatorios', label: 'Relatórios do período' },
-  ]
+  const now = new Date()
+  const todayKey = localDay(now.toISOString(), timeZone)
+  const openTodos = reminders.filter((todo) => todo.status !== 'Done')
+  const todayDueTodos = reminders.filter((todo) => {
+    const dueAt = todo.dueAtUtc || todo.dueAtLocal
+    return dueAt && localDay(dueAt, timeZone) === todayKey
+  })
+  const todayTodos = todayDueTodos.filter((todo) => todo.status !== 'Done')
+  const overdueTodos = openTodos.filter((todo) => todo.isOverdue)
+  const weekStart = new Date(now)
+  weekStart.setDate(now.getDate() - ((now.getDay() + 6) % 7))
+  weekStart.setHours(0, 0, 0, 0)
+  const weekEnd = new Date(weekStart)
+  weekEnd.setDate(weekStart.getDate() + 7)
+  const weekTodos = reminders.filter((todo) => {
+    const dueAt = todo.dueAtUtc || todo.dueAtLocal
+    if (!dueAt) return false
+    const date = new Date(dueAt)
+    return date >= weekStart && date < weekEnd
+  })
+  const weekProgress = weekTodos.length
+    ? Math.round((weekTodos.filter((todo) => todo.status === 'Done').length / weekTodos.length) * 100)
+    : null
+  const todayEvents = events.filter((event) => localDay(event.startAtUtc || event.startAt, timeZone) === todayKey)
+  const nextEvent = todayEvents
+    .filter((event) => new Date(event.startAtUtc || event.startAt) >= now)
+    .sort((a, b) => new Date(a.startAtUtc || a.startAt).getTime() - new Date(b.startAtUtc || b.startAt).getTime())[0]
+  const nextTime = nextEvent
+    ? new Date(nextEvent.startAtUtc || nextEvent.startAt).toLocaleTimeString('pt-BR', { timeZone, hour: '2-digit', minute: '2-digit' })
+    : null
+  const agenda = todayEvents.length
+  const canSummarizeDay = hasTodosData && hasAgendaData
 
   const quickActions = [
-    { to: '/todos', label: 'Nova tarefa', icon: ListPlus },
-    { to: '/agenda', label: 'Novo evento', icon: CalendarPlus },
-    { to: '/clientes', label: 'Novo cliente', icon: UserPlus },
-    { to: '/financeiro', label: 'Nova despesa', icon: CirclePlus },
-  ]
-
-  const today = new Date().toLocaleDateString('pt-BR', {
-    weekday: 'long',
-    day: 'numeric',
-    month: 'long',
-  })
+    { to: '/todos?novo=1', label: 'Nova tarefa', hint: 'Adicionar tarefa', icon: ListPlus, tone: 'purple', allowed: canCreateTodos && canReadTodos },
+    { to: '/agenda?novo=1', label: 'Novo evento', hint: 'Agendar compromisso', icon: CalendarPlus, tone: 'orange', allowed: canCreateAgenda && canReadAgenda },
+    { to: '/clientes?novo=1', label: 'Novo cliente', hint: 'Cadastrar cliente', icon: UserPlus, tone: 'purple', allowed: canCreateClients && canReadClients },
+    { to: '/financeiro?novo=1&livro=ClientAp', label: 'Nova despesa', hint: 'Registrar despesa', icon: CirclePlus, tone: 'pink', allowed: canReadFinance },
+  ].filter((action) => action.allowed)
 
   return (
     <div className="mona-home">
-      <section className="mona-hero mona-hero--stage">
-        <MonaWave className="mona-hero__wave" />
-        <MonaArrow tone="purple" className="mona-hero__arrow" />
-        <div className="relative z-[2] max-w-xl">
-          <p className="mona-hero__kicker">
-            {greeting()}, {firstName(user?.name)}!
-          </p>
-          <h1 className="mona-hero__title">Planeje seu dia com mais leveza</h1>
-          <p className="mt-2 text-sm text-ink-500">
-            {user?.isOwner
-              ? 'Visão rápida da operação. Para o dia a dia com muitos clientes, use o Modo operação.'
-              : 'Sua área: o que importa agora, sem ruído.'}{' '}
-            Tenha um ótimo dia.
-          </p>
-          <Link to="/operacao" className="mona-hero__cta">
-            Entrar no modo operação
-            <ArrowRight size={16} />
-          </Link>
-        </div>
-        <p className="mona-hero__note">Mais para o que importa</p>
-        <div className="mona-hero__art" aria-hidden>
-          <BrandLogo variant="mark" size={176} title="" className="mona-hero__mark" />
-        </div>
-        <div className="mona-hero__card mona-folder">
-          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-ink-500">Hoje</p>
-          <p className="mt-1 text-sm capitalize text-ink-700">{today}</p>
-          <div className="mt-3 space-y-2">
-            <Link to="/todos" className="flex items-center justify-between rounded-2xl bg-brand-50 px-3 py-2.5 text-sm">
-              <span>Tarefas pendentes</span>
-              <strong>{todos}</strong>
-            </Link>
-            <Link to="/agenda" className="mona-tint-orange flex items-center justify-between rounded-2xl px-3 py-2.5 text-sm">
-              <span>Agenda de hoje</span>
-              <strong>{agenda}</strong>
-            </Link>
+      <div className="mona-home__desktop mona-dashboard">
+        <section className="mona-dashboard__hero">
+          <MonaWave className="mona-dashboard__wave" />
+          <div className="mona-dashboard__hero-copy">
+            <p className="mona-dashboard__eyebrow">{greeting()}, {firstName(user?.name)}!</p>
+            <h1>{canSummarizeDay && todayTodos.length === 0 && overdueTodos.length === 0 ? 'Seu dia está organizado' : 'Seu dia em movimento'} <Sparkles size={25} aria-hidden="true" /></h1>
+            <p>
+              {canSummarizeDay
+                ? `Você tem ${agenda} ${agenda === 1 ? 'compromisso' : 'compromissos'} hoje e ${todayTodos.length} ${todayTodos.length === 1 ? 'tarefa pendente' : 'tarefas pendentes'} para hoje.`
+                : 'Acompanhe as informações disponíveis para o seu perfil.'}
+            </p>
+            <Link to="/operacao" className="mona-dashboard__primary">Ver prioridades <ArrowRight size={17} /></Link>
           </div>
-        </div>
-      </section>
+          <div className="mona-dashboard__motto"><Sun size={24} /><span>Grandes dias começam com organização.</span></div>
+          <BrandLogo variant="mark" size={122} title="" className="mona-dashboard__brand" />
+        </section>
+
+        <section className="mona-dashboard__metrics" aria-label="Resumo do dia">
+          <Link to="/todos" className="mona-dashboard__metric is-purple">
+            <span className="mona-dashboard__metric-icon"><CheckSquare size={27} /></span>
+            <span className="mona-dashboard__metric-title">Pendências</span>
+            <strong>{hasTodosData ? overdueTodos.length : '—'}</strong><span>atrasadas</span>
+            <small>{todosError ? 'Não foi possível carregar tarefas' : !canReadTodos ? 'Sem acesso a tarefas' : overdueTodos.length === 0 ? 'Tudo em dia!' : `${overdueTodos.length} ${overdueTodos.length === 1 ? 'tarefa precisa' : 'tarefas precisam'} de atenção`}</small>
+            <ArrowRight className="mona-dashboard__metric-arrow" size={18} />
+          </Link>
+          <Link to="/agenda" className="mona-dashboard__metric is-orange">
+            <span className="mona-dashboard__metric-icon"><CalendarDays size={27} /></span>
+            <span className="mona-dashboard__metric-title">Agenda</span>
+            <strong>{hasAgendaData ? agenda : '—'}</strong><span>{agenda === 1 ? 'evento hoje' : 'eventos hoje'}</span>
+            <small>{agendaError ? 'Não foi possível carregar a agenda' : !canReadAgenda ? 'Sem acesso à agenda' : nextTime ? `Próximo às ${nextTime}` : agenda ? 'Sem próximos eventos hoje' : 'Nenhum evento hoje'}</small>
+            <ArrowRight className="mona-dashboard__metric-arrow" size={18} />
+          </Link>
+          <Link to="/relatorios" className="mona-dashboard__metric is-mint">
+            <span className="mona-dashboard__metric-icon"><ListChecks size={27} /></span>
+            <span className="mona-dashboard__metric-title">Progresso da semana</span>
+            <strong>{hasTodosData && weekProgress !== null ? `${weekProgress}%` : '—'}</strong><span>das tarefas concluídas</span>
+            <small>{todosError ? 'Não foi possível carregar tarefas' : !canReadTodos ? 'Sem acesso a tarefas' : weekTodos.length ? `${weekTodos.filter((todo) => todo.status === 'Done').length} de ${weekTodos.length} tarefas com prazo nesta semana` : 'Sem tarefas com prazo nesta semana'}</small>
+            {hasTodosData && weekProgress !== null && <span className="mona-dashboard__progress"><span style={{ width: `${weekProgress}%` }} /></span>}
+            <ArrowRight className="mona-dashboard__metric-arrow" size={18} />
+          </Link>
+        </section>
+
+        <section className="mona-dashboard__section">
+          <div className="mona-dashboard__section-head"><div><h2>Ações rápidas</h2><p>Crie e organize tudo em poucos cliques.</p></div></div>
+          <div className="mona-dashboard__actions">
+            {quickActions.map((action) => {
+              const Icon = action.icon
+              return <Link key={action.label} to={action.to} className={`mona-dashboard__action is-${action.tone}`}>
+                <span className="mona-dashboard__action-icon"><Icon size={27} /></span>
+                <strong>{action.label}</strong><span>{action.hint}</span><ArrowRight size={18} />
+              </Link>
+            })}
+          </div>
+        </section>
+
+        <section className="mona-dashboard__section">
+          <div className="mona-dashboard__section-head"><div><h2>Lembretes de hoje</h2><p>Aqui estão os destaques para o seu dia.</p></div><Link to="/todos">Ver todos <ArrowRight size={17} /></Link></div>
+          <div className="mona-dashboard__reminders">
+            {!hasTodosData ? (
+              <div className="mona-dashboard__reminder"><span className="mona-dashboard__reminder-icon"><CheckSquare size={23} /></span><div><strong>{todosError ? 'Não foi possível carregar os lembretes' : 'Tarefas indisponíveis'}</strong><p>{todosError ? 'Tente novamente mais tarde.' : 'Seu perfil não tem acesso a tarefas.'}</p></div></div>
+            ) : todayTodos.length === 0 ? (
+              <div className="mona-dashboard__reminder"><span className="mona-dashboard__reminder-icon"><CheckSquare size={23} /></span><div><strong>Nada pendente para hoje</strong><p>Aproveite para adiantar a semana.</p></div></div>
+            ) : todayTodos.slice(0, 3).map((todo) => (
+              <Link key={todo.id} to="/todos" className="mona-dashboard__reminder"><span className="mona-dashboard__reminder-icon"><CheckSquare size={23} /></span><div><strong>{todo.title}</strong><p>{todo.clientName || 'Tarefa do dia'}</p></div><ArrowRight size={17} /></Link>
+            ))}
+          </div>
+        </section>
+      </div>
 
       <section className="mona-home__mobile mona-m-stack">
         <MobileHero
@@ -255,41 +201,37 @@ export function DashboardPage() {
             to="/todos"
             icon={CheckSquare}
             label="Tarefas de hoje"
-            value={todos}
-            hint={`de ${Math.max(todos, reminders.length || todos)} no total`}
-            progress={reminders.length ? Math.round(((reminders.length - todos) / reminders.length) * 100) : todos ? 38 : 100}
+            value={hasTodosData ? todayTodos.length : '—'}
+            hint={todosError ? 'Não foi possível carregar' : hasTodosData ? `${todayDueTodos.length} com prazo hoje` : 'Sem acesso a tarefas'}
+            progress={hasTodosData && todayDueTodos.length ? Math.round((todayDueTodos.filter((todo) => todo.status === 'Done').length / todayDueTodos.length) * 100) : undefined}
             tone="purple"
           />
           <MobileStat
             to="/agenda"
             icon={CalendarDays}
             label="Reuniões de hoje"
-            value={agenda}
-            hint="na sua agenda"
-            progress={agenda ? Math.min(100, 40 + agenda * 12) : 100}
+            value={hasAgendaData ? agenda : '—'}
+            hint={agendaError ? 'Não foi possível carregar' : hasAgendaData ? 'na sua agenda' : 'Sem acesso à agenda'}
             tone="orange"
           />
           <MobileStat
             to="/relatorios"
             icon={ListChecks}
             label="Seu progresso"
-            value={`${reminders.length ? Math.round((reminders.filter((t) => t.status === 'Done').length / reminders.length) * 100) : 80}%`}
+            value={!hasTodosData || weekProgress === null ? '—' : `${weekProgress}%`}
             hint="das tarefas da semana"
-            progress={reminders.length ? Math.round((reminders.filter((t) => t.status === 'Done').length / reminders.length) * 100) : 80}
+            progress={hasTodosData ? weekProgress ?? undefined : undefined}
             tone="mint"
           />
         </div>
 
-        <MobileSection title="Ações rápidas" action={{ to: '/apps', label: 'Ver todas' }}>
+        <MobileSection title="Ações rápidas">
           <MobileQuickActions items={quickActions} />
         </MobileSection>
 
         <MobileSection title="Lembretes de hoje" action={{ to: '/todos', label: 'Ver todas' }}>
           <div className="mona-m-list">
-            {(reminders.filter((t) => t.status !== 'Done' && (isSameLocalDay(t.dueAtLocal) || isSameLocalDay(t.dueAtUtc))).length
-              ? reminders.filter((t) => t.status !== 'Done' && (isSameLocalDay(t.dueAtLocal) || isSameLocalDay(t.dueAtUtc)))
-              : reminders.filter((t) => t.status !== 'Done')
-            ).slice(0, 4).map((todo) => (
+            {todayTodos.slice(0, 4).map((todo) => (
               <MobileRow
                 key={todo.id}
                 to="/todos"
@@ -298,86 +240,14 @@ export function DashboardPage() {
                 trailing={<ArrowRight size={16} />}
               />
             ))}
-            {reminders.every((t) => t.status === 'Done') && (
-              <MobileRow title="Nada pendente para hoje" meta="Aproveite para adiantar a semana" />
+            {(!hasTodosData || todayTodos.length === 0) && (
+              <MobileRow title={!hasTodosData ? 'Lembretes indisponíveis' : 'Nada pendente para hoje'} meta={!hasTodosData ? 'Não foi possível consultar suas tarefas' : 'Aproveite para adiantar a semana'} />
             )}
           </div>
         </MobileSection>
 
         <MobileTip>Comece o dia definindo 3 prioridades. Menos tarefas, mais resultado.</MobileTip>
       </section>
-
-      <div className="mona-home__desktop mb-5 grid gap-3 pt-2 md:grid-cols-2">
-        <Link
-          to="/relatorios"
-          className="mona-folder flex items-center justify-between rounded-3xl bg-brand-50 px-4 py-3 text-sm text-brand-950 transition hover:brightness-95"
-        >
-          <span>
-            <strong>Relatórios</strong> — dia, semana e mês nas lentes cliente, ADM e VA.
-          </span>
-          <MonaArrow tone="purple" className="h-7 w-7 shrink-0" />
-        </Link>
-        <Link
-          to="/operacao"
-          className="mona-folder flex items-center justify-between rounded-3xl mona-tint-orange px-4 py-3 text-sm text-ink-900 transition hover:brightness-95"
-        >
-          <span>
-            <strong>Modo operação</strong> — fila do dia e grupos que a equipe define.
-          </span>
-          <MonaArrow tone="orange" className="h-7 w-7 shrink-0" />
-        </Link>
-      </div>
-
-      <div className="mona-home__desktop grid gap-4 pt-2 sm:grid-cols-2 xl:grid-cols-4">
-        {cards.slice(0, 4).map((card, index) => (
-          <KpiCard
-            key={card.label}
-            to={card.to}
-            label={card.label}
-            value={card.value}
-            hint={'hint' in card ? card.hint : undefined}
-            icon={card.icon}
-            tone={KPI_TONES[index % KPI_TONES.length]}
-          />
-        ))}
-      </div>
-
-      <div className="mona-home__desktop mt-6 grid gap-4 pt-2 lg:grid-cols-[1.4fr_1fr]">
-        <Card className="mona-folder rounded-[24px]">
-          <div className="mb-4 flex items-center justify-between">
-            <h2 className="text-base font-semibold text-ink-900">Atalhos do sistema</h2>
-            <MonaArrow tone="purple" className="h-5 w-5" />
-          </div>
-          <div className="grid gap-3 sm:grid-cols-2">
-            {cards.map((card) => (
-              <Link
-                key={card.label}
-                to={card.to}
-                className="rounded-2xl border border-ink-100 px-4 py-3 transition hover:border-brand-500/40 hover:bg-brand-50/40"
-              >
-                <p className="text-sm font-medium text-ink-900">{card.label}</p>
-                <p className="mt-1 text-xs text-ink-500">Abrir módulo</p>
-              </Link>
-            ))}
-          </div>
-        </Card>
-
-        <Card className="mona-folder rounded-[24px]">
-          <h2 className="mb-4 text-base font-semibold text-ink-900">Ações rápidas</h2>
-          <div className="space-y-2">
-            {quickLinks.map((item) => (
-              <Link
-                key={item.label}
-                to={item.to}
-                className="flex items-center justify-between rounded-2xl border border-ink-100 px-3 py-2.5 text-sm font-medium text-ink-800 transition hover:bg-ink-50"
-              >
-                {item.label}
-                <MonaArrow tone="purple" className="h-4 w-4" />
-              </Link>
-            ))}
-          </div>
-        </Card>
-      </div>
     </div>
   )
 }

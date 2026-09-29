@@ -109,13 +109,11 @@ export function EmailsPage() {
 
 
   return (
-    <div>
-
-
+    <div className="mona-communication">
       <div className="mona-responsive-content">
       <PageHeader
         title="E-mails"
-        subtitle={`Caixas dos clientes diretos (POC) · fuso efetivo ${effectiveTz}. Envio programado já dispara via EmailKit.`}
+        subtitle={`Caixas dos clientes diretos · agendamentos no fuso ${effectiveTz}.`}
         actions={
           canSend && (
             <Button
@@ -138,14 +136,12 @@ export function EmailsPage() {
         }
       />
 
-      <div className="mb-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950">
-        Escopo: <strong>clientes diretos</strong> apenas. Leitura em modo demo (Gmail/Outlook stubs prontos no
-        pacote <code className="rounded bg-white px-1">packages/EmailKit</code>). Envio POC grava em outbox
-        DevFile e marca como Sent.
+      <div className="mona-communication__notice" role="status">
+        Ambiente de demonstração: a leitura usa mensagens de exemplo e os envios ficam na caixa de saída local.
       </div>
 
-      <div className="grid gap-5 xl:grid-cols-[280px_1fr_320px]">
-        <Card className="p-3">
+      <div className="mona-mail-workspace">
+        <Card className="mona-mail-accounts p-3">
           <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-ink-500">Contas</p>
           <ul className="space-y-1">
             {accounts.map((a) => (
@@ -174,7 +170,7 @@ export function EmailsPage() {
           </ul>
         </Card>
 
-        <Card className="p-0 overflow-hidden">
+        <Card className="mona-mail-inbox p-0 overflow-hidden">
           <div className="flex min-w-0 items-center gap-2 border-b border-ink-100 px-4 py-3">
             <button
               type="button"
@@ -220,13 +216,13 @@ export function EmailsPage() {
           )}
         </Card>
 
-        <Card className="p-3">
+        <Card className="mona-mail-scheduled p-3">
           <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-ink-500">
             Programados ({pending.length})
           </p>
           <ul className="max-h-[480px] space-y-2 overflow-y-auto">
             {scheduled.map((s) => (
-              <li key={s.id} className="rounded-xl border border-ink-100 px-3 py-2 text-sm">
+              <li key={s.id} className="border-b border-ink-100 px-1 py-2 text-sm last:border-0">
                 <p className="font-medium text-ink-900">{s.subject}</p>
                 <p className="text-xs text-ink-500">
                   {s.clientName} · {s.toAddress}

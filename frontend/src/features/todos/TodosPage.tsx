@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { ArrowDown, ArrowRight, ArrowUp, GripVertical, Check, ChevronDown, ChevronRight, Clock3, Pencil, Plus, ShieldCheck, SlidersHorizontal, Star, Trash2 } from 'lucide-react'
 import { api } from '../../shared/api/client'
 import type { TodoItem } from '../../shared/types'
@@ -231,6 +232,7 @@ function TodoCard({
 }
 
 export function TodosPage() {
+  const [searchParams, setSearchParams] = useSearchParams()
   const { user } = useAuth()
   const { hasPermission } = usePermissions()
   const canSeeAll = hasPermission(Permissions.TodosAll)
@@ -244,6 +246,20 @@ export function TodosPage() {
   const [phoneSort, setPhoneSort] = useState<'due' | 'priority'>('due')
   const [focusTodo, setFocusTodo] = useState<string | null>(null)
   const [showAdd, setShowAdd] = useState(false)
+
+  useEffect(() => {
+    if (searchParams.get('novo') !== '1') return
+    if (canWrite) setShowAdd(true)
+  }, [searchParams, canWrite])
+
+  const closeAdd = () => {
+    setShowAdd(false)
+    if (searchParams.has('novo')) setSearchParams((params) => {
+      const next = new URLSearchParams(params)
+      next.delete('novo')
+      return next
+    }, { replace: true })
+  }
   const [showColumns, setShowColumns] = useState(false)
   const [dragColumn, setDragColumn] = useState<string | null>(null)
   const [orderMessage, setOrderMessage] = useState('')
@@ -336,7 +352,7 @@ export function TodosPage() {
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: ['todos'] })
       void qc.invalidateQueries({ queryKey: ['todo-columns'] })
-      setShowAdd(false)
+      closeAdd()
       setForm({
         title: '',
         description: '',
@@ -697,7 +713,7 @@ export function TodosPage() {
       </div>
       </div>
 
-      <Modal open={showAdd} onClose={() => setShowAdd(false)} title="Nova tarefa">
+      <Modal open={showAdd} onClose={closeAdd} title="Nova tarefa">
         <div className="space-y-4">
           {createMutation.error && <ErrorAlert message={createMutation.error.message} />}
           <Input label="Título" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} />
@@ -755,13 +771,14 @@ export function TodosPage() {
           <label className="flex items-center gap-2 text-sm">
             <input
               type="checkbox"
+              className="mona-check__input"
               checked={form.isGeneral}
               onChange={(e) => setForm({ ...form, isGeneral: e.target.checked })}
             />
             Visível para a equipe (geral)
           </label>
           <div className="flex justify-end gap-2">
-            <Button variant="secondary" onClick={() => setShowAdd(false)}>
+            <Button variant="secondary" onClick={closeAdd}>
               Cancelar
             </Button>
             <Button disabled={!form.title.trim() || createMutation.isPending} onClick={() => createMutation.mutate()}>
@@ -837,6 +854,7 @@ export function TodosPage() {
           <label className="flex items-center gap-2 rounded-lg bg-sand-50 p-3 text-sm">
             <input
               type="checkbox"
+              className="mona-check__input"
               checked={notifyOwner}
               onChange={(e) => setNotifyOwner(e.target.checked)}
             />

@@ -242,31 +242,20 @@ export function OperationsPage() {
         </div>
       </div>
 
-      <div className="mona-responsive-content">
+      <div className="mona-responsive-content mona-management">
       {error && (
         <ErrorAlert message={`A atualização falhou. Exibindo a última fila carregada: ${error.message}`} />
       )}
       <div className="mona-desk">
       <PageHeader
         title="Modo operação"
-        subtitle={`${data.organization?.name ?? 'Org'}. Fila do dia para a equipe — organize clientes em grupos que vocês mesmos definem. Fuso ${data.effectiveTimeZoneId ?? '—'}.`}
+        subtitle={`${data.organization?.name ?? 'Organização'} · fila do dia · ${data.effectiveTimeZoneId ?? 'fuso não informado'}`}
       />
 
-      <div className="mb-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
-        {[
-          { label: 'Na fila', value: summary.total, to: '#fila' },
-          { label: 'Alertas', value: summary.alerts, to: '/notificacoes' },
-          { label: 'Tarefas', value: summary.todos, to: '/todos' },
-          { label: 'Agenda 24h', value: summary.agenda, to: '/agenda' },
-          { label: 'Clientes', value: summary.clientsAttention, to: '/clientes' },
-        ].map((c) => (
-          <Link key={c.label} to={c.to}>
-            <Card hover className="py-3">
-              <p className="text-xs text-ink-500">{c.label}</p>
-              <p className="mt-1 text-2xl font-semibold text-ink-900">{c.value}</p>
-            </Card>
-          </Link>
-        ))}
+      <div className="mona-management__stats">
+        <MobileStat to="#fila" icon={BarChart3} label="Na fila" value={summary.total} hint={`${summary.alerts} alertas`} tone="purple" />
+        <MobileStat to="/todos" icon={CheckSquare} label="Tarefas" value={summary.todos} hint="para acompanhar" tone="mint" />
+        <MobileStat to="/agenda" icon={CalendarDays} label="Agenda 24h" value={summary.agenda} hint={`${summary.clientsAttention} clientes em atenção`} tone="orange" />
       </div>
       </div>
 
@@ -276,10 +265,6 @@ export function OperationsPage() {
             <Bolt size={16} className="text-brand-800" />
             <h2 className="font-semibold text-ink-900">Seus grupos de clientes</h2>
           </div>
-          <p className="mb-3 text-xs text-ink-500">
-            Criados pela equipe — renomeie, apague, agrupe como fizer sentido no operacional. Sem catálogo fixo de
-            “tipo de negócio” no produto.
-          </p>
           {groupsError && <ErrorAlert message={groupsError.message} />}
           {createGroup.error && <ErrorAlert message={createGroup.error.message} />}
           <ul className="space-y-2">
@@ -321,24 +306,27 @@ export function OperationsPage() {
           )}
         </Card>
 
-        <Card className="mona-desk bg-brand-50/40">
-          <h2 className="font-semibold text-ink-900">Foco operacional (Ju / Fatto)</h2>
-          <ul className="mt-3 space-y-2 text-sm text-ink-700">
-            <li>Fila do dia: alertas, tarefas, agenda e clientes marcados para resposta rápida.</li>
-            <li>Grupos e tags são da equipe — o sistema não impõe vertical de mercado.</li>
-            <li>Idioma, fuso e mercado ficam no cliente para comunicação correta.</li>
-            <li>Quando for comercializar, a mesma estrutura serve outras orgs/autônomas.</li>
-          </ul>
-          <div className="mt-4 flex flex-wrap gap-2">
-            <Link to="/whatsapp" className="text-sm font-medium text-brand-800 hover:underline">
-              WhatsApp →
-            </Link>
-            <Link to="/emails" className="text-sm font-medium text-brand-800 hover:underline">
-              E-mails →
-            </Link>
-            <Link to="/clientes" className="text-sm font-medium text-brand-800 hover:underline">
-              Clientes →
-            </Link>
+        <Card className="mona-desk mona-operations__priorities">
+          <div className="mona-operations__head">
+            <h2>Próximos passos</h2>
+            <Link to="#fila">Ver fila</Link>
+          </div>
+          <div className="mona-operations__priority-list">
+            {priorityTodos.slice(0, 3).map((item) => (
+              <Link key={`${item.kind}-${item.id}`} to={item.link}>
+                <CheckSquare size={16} />
+                <span><strong>{item.title}</strong><small>{item.clientName || KIND_LABEL[item.kind]}</small></span>
+                <ArrowUpRight size={15} />
+              </Link>
+            ))}
+            {meetings.slice(0, 2).map((item) => (
+              <Link key={`${item.kind}-${item.id}`} to={item.link}>
+                <CalendarDays size={16} />
+                <span><strong>{item.title}</strong><small>{item.clientName || 'Agenda'}</small></span>
+                <ArrowUpRight size={15} />
+              </Link>
+            ))}
+            {priorityTodos.length === 0 && meetings.length === 0 && <p>Nenhuma tarefa ou reunião na fila.</p>}
           </div>
         </Card>
       </div>

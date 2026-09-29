@@ -1,15 +1,17 @@
-import type { InputHTMLAttributes } from 'react'
+import { useId, type InputHTMLAttributes } from 'react'
 
 interface CheckboxProps extends Omit<InputHTMLAttributes<HTMLInputElement>, 'type'> {
   label?: string
+  completion?: boolean
 }
 
-export function Checkbox({ label = '', className = '', id, ...props }: CheckboxProps) {
-  const checkboxId = id || (label ? label.toLowerCase().replace(/\s+/g, '-') : undefined)
+export function Checkbox({ label = '', className = '', completion = false, id, ...props }: CheckboxProps) {
+  const generatedId = useId()
+  const checkboxId = id || generatedId
   return (
-    <label htmlFor={checkboxId} className={`mona-check ${className}`.trim()}>
-      <input id={checkboxId} type="checkbox" className="mona-check__input" {...props} />
-      {label ? <span>{label}</span> : null}
-    </label>
+    <div className={`mona-checklist${completion ? '' : ' mona-checklist--option'} ${className}`.trim()}>
+      <input id={checkboxId} type="checkbox" {...props} />
+      <label htmlFor={checkboxId}>{label}</label>
+    </div>
   )
 }

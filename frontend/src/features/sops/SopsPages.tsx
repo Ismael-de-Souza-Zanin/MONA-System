@@ -825,6 +825,7 @@ export function SopDetailPage() {
                   {run.steps.map((s) => (
                     <li key={s.id} className="rounded-lg bg-ink-50 px-2 py-2">
                       <Checkbox
+                        completion
                         label={`${s.title}${s.isCritical ? ' ★' : ''}`}
                         checked={s.isCompleted}
                         disabled={run.status !== 'InProgress'}
@@ -992,6 +993,7 @@ export function SopFormPage() {
               <label className="flex items-center gap-2 self-end text-sm text-ink-700">
                 <input
                   type="checkbox"
+                  className="mona-check__input"
                   checked={form.bumpVersion}
                   onChange={(e) => setForm({ ...form, bumpVersion: e.target.checked })}
                 />
@@ -1109,6 +1111,7 @@ export function SopFormPage() {
                   <label className="flex items-center gap-2 text-sm">
                     <input
                       type="checkbox"
+                      className="mona-check__input"
                       checked={!!step.isCritical}
                       onChange={(e) => {
                         const next = [...steps]
